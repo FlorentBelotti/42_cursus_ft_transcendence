@@ -1,133 +1,102 @@
 ### To Do
 
-- Romain dépêche toi de push,
-- Théo dépêche toi de push,
-- Flo, continue comme ça <3
+- Romain, hurry up and push.
+- Théo, hurry up and push.
+- Flo, keep it up <3
 
 ### Usage
 
-- Run an autonomouse container provided by Docker (docker-compose up --build)
-- Subject page 6 to prepare evaluation.
+- Run an autonomous container provided by Docker: `docker-compose up --build`
+- Refer to page 6 of the subject to prepare for evaluation.
 
 ### Constraints
 
-- Backend: Python Django
-- Database: see Database module
-- Frontend: Javascript
-- Engine: latest stable version of Google Chrome
-- Security: password strongly hashed in database, SQL and injections/XSS protection, HTTPS (wss), validation form -> See Security concerns page 8
-- .env ignored
+- **Backend:** Python Django
+- **Database:** See Database module
+- **Frontend:** JavaScript
+- **Engine:** Latest stable version of Google Chrome
+- **Security:** Passwords strongly hashed in the database, SQL and XSS injection protection, HTTPS (wss), form validation -> See Security concerns on page 8
+- **.env:** Ignored
 
 ### Pong
 
-- Online realtime multiplayer on the same keyboard -> See remote players module
+- Online real-time multiplayer on the same keyboard -> See remote players module
 - Tournament with matchmaking
-- Registration system (alias reset after each tournamenet) -> See Standard User Management module
-- Same rules for every players, and AI
+- Registration system (alias reset after each tournament) -> See Standard User Management module
+- Same rules for every player and AI
 - Respect original Pong's aesthetic
 - UI
 
 ### Modules
 
-To attain 100% project completion, a minimum of 7 major modules is required. Two minor modules are equivalent to one Major Module.
+To attain 100% project completion, a minimum of 7 major modules is required. Two minor modules are equivalent to one major module.
 
-- Chosen : 7
+- **Chosen:** 7
 
-FlorentBelotti:
-Major - Backend : Python-Django
-Mini - Database : PostgreSQL
-Major - User : Standard user management
-Major - User : Remote authentification
-Major : AI opponent
+**FlorentBelotti:**
+- Major - Backend: Python-Django
+- Mini - Database: PostgreSQL
+- Major - User: Standard user management
+- Major - User: Remote authentication
+- Major: AI opponent
 
-RomLamb:
-Mini - CSS : framework bootstrap
+**RomLamb:**
+- Mini - CSS: Framework Bootstrap
 
-TheoGerardin:
-Major: WAF/ModSecurity with Hardened Configuration
-and HashiCorp Vault for Secrets Management.
-Major: GDPR Compliance
+**TheoGerardin:**
+- Major: WAF/ModSecurity with Hardened Configuration and HashiCorp Vault for Secrets Management
+- Major: GDPR Compliance
 
+### Web
 
-- Web
+- **Major module:** Use a framework to build the backend.
+- **Minor module:** Use a framework or a toolkit to build the frontend.
+- **Minor module:** Use a database for the backend.
+- **Major module:** Store the score of a tournament in the Blockchain.
 
-Major module: Use a Framework to build the backend.
+### User Management
 
-Minor module: Use a framework or a toolkit to build the frontend.
+- **Major module:** Standard user management, authentication, users across tournaments.
+- **Major module:** Implementing remote authentication.
 
-Minor module: Use a database for the backend.
+### Gameplay and User Experience
 
-Major module: Store the score of a tournament in the Blockchain.
+- **Major module:** Remote players
+- **Major module:** Multiplayer (more than 2 in the same game).
+- **Major module:** Add another game.
+- **Minor module:** Game customization options.
+- **Major module:** Live chat.
 
-- User Management
+### AI-Algo
 
-Major module: Standard user management, authentication, users across
-tournaments.
+- **Major module:** Introduce an AI opponent.
+- **Minor module:** User and game stats dashboards.
 
-Major module: Implementing a remote authentication.
+### Cybersecurity
 
-- Gameplay and user experience
+- **Major module:** Implement WAF/ModSecurity with Hardened Configuration and HashiCorp Vault for Secrets Management.
+- **Minor module:** GDPR compliance options with user anonymization, local data management, and account deletion.
+- **Major module:** Implement two-factor authentication (2FA) and JWT.
 
-Major module: Remote players
+### DevOps
 
-Major module: Multiplayers (more than 2 in the same game).
+- **Major module:** Infrastructure setup for log management.
+- **Minor module:** Monitoring system.
+- **Major module:** Designing the backend as microservices.
 
-Major module: Add Another Game with 
+### Graphics
 
-- User History and Matchmaking.
+- **Major module:** Use of advanced 3D techniques.
 
-Minor module: Game Customization 
+### Accessibility
 
-- Options.
+- **Minor module:** Support on all devices.
+- **Minor module:** Expanding browser compatibility.
+- **Minor module:** Multiple language supports.
+- **Minor module:** Add accessibility for visually impaired users.
+- **Minor module:** Server-side rendering (SSR) integration.
 
-Major module: Live chat.
+### Server-Side Pong
 
-- AI-Algo
-
-Major module: Introduce an AI Opponent.
-
-Minor module: User and Game Stats Dashboards
-
-- Cybersecurity.
-
-Major module: Implement WAF/ModSecurity with Hardened Configuration
-and HashiCorp Vault for Secrets 
-
-- Management.
-
-Minor module: GDPR Compliance Options with User Anonymization, Local
-Data Management, and Account Deletion.
-
-Major module: Implement Two-Factor Authentication (2FA) and JWT.
-
-- Devops
-
-Major module: Infrastructure Setup for Log Management.
-
-Minor module: Monitoring system.
-
-Major module: Designing the Backend as Microservices.
-
-- Graphics
-
-Major module: Use of advanced 3D techniques.
-
-- Accessibility
-
-Minor module: Support on all devices.
-
-Minor module: Expanding Browser Compatibility.
-
-Minor module: Multiple language supports.
-
-Minor module: Add accessibility for Visually Impaired Users.
-
-Minor module: Server-Side Rendering (SSR) Integration.
-
-- Server-Side Pong
-
-Major module: Replacing Basic Pong with Server-Side Pong and Imple-
-menting an API.
-
-Major module: Enabling Pong Gameplay via CLI against Web Users with
-API Integration.
+- **Major module:** Replacing basic Pong with server-side Pong and implementing an API.
+- **Major module:** Enabling Pong gameplay via CLI against web users with API integration.
