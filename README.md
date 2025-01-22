@@ -47,6 +47,7 @@ To attain 100% project completion, a minimum of 7 major modules is required. Two
 - Major - AI Algo : AI opponent
 - Major - User : Remote player
 - Major - Server: Server side pong -> if remote player
+- Major - Game: Another game (snake)
 
 **TheoGerardin:**
 - Major - Cyber : Double authentification
