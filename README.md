@@ -31,21 +31,26 @@
 
 To attain 100% project completion, a minimum of 7 major modules is required. Two minor modules are equivalent to one major module.
 
-- **Chosen:** 7
+- **Chosen:** 70 from major, 20 from minor
 
 **FlorentBelotti:**
 - Major - Backend: Python-Django
+- Minor - Accessibility: SSR from the use of Django
 - Mini - Database: PostgreSQL
 - Major - User: Standard user management
 - Major - User: Remote authentication
-- Major: AI opponent
+- Minor - DevOps: Monitoring system
+- Single page application
 
 **RomLamb:**
 - Mini - CSS: Framework Bootstrap
+- Major - AI Algo : AI opponent
+- Major - User : Remote player
+- Major - Server: Server side pong -> if remote player
 
 **TheoGerardin:**
-- Major: WAF/ModSecurity with Hardened Configuration and HashiCorp Vault for Secrets Management
-- Major: GDPR Compliance
+- Major - Cyber : Double authentification
+- Minor - Cybersecurite : GDPR Compliance
 
 ### Web
 
