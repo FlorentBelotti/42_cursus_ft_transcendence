@@ -1,27 +1,62 @@
+// import "bot.js"
+
 const canvas = document.getElementById('pong');
 const ctx = canvas.getContext('2d')
-
+const versus = document.getElementById('versus');
+const ia = document.getElementById('ia');
+let gameMode = null;
+let isGameRunning = false;
+let requestID = null;
 
 // PAD PARAMS //
+versus.addEventListener('click', () => {
+	gameMode = 'versus';
+	startGameLoop();
+})
 
-const padWidth = 16; const padHeight = 90; //taille pad
-const padSpeed = 5;
-let pad1 = {x:10, y:255}; // pos pad
-let pad2 = {x: 774, y:255};
+ia.addEventListener('click', ()=>{
+	gameMode = 'ia';
+	startGameLoop();
+})
+
+const padWidth = 20;
+const padHeight = 90; //taille pad
+const padSpeed = 7;
+// Position Pad
+let pad1 = {
+	x:10,
+	y:255
+};
+
+let pad2 = {
+	x: 770,
+	y:255
+};
+
 let direction1 = 0;
 let direction2 = 0;
 
+let score = {
+	score1: 0,
+	score2: 0
+}
 
 // BALL PARAMS //
+const ballHeight = 15;
+const ballWidth =  15;
 
-const ballWidth = 12; const ballHeight = 12;
-const ballSpeed = 5;
-let ball = {x: (canvas.width / 2 - ballWidth / 2), y: canvas.height / 2 - ballHeight / 2};
-let directionBall = {x:0, y:0}; // faire du random pour choisir un cote pour la premiere ball sinon envoyer ball au perdant
+let ball = {
+	x: canvas.width / 2 - ballWidth / 2,
+	y: canvas.height / 2 - ballHeight / 2,
+	ballSpeed: 3
+}
 
+let directionBall = {
+	x: Math.random() < 0.5 ? -1 : 1,
+	y: Math.random() < 0.5 ? -1 : 1,
+};
 
 // PAD //
-
 document.addEventListener('keydown', (event) => {
 	switch(event.key){
 		case 'ArrowUp':
@@ -51,6 +86,8 @@ document.addEventListener('keyup', (event) => {
 	}
 })
 
+
+
 function updatePad(){
 	pad1.y += direction1 * padSpeed;
 	pad2.y += direction2 * padSpeed;
@@ -64,12 +101,11 @@ function draw(){
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 	// Draw Pad //
-	ctx.fillStyle = 'green';
+	ctx.fillStyle = 'white';
 	ctx.fillRect(pad1.x, pad1.y, padWidth, padHeight); //pos x / pos y / taille x/ taille y/
 	ctx.fillRect(pad2.x, pad2.y, padWidth, padHeight)
 
 	// Draw Ball //
-	ctx.fillStyle = 'red';
 	ctx.fillRect(ball.x,ball.y,ballWidth, ballHeight);
 
 	// Pour centrer les éléments
@@ -78,26 +114,179 @@ function draw(){
 	// ctx.fillRect(790,0, 1, 600);
 }
 
-
 // BALL //
+let count = 0;
+
+function collisionWall(){
+	if (ball.y <= 0 || ball.y >= canvas.height - ballHeight)
+		directionBall.y *= -1;
+}
+
+function collissionWithPad(){
+	// Collision Pad1 //
+	if (ball.x <= pad1.x + padWidth && ball.x >= pad1.x &&
+		 ball.y + ballHeight >= pad1.y && ball.y <= pad1.y + padHeight)
+	{
+		let impact = (ball.y + ballHeight / 2) - (pad1.y + padHeight / 2);
+		let normalizeImpact = impact / (padHeight / 2);
+
+		let bounceAngle = normalizeImpact * (Math.PI / 3);
+
+		directionBall.x = Math.cos(bounceAngle);
+		directionBall.y = Math.sin(bounceAngle);
+
+		count++;
+		ball.ballSpeed = 3 + (count * 0.3);
+		ball.x = pad1.x + padWidth + 1;
+	}
+	// Collision Pad2 //
+	if (ball.x + ballWidth >= pad2.x && ball.x <= pad2.x + padWidth &&
+		ball.y + ballHeight >= pad2.y && ball.y <= pad2.y + padHeight)
+	{
+		let impact = (ball.y + ballHeight / 2) - (pad2.y + padHeight / 2)
+		let normalizeImpact = impact / (padHeight / 2);
+
+		let bounceAngle = normalizeImpact * (Math.PI / 3);
+
+		directionBall.x= -Math.cos(bounceAngle);
+		directionBall.y = Math.sin(bounceAngle);
+
+		count++;
+		ball.ballSpeed = 5 + (count * 0.3);
+		ball.x = pad2.x - padWidth - 1;
+	}
+}
+
+function BUTTTTT(){
+	if (ball.x <= 0){
+		resetBall('right');
+		score.score2 += 1;
+	}
+	if (ball.x >= canvas.width){
+		resetBall('left');
+		score.score1 += 1;
+	}
+}
 
 function updateBall(){
-	ball.x += directionBall.x * ballSpeed;
-	ball.y += directionBall.y * ballSpeed;
+	ball.x += directionBall.x * ball.ballSpeed;
+	ball.y += directionBall.y * ball.ballSpeed;
 
+	// collision contre mur
+	collisionWall();
+	collissionWithPad()
+
+	// but à travailler
+	BUTTTTT();
 }
 
-function collisionBall(){
-	// ball.x = Math.max(0, Math.min(ball.y, canvas.height - ballHeight));
-	ball.y = Math.max(0, Math.min(ball.y, canvas.height - ballHeight));
+function resetBall(scorer){
+	ball.x = canvas.width / 2 - ballWidth / 2;
+	ball.y = canvas.height / 2 - ballHeight / 2;
+	directionBall.x = scorer === 'left' ? -1 : 1;
+	directionBall.y = Math.random() < 0.5 ? -1 : 1;
+	ball.ballSpeed = 3;
+	count = 0;
 }
 
+function displayScore(){
+	ctx.fillStyle = 'white';
+	ctx.textAlign = 'center'
+	ctx.font = '30px Arial';
+	ctx.fillText(score.score1 , canvas.width / 2 - 30, 30); //parametres arbitraire pour le moment
+	ctx.fillText(":", canvas.width / 2, 30);
+	ctx.fillText(score.score2, canvas.width / 2 + 30, 30);
+}
+
+// BOT //
+function updatePad1(){
+	pad1.y += direction1 * padSpeed;
+	pad1.y = Math.max(0, Math.min(pad1.y, canvas.height - padHeight));
+}
+
+let targetY = 0;
+let botRunning = false;
+
+async function botLoop(){
+	botRunning = true;
+    while (isGameRunning && gameMode === 'ia') {
+        targetY = ball.y - padHeight / 2;
+
+        // console.log("Nouvelle targetY:", targetY); // Vérification
+
+        await new Promise(resolve => setTimeout(resolve, 1000));  // Attends 1 seconde
+    }
+    botRunning = false;
+}
+
+function moveBot() {
+    // console.log(`Bot position: ${pad2.y}, Target: ${targetY}`);
+
+    if (pad2.y < targetY) {
+        pad2.y += padSpeed;
+    } else if (pad2.y > targetY) {
+        pad2.y -= padSpeed;
+    }
+    pad2.y = Math.max(0, Math.min(pad2.y, canvas.height - padHeight));
+}
+
+//GAME FUNCTIONS//
+
+function stopGame(){
+	if (requestID){
+		cancelAnimationFrame(requestID);
+	}
+	isGameRunning = false;
+	requestID = null;
+}
 
 function gameLoop(){
-	updatePad();
-	updateBall();
-	draw();
-	requestAnimationFrame(gameLoop);
+	if (!isGameRunning)
+		return ;
+	if (gameMode === 'ia'){
+		updatePad1();
+		moveBot();
+		updateBall();
+		draw();
+		displayScore();
+	}
+	if (gameMode === 'versus'){
+		updatePad();
+		updateBall();
+		draw();
+		displayScore();
+	}
+	requestID = requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+// gameLoop.hasLogged = false;
+
+function resetGame(){
+	pad1.y = 255;
+	pad2.y = 255;
+	score.score1 = 0;
+	score.score2 = 0;
+	ball.x = canvas.width / 2 - ballWidth / 2;
+	ball.y = canvas.height / 2 - ballHeight / 2;
+	directionBall = {
+		x: Math.random() < 0.5 ? -1 : 1,
+		y: Math.random() < 0.5 ? -1 : 1,
+	};
+	ball.ballSpeed = 3;
+	count = 0;
+}
+
+function startGameLoop(){
+	if(isGameRunning){
+		stopGame();
+	}
+	resetGame();
+	isGameRunning = true;
+	if (gameMode === 'ia' && !botRunning) {
+        botLoop();  // On démarre la boucle du bot
+    }
+	// gameLoop.hasLogged = false;
+	gameLoop();
+}
+
+
