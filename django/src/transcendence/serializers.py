@@ -4,4 +4,4 @@ from transcendence.models import User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'nickname']
+        fields = ['id', 'nickname', 'elo']

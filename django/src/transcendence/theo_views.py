@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from transcendence.models import User
 from transcendence.serializers import UserSerializer
+from controller.scoreboard.scoreboard_controller import get_scoreboard_view
 
 def create_new_user(request):
     if request.method == 'POST':
