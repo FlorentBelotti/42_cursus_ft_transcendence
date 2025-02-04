@@ -1,8 +1,8 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
-class User(models.Model):
-    nickname = models.CharField(max_length=100, unique=True)
+class User(AbstractUser):
     elo = models.IntegerField(default=1000)
 
     def __str__(self):
-        return self.nickname
+        return self.username
