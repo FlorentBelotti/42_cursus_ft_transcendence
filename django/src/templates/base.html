@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcendence</title>
+    {% load static %}
+</head>
+<body>
+    <header>
+        <h1>Transcendence</h1>
+        <nav>
+            <a href="#" onclick="loadContent('home', event)">Accueil</a>
+            <a href="#" onclick="loadContent('about', event)">À propos</a>
+        </nav>
+    </header>
+    <main id="content">
+        <!-- Le contenu dynamique sera chargé ici -->
+    </main>
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>
