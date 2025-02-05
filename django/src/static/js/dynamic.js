@@ -20,21 +20,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Select all links on the page
-    document.querySelectorAll('a').forEach(function(link) {
+    document.querySelectorAll('.nav-button').forEach(function(button) {
 
-        // Add event "click" on each link
-        link.addEventListener('click', function(event) {
-
-            // Prevent the default navigation behavior of the link
+        button.addEventListener('click', function(event) {
             event.preventDefault();
 
-            // Check if the current URL is the same as the link's URL
-            if (window.location.pathname === new URL(link.href).pathname) {
-                return; // Do nothing if the URLs are the same
+            const url = button.getAttribute('data-url');
+
+            if (window.location.pathname === new URL(url, window.location.origin).pathname) {
+                return;
             }
 
-            // Fetch the content of the link
-            loadContent(link.href);
+            loadContent(url);
         });
     });
     
