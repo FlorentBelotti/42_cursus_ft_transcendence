@@ -1,22 +1,24 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transcendence</title>
+    <title>Base</title>
     {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="{% static 'js/main.js' %}" defer></script>
 </head>
 <body>
-    <header>
-        <h1>Transcendence</h1>
-        <nav>
-            <a href="#" onclick="loadContent('home', event)">Accueil</a>
-            <a href="#" onclick="loadContent('about', event)">À propos</a>
-        </nav>
-    </header>
-    <main id="content">
-        <!-- Le contenu dynamique sera chargé ici -->
-    </main>
-    <script src="{% static 'js/main.js' %}"></script>
+    
+    <h1>Transcendence</h1>
+    <nav>
+        <a href="{% url 'home_content' %}" onclick="loadContent(event, this.href)">Accueil</a>
+        <a href="{% url 'about_us' %}" onclick="loadContent(event, this.href)">À propos</a>
+    </nav>
+
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+
 </body>
 </html>
