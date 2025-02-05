@@ -1,5 +1,4 @@
 from django.urls import path
-from .theo_views import UserCreateView, UserListView
 from django.contrib import admin
 from transcendence.controller import user_controller
 
