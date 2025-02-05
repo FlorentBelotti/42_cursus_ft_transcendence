@@ -147,6 +147,8 @@ function collissionWithPad(){
 		ball.ballSpeed = 4 + (count * 0.3);
 		ball.x = pad1.x + padWidth + 1;
 
+		ball.x = pad1.x + padWidth + Math.abs(directionBall.x) * ball.ballSpeed;
+
 		ballTouched = true;
 	}
 
@@ -168,6 +170,8 @@ function collissionWithPad(){
 		count++;
 		ball.ballSpeed = 4 + (count * 0.3);
 		ball.x = pad2.x - ballWidth - 1;
+
+		ball.x = pad2.x - ballWidth - Math.abs(directionBall.x) * ball.ballSpeed;
 
 		ballTouched = true;
 	}
