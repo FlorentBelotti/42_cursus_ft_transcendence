@@ -4,10 +4,6 @@ from transcendence.controller import user_controller
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-]
-
-urlpatterns = [
     path('api/users/', user_controller.user_list, name='user_list'),
     path('api/users/<int:pk>/', user_controller.user_detail, name='user_detail'),
     path('api/users/create/', user_controller.user_create, name='user_create'),

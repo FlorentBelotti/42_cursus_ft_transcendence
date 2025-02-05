@@ -23,19 +23,19 @@ def user_detail(request, pk):
 
 @api_view(['POST'])
 def user_create(request):
-    data = request.data
-    username = data.get('username')
-    password = data.get('password')
-    elo = data.get('elo')
+    nickname = request.data.get('nickname')
+    password = request.data.get('password')
+    elo = request.data.get('elo')
+    email = request.data.get('email')
 
-    if not username or not password or elo is None:
-        return Response({'message': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
-    if User.objects.filter(username=username).exists():
-        return Response({'message': 'username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+    if not nickname or not password or not elo or not email:
+        return Response({"message": "Invalid data"}, status=status.HTTP_400_BAD_REQUEST)
 
-    user = create_new_user(username, password, elo)
-    serializer = UserSerializer(user)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    try:
+        user = create_new_user(nickname, password, elo, email)
+        return Response({"message": "User created successfully", "user": user.id}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['PUT'])
 def user_update(request, pk):
@@ -45,11 +45,11 @@ def user_update(request, pk):
         return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
     data = request.data
-    username = data.get('username')
+    nickname = data.get('nickname')
     password = data.get('password')
     elo = data.get('elo')
 
-    updated_user = update_existing_user(pk, username, password, elo)
+    updated_user = update_existing_user(pk, nickname, password, elo)
     serializer = UserSerializer(updated_user)
     return Response(serializer.data)
 
