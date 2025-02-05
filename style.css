@@ -1,5 +1,7 @@
-.pong{
+canvas{
 	background-color: grey;
+	display: block;
+	margin: auto;
 }
 
 li{

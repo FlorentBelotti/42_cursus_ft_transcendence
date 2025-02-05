@@ -189,6 +189,8 @@ function resetBall(scorer){
 	count = 0;
 }
 
+
+//MANAGE SCORE//
 function displayScore(){
 	ctx.fillStyle = 'white';
 	ctx.textAlign = 'center'
@@ -196,6 +198,28 @@ function displayScore(){
 	ctx.fillText(score.score1 , canvas.width / 2 - 30, 30); //parametres arbitraire pour le moment
 	ctx.fillText(":", canvas.width / 2, 30);
 	ctx.fillText(score.score2, canvas.width / 2 + 30, 30);
+}
+
+function manageScore(){
+	if (score.score1 === 10)
+		return ('left');
+	if (score.score2 === 10)
+		return ('right');
+}
+
+function displayWinner(winner){
+	if (winner === 'left'){
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.font = '50px Arial';
+		ctx.fillText("Player 1 win !", canvas.width / 2, 50);
+		stopGame();
+	}
+	if (winner === 'right'){
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.font = '50px Arial';
+		ctx.fillText("Player 2 win !", canvas.width / 2, 50);
+		stopGame();
+	}
 }
 
 // BOT //
@@ -211,24 +235,24 @@ async function botLoop(){
 	botRunning = true;
     while (isGameRunning && gameMode === 'ia') {
         targetY = ball.y - padHeight / 2;
-
-        // console.log("Nouvelle targetY:", targetY); // Vérification
-
         await new Promise(resolve => setTimeout(resolve, 1000));  // Attends 1 seconde
     }
     botRunning = false;
 }
 
 function moveBot() {
-    // console.log(`Bot position: ${pad2.y}, Target: ${targetY}`);
+    let step = padSpeed; // Pas de déplacement par frame
 
-    if (pad2.y < targetY) {
-        pad2.y += padSpeed;
+    if (Math.abs(pad2.y - targetY) < step) {
+        pad2.y = targetY; // Si on est très proche, on se positionne directement
+    } else if (pad2.y < targetY) {
+        pad2.y += step;
     } else if (pad2.y > targetY) {
-        pad2.y -= padSpeed;
+        pad2.y -= step;
     }
-    pad2.y = Math.max(0, Math.min(pad2.y, canvas.height - padHeight));
+    pad2.y = Math.max(0, Math.min(pad2.y, canvas.height - padHeight)); // Empêche de dépasser les bords
 }
+
 
 //GAME FUNCTIONS//
 
@@ -249,6 +273,8 @@ function gameLoop(){
 		updateBall();
 		draw();
 		displayScore();
+		let winner = manageScore();
+		displayWinner(winner);
 	}
 	if (gameMode === 'versus'){
 		updatePad();
@@ -285,7 +311,6 @@ function startGameLoop(){
 	if (gameMode === 'ia' && !botRunning) {
         botLoop();  // On démarre la boucle du bot
     }
-	// gameLoop.hasLogged = false;
 	gameLoop();
 }
 
