@@ -1,24 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <script src="{% static 'js/main.js' %}" defer></script>
+    <title>SPA Django</title>
 </head>
 <body>
-    
-    <h1>Transcendence</h1>
+
     <nav>
-        <a href="{% url 'home_content' %}" onclick="loadContent(event, this.href)">Accueil</a>
-        <a href="{% url 'about_us' %}" onclick="loadContent(event, this.href)">À propos</a>
+        <button onclick="loadPage('home')">Accueil</button>
+        <button onclick="loadPage('login')">Login</button>
+        <button onclick="loadPage('register')">Register</button>
+        <button onclick="loadPage('users')">Users</button>
     </nav>
 
     <div id="content">
-        {% block content %}{% endblock %}
+        <h2>Bienvenue sur mon site !</h2>
+        <p>Cliquer sur un bouton pour naviguer.</p>
     </div>
 
+    <script>
+        console.log("Script chargé !");
+    
+        function loadPage(page) {
+            console.log("Chargement de la page :", page);
+            fetch(`/load-page/${page}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("content").innerHTML = data.html; 
+            })
+            .catch(error => console.error("Erreur :", error));
+        }
+    
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("DOM chargé !");
+            loadPage("home");
+        });
+    </script>
 </body>
 </html>

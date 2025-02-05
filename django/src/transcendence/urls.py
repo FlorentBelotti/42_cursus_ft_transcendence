@@ -1,14 +1,10 @@
 from django.contrib import admin
 from django.urls import path
-from views.test_fbelotti_1 import home_content
-from views.test_fbelotti_1 import about_us
-from views.test_fbelotti_1 import header
-from views.test_fbelotti_1 import base
+
+from django.urls import path
+from views.test_fbelotti_1 import home, load_page
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', base, name='base'),
-    path('header/', header, name='header'),
-    path('home/', home_content, name='home_content'),
-    path('about/', about_us, name='about_us'),
+    path('', home, name="home"),
+    path('load-page/<str:page>/', load_page, name="load_page"),
 ]
