@@ -7,6 +7,7 @@ const ia = document.getElementById('ia');
 let gameMode = null;
 let isGameRunning = false;
 let requestID = null;
+let ballTouched = false;
 
 // PAD PARAMS //
 versus.addEventListener('click', () => {
@@ -135,25 +136,40 @@ function collissionWithPad(){
 		directionBall.x = Math.cos(bounceAngle);
 		directionBall.y = Math.sin(bounceAngle);
 
+		if (directionBall.x < 0){
+			directionBall.x *= -1;
+		}
+		console.log(ball.ballSpeed, directionBall.x, directionBall.y);
+		let magnitude = Math.sqrt(directionBall.x ** 2 + directionBall.y ** 2);
+		directionBall.x /= magnitude;
+		directionBall.y /= magnitude;
 		count++;
-		ball.ballSpeed = 3 + (count * 0.3);
+		ball.ballSpeed = 4 + (count * 0.3);
 		ball.x = pad1.x + padWidth + 1;
+
+		ballTouched = true;
 	}
+
 	// Collision Pad2 //
 	if (ball.x + ballWidth >= pad2.x && ball.x <= pad2.x + padWidth &&
 		ball.y + ballHeight >= pad2.y && ball.y <= pad2.y + padHeight)
 	{
-		let impact = (ball.y + ballHeight / 2) - (pad2.y + padHeight / 2)
+		let impact = (ball.y + ballHeight / 2) - (pad2.y + padHeight / 2);
 		let normalizeImpact = impact / (padHeight / 2);
 
 		let bounceAngle = normalizeImpact * (Math.PI / 3);
 
-		directionBall.x= -Math.cos(bounceAngle);
+		directionBall.x = -Math.cos(bounceAngle);
 		directionBall.y = Math.sin(bounceAngle);
 
+		let magnitude = Math.sqrt(directionBall.x ** 2 + directionBall.y ** 2);
+		directionBall.x /= magnitude;
+		directionBall.y /= magnitude;
 		count++;
-		ball.ballSpeed = 5 + (count * 0.3);
-		ball.x = pad2.x - padWidth - 1;
+		ball.ballSpeed = 4 + (count * 0.3);
+		ball.x = pad2.x - ballWidth - 1;
+
+		ballTouched = true;
 	}
 }
 
@@ -170,8 +186,9 @@ function BUTTTTT(){
 
 function updateBall(){
 	ball.x += directionBall.x * ball.ballSpeed;
-	ball.y += directionBall.y * ball.ballSpeed;
-
+	if (ballTouched){
+		ball.y += directionBall.y * ball.ballSpeed;
+	}
 	// collision contre mur
 	collisionWall();
 	collissionWithPad()
@@ -184,9 +201,10 @@ function resetBall(scorer){
 	ball.x = canvas.width / 2 - ballWidth / 2;
 	ball.y = canvas.height / 2 - ballHeight / 2;
 	directionBall.x = scorer === 'left' ? -1 : 1;
-	directionBall.y = Math.random() < 0.5 ? -1 : 1;
+	directionBall.y = 0;
 	ball.ballSpeed = 3;
 	count = 0;
+	ballTouched = false;
 }
 
 
