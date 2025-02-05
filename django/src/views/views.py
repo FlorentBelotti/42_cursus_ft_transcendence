@@ -7,7 +7,13 @@ def header(request):
     return render(request, 'header.html')
 
 def home(request):
-    return render(request, 'home.html')
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'home.html')
+    else:
+        return render(request, 'base.html', {'content_template': 'home.html'})
 
 def about(request):
-    return render(request, 'about.html')
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'about.html')
+    else:
+        return render(request, 'base.html', {'content_template': 'about.html'})

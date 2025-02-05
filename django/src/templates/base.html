@@ -12,7 +12,9 @@
 
     <!-- Dynamic content -->
     <div id="content">
-        {% block content %}{% endblock %}
+        {% block content %}
+        {% include content_template %}
+        {% endblock %}
     </div>
 
     <!-- JS scripts allowing dynamic content -->
