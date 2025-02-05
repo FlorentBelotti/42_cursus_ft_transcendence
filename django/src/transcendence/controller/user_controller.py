@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from transcendence.service.user_service import get_users, get_user, create_new_user, update_existing_user, delete_existing_user
 from transcendence.serializers import UserSerializer
+from transcendence.models import User
 
 @api_view(['GET'])
 def user_list(request):
