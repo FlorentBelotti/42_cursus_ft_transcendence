@@ -1,6 +1,7 @@
-# filepath: /home/theo/Documents/GitHub/ft_transcendence/django/src/transcendence/models.py
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
+from django.contrib.auth.models import User
+import uuid
 
 class UserManager(BaseUserManager):
     def create_user(self, email, nickname, password=None):
@@ -53,3 +54,9 @@ class User(AbstractBaseUser):
     @property
     def is_staff(self):
         return self.is_admin
+
+class VerificationCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    code = models.UUIDField(default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
