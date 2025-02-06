@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenObtainPairSerializer
+from .serializers import CustomTokenObtainPairSerializer, CustomTokenObtainPairSerializerRank
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
@@ -16,6 +16,9 @@ User = get_user_model()
 @method_decorator(csrf_exempt, name='dispatch')
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+class CustomTokenObtainPairViewRank(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializerRank
 
 class ProtectedView(APIView):
     permission_classes = [IsAuthenticated]

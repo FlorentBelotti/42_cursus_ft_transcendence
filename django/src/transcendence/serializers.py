@@ -23,5 +23,28 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def get_token(self, user):
         token = super().get_token(user)
-        token['nickname'] = user.nickname
+        token['rank'] = 0
         return token
+    
+class CustomTokenObtainPairSerializerRank(TokenObtainPairSerializer):
+    def validate2(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        user = User.objects.filter(email=email).first()
+        if user and user.check_password(password):
+            if not user.is_active:
+                raise serializers.ValidationError("User account is disabled.")
+            attrs["username"] = user.email
+            return super().validate2(attrs)
+        else:
+            raise serializers.ValidationError("Invalid email or password")
+
+    def get_token(self, user):
+        token = super().get_token(user)
+        if user.is_admin:
+            token['rank'] = 2
+        else:
+            token['rank'] = 1
+        return token
+
