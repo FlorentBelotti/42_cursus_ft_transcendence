@@ -5,7 +5,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'nickname', 'elo', 'email', 'password', 'is_active']
+        fields = ['id', 'nickname', 'elo', 'email', 'password', 'is_admin']
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -20,3 +20,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             return super().validate(attrs)
         else:
             raise serializers.ValidationError("Invalid email or password")
+
+    def get_token(self, user):
+        token = super().get_token(user)
+        token['nickname'] = user.nickname
+        return token

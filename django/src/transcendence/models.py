@@ -14,7 +14,7 @@ class UserManager(BaseUserManager):
             email=self.normalize_email(email),
             nickname=nickname,
         )
-
+        user.rank = 0
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -45,15 +45,15 @@ class User(AbstractBaseUser):
     def __str__(self):
         return self.nickname
 
-    def has_perm(self, perm, obj=None):
-        return True
+    # def has_perm(self, perm, obj=None):
+    #     return True
 
-    def has_module_perms(self, app_label):
-        return True
+    # def has_module_perms(self, app_label):
+    #     return True
 
-    @property
-    def is_staff(self):
-        return self.is_admin
+    # @property
+    # def is_staff(self):
+    #     return self.is_admin
 
 class VerificationCode(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

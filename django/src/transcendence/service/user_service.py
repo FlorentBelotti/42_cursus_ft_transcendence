@@ -11,10 +11,10 @@ def create_new_user(nickname, password, elo, email):
     hashed_password = make_password(password)
     return create_user(nickname, hashed_password, elo, email)
 
-def update_existing_user(user_id, nickname, password, elo, email):
+def update_existing_user(user_id, nickname, password, elo, email, is_admin):
     user = get_user_by_id(user_id)
     hashed_password = make_password(password)
-    return update_user(user, nickname, hashed_password, elo, email)
+    return update_user(user, nickname, hashed_password, elo, email, is_admin)
 
 def delete_existing_user(user_id):
     user = get_user_by_id(user_id)

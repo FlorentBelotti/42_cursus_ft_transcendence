@@ -48,8 +48,9 @@ def user_update(request, pk):
     nickname = data.get('nickname')
     password = data.get('password')
     elo = data.get('elo')
+    is_admin = data.get('is_admin')
 
-    updated_user = update_existing_user(pk, nickname, password, elo)
+    updated_user = update_existing_user(pk, nickname, password, elo, is_admin)
     serializer = UserSerializer(updated_user)
     return Response(serializer.data)
 
