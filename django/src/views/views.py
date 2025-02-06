@@ -1,19 +1,37 @@
 from django.shortcuts import render
 
-def base(request):
-    return render(request, 'base.html')
-
 def header(request):
     return render(request, 'header.html')
 
-def home(request):
+def define_render(request, template_name):
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return render(request, 'home.html')
+        return render(request, template_name)
     else:
-        return render(request, 'base.html', {'content_template': 'home.html'})
+        return render(request, 'base.html', {'content_template': template_name})
+
+def home(request):
+    return define_render(request, 'home.html')
 
 def about(request):
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return render(request, 'about.html')
-    else:
-        return render(request, 'base.html', {'content_template': 'about.html'})
+    return define_render(request, 'about.html')
+
+def register(request):
+    return define_render(request, 'register.html')
+
+def login(request):
+    return define_render(request, 'login.html')
+
+def pong(request):
+    return define_render(request, 'pong.html')
+
+def tournament(request):
+    return define_render(request, 'tournament.html')
+
+def match(request):
+    return define_render(request, 'match.html')
+
+def vsBot(request):
+    return define_render(request, 'vsBot.html')
+
+def leaderboard(request):
+    return define_render(request, 'leaderboard.html')
