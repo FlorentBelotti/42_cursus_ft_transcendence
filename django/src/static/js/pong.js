@@ -1,5 +1,3 @@
-// import "bot.js"
-
 const canvas = document.getElementById('pong');
 const ctx = canvas.getContext('2d')
 const versus = document.getElementById('versus');
@@ -12,11 +10,13 @@ let ballTouched = false;
 // PAD PARAMS //
 versus.addEventListener('click', () => {
 	gameMode = 'versus';
+	console.log(versus);
 	startGameLoop();
 })
 
 ia.addEventListener('click', ()=>{
 	gameMode = 'ia';
+	console.log(ia);
 	startGameLoop();
 })
 
@@ -88,7 +88,6 @@ document.addEventListener('keyup', (event) => {
 })
 
 
-
 function updatePad(){
 	pad1.y += direction1 * padSpeed;
 	pad2.y += direction2 * padSpeed;
@@ -119,8 +118,15 @@ function draw(){
 let count = 0;
 
 function collisionWall(){
-	if (ball.y <= 0 || ball.y >= canvas.height - ballHeight)
+	if (ball.y <= 0){
+		// ball.y = 0;
 		directionBall.y *= -1;
+	}
+	if (ball.y >= canvas.height - ballHeight){
+		// ball.y = canvas.height;
+		directionBall.y *= -1;
+	}
+
 }
 
 function collissionWithPad(){
@@ -139,7 +145,6 @@ function collissionWithPad(){
 		if (directionBall.x < 0){
 			directionBall.x *= -1;
 		}
-		console.log(ball.ballSpeed, directionBall.x, directionBall.y);
 		let magnitude = Math.sqrt(directionBall.x ** 2 + directionBall.y ** 2);
 		directionBall.x /= magnitude;
 		directionBall.y /= magnitude;
@@ -211,7 +216,6 @@ function resetBall(scorer){
 	ballTouched = false;
 }
 
-
 //MANAGE SCORE//
 function displayScore(){
 	ctx.fillStyle = 'white';
@@ -253,28 +257,61 @@ function updatePad1(){
 let targetY = 0;
 let botRunning = false;
 
-async function botLoop(){
-	botRunning = true;
-    while (isGameRunning && gameMode === 'ia') {
-        targetY = ball.y - padHeight / 2;
-        await new Promise(resolve => setTimeout(resolve, 1000));  // Attends 1 seconde
-    }
-    botRunning = false;
+function predictBallImpact() {
+	if (directionBall.x === 0) return pad2.y;
+
+	const distanceToPad2 = pad2.x - ball.x;
+	const timeToReachPad2 = distanceToPad2 / (directionBall.x * ball.ballSpeed);
+
+	let predictedY = ball.y + directionBall.y * ball.ballSpeed * timeToReachPad2;
+
+	// Utiliser une copie de directionBall.y pour la prédiction
+	let predictedDirectionY = directionBall.y;
+	let remainingTime = timeToReachPad2;
+	let currentY = ball.y;
+
+	while (remainingTime > 0) {
+		const timeToNextWall = predictedDirectionY > 0 ?
+			(canvas.height - ballHeight - currentY) / (predictedDirectionY * ball.ballSpeed) :
+			(currentY) / (-predictedDirectionY * ball.ballSpeed);
+
+		if (timeToNextWall >= remainingTime) {
+			currentY += predictedDirectionY * ball.ballSpeed * remainingTime;
+			break;
+		} else {
+			currentY += predictedDirectionY * ball.ballSpeed * timeToNextWall;
+			predictedDirectionY *= -1; // Inverser la direction Y après un rebond
+			remainingTime -= timeToNextWall;
+		}
+	}
+
+	return currentY - padHeight / 2;
 }
+
+async function botLoop() {
+	botRunning = true;
+	while (isGameRunning && gameMode === 'ia') {
+		targetY = predictBallImpact(); // Utiliser la prédiction
+		await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1 seconde
+	}
+	botRunning = false;
+}
+
 
 function moveBot() {
-    let step = padSpeed; // Pas de déplacement par frame
+	const step = padSpeed; // Vitesse de déplacement de l'AI
 
-    if (Math.abs(pad2.y - targetY) < step) {
-        pad2.y = targetY; // Si on est très proche, on se positionne directement
-    } else if (pad2.y < targetY) {
-        pad2.y += step;
-    } else if (pad2.y > targetY) {
-        pad2.y -= step;
-    }
-    pad2.y = Math.max(0, Math.min(pad2.y, canvas.height - padHeight)); // Empêche de dépasser les bords
+	if (Math.abs(pad2.y - targetY) < step) {
+		pad2.y = targetY; // Si on est très proche, on se positionne directement
+	} else if (pad2.y < targetY) {
+		pad2.y += step;
+	} else if (pad2.y > targetY) {
+		pad2.y -= step;
+	}
+
+	// Empêcher la raquette de sortir du canvas
+	pad2.y = Math.max(0, Math.min(pad2.y, canvas.height - padHeight));
 }
-
 
 //GAME FUNCTIONS//
 
@@ -307,8 +344,6 @@ function gameLoop(){
 	requestID = requestAnimationFrame(gameLoop);
 }
 
-// gameLoop.hasLogged = false;
-
 function resetGame(){
 	pad1.y = 255;
 	pad2.y = 255;
@@ -331,9 +366,8 @@ function startGameLoop(){
 	resetGame();
 	isGameRunning = true;
 	if (gameMode === 'ia' && !botRunning) {
-        botLoop();  // On démarre la boucle du bot
-    }
+		botLoop();  // On démarre la boucle du bot
+	}
 	gameLoop();
 }
-
 

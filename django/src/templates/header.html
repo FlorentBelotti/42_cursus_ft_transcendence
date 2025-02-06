@@ -1,0 +1,20 @@
+<header>
+    <nav>
+        <ul>
+            <li>
+                <button class="nav-button" data-url="{% url 'home' %}">Home</button>
+                <button class="nav-button" data-url="{% url 'about' %}">About Us</button>
+				<button class="nav-button" data-url="{% url 'pong' %}">Pong Game</button>
+				<button class="nav-button" data-url="{% url 'register' %}">Register</button>
+				<button class="nav-button" data-url="{% url 'login' %}">Login</button>
+				<button class="nav-button" data-url="{% url 'pongServer' %}">PongServer</button>
+            </li>
+            <style>
+                li{
+                    list-style: none;
+                }
+            </style>
+            <!-- <li><a href="{% url 'about' %}">About Us</a></li> -->
+        </ul>
+    </nav>
+</header>
