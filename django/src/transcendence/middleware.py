@@ -1,31 +1,34 @@
+# filepath: /home/theo/Documents/GitHub/ft_transcendence/django/src/transcendence/middleware.py
 from django.utils.deprecation import MiddlewareMixin
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.http import JsonResponse
 
-class JWTAuthenticationMiddleware(MiddlewareMixin):
+class AccessControlMiddleware(MiddlewareMixin):
     def process_request(self, request):
-        excluded_urls = [
+        public_urls = [
             '/api/token/',
-            '/api/token/refresh/',
+        ]
+
+        rank_0_urls = [
             '/api/send-verification-code/',
             '/api/verify-code/',
         ]
 
-        if request.path in excluded_urls:
-            if request.token.get('rank') == 0:
+        if request.path in public_urls:
+            return
+
         jwt_authenticator = JWTAuthentication()
         try:
             user, token = jwt_authenticator.authenticate(request)
             request.user = user
             request.token = token
         except AuthenticationFailed:
-            request.user = None
-            request.token = None
+            return JsonResponse({'detail': 'Invalid token'}, status=401)
 
-class TwoFactorAuthenticationMiddleware(MiddlewareMixin):
-    def process_request(self, request):
-        if request.user and request.user.is_authenticated:
-            if request.token and request.token.get('rank') == 0:
-                if not request.session.get('is_verified'):
-                    return JsonResponse({'detail': 'Two-factor authentication required'}, status=403)
+        if request.path in rank_0_urls:
+            if request.token.get('rank') != 0:
+                return JsonResponse({'detail': 'Access denied'}, status=403)
+        else:
+            if request.token.get('rank') not in [1, 2]:
+                return JsonResponse({'detail': 'Access denied'}, status=403)
