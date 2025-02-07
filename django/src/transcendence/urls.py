@@ -1,6 +1,8 @@
 from django.urls import path
 from django.views.generic import RedirectView
 from views import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/home/', permanent=True)),
@@ -16,3 +18,6 @@ urlpatterns = [
     path('leaderboard/', views.define_render, name='leaderboard'),
     path('pongserver/', views.define_render, name='pongServer'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
