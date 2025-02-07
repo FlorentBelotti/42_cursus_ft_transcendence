@@ -9,7 +9,7 @@ canvas_height = 550
 pad_width = 20
 pad_height = 90
 pad_speed = 7
-ball_radius = 15
+ball_radius = 8
 ball_speed = 3
 
 class PongConsumer(AsyncWebsocketConsumer):
