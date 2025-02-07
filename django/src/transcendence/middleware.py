@@ -8,11 +8,13 @@ class AccessControlMiddleware(MiddlewareMixin):
     def process_request(self, request):
         public_urls = [
             '/api/token/',
+            '/api/users/create/',
         ]
 
         rank_0_urls = [
             '/api/send-verification-code/',
             '/api/verify-code/',
+            '/api/token-ranked/',
         ]
 
         if request.path in public_urls:
@@ -20,7 +22,10 @@ class AccessControlMiddleware(MiddlewareMixin):
 
         jwt_authenticator = JWTAuthentication()
         try:
-            user, token = jwt_authenticator.authenticate(request)
+            auth_result = jwt_authenticator.authenticate(request)
+            if auth_result is None:
+                raise AuthenticationFailed('Invalid token')
+            user, token = auth_result
             request.user = user
             request.token = token
         except AuthenticationFailed:

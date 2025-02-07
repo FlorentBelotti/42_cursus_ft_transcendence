@@ -24,6 +24,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(self, user):
         token = super().get_token(user)
         token['rank'] = 0
+        token['nickname'] = user.nickname
         return token
     
 class CustomTokenObtainPairSerializerRank(TokenObtainPairSerializer):
@@ -44,7 +45,9 @@ class CustomTokenObtainPairSerializerRank(TokenObtainPairSerializer):
         token = super().get_token(user)
         if user.is_admin:
             token['rank'] = 2
+            token['nickname'] = user.nickname
         else:
             token['rank'] = 1
+            token['nickname'] = user.nickname
         return token
 
