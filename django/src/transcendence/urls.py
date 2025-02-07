@@ -14,4 +14,5 @@ urlpatterns = [
     path('match/', views.define_render, name='match'),
     path('vsBot/', views.define_render, name='vsBot'),
     path('leaderboard/', views.define_render, name='leaderboard'),
+    path('pongserver/', views.define_render, name='pongServer'),
 ]

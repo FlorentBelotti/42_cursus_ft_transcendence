@@ -15,9 +15,11 @@ COPY ./src /app/src
 
 # Définit la variable d'environnement pour Django
 ENV DJANGO_SETTINGS_MODULE=transcendence.settings
+ENV PYTHONPATH=/app/src
 
 # Expose le port 8000 pour l'application Django
 EXPOSE 8000
 
 # Commande pour démarrer le serveur Django
-CMD ["python", "src/main.py", "runserver", "0.0.0.0:8000"]
+# CMD ["python", "src/main.py", "runserver", "0.0.0.0:8000"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "transcendence.asgi:application"]
