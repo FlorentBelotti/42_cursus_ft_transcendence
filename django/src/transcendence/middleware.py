@@ -11,6 +11,7 @@ class AccessControlMiddleware(MiddlewareMixin):
     def process_request(self, request):
         public_urls = [
             r'^/api/token/$',
+            r'^/$',
             r'^/api/users/create/$',
             r'^/home/$',
             r'^/about/$',
