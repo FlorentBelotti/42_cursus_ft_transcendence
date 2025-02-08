@@ -7,6 +7,7 @@ const ia = document.getElementById('ia');
 let isGameRunning = false;
 let requestID = null;
 let ballTouched = false;
+let gameMode = null;
 
 // PAD PARAMS //
 versus.addEventListener('click', () => {
