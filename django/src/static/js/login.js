@@ -16,7 +16,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Bad Request');
+            throw new Error(data.detail || 'Bad Request');
         }
         return response.json();
     })
@@ -29,5 +29,6 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     })
     .catch((error) => {
         console.error('Error:', error);
+        alert('Invalid email or password. Please try again.');
     });
 });
