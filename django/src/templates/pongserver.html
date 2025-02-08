@@ -1,95 +1,121 @@
+{% load static %}
 <div>
 	<header>
-		<!-- <li>
+		<li>
 			<ul>
-				<button id="versus">Versus</button>
-				<button id="ia">Robot</button>
+				<!-- <button id="versus">Versus</button> -->
+				<!-- <button id="ia">Robot</button> -->
+				<button id="openModalButton">Ouvrir l'interface</button>
 			</ul>
-		</li> -->
+		</li>
 	</header>
+
 	<canvas class="pong" id="pong" width="800" height="550"></canvas>
+
 	<style>
-		canvas{
+		canvas {
 			background-color: grey;
 		}
 
-		li{
+		li {
 			list-style: none;
 		}
+
+		/* Styles pour le modal */
+		.modal {
+			display: none;
+			position: fixed;
+			z-index: 1000;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.5);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.modal-content {
+			background-color: white;
+			padding: 20px;
+			border-radius: 10px;
+			box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+			width: 300px;
+			text-align: center;
+			position: relative;
+		}
+
+		.close {
+			position: absolute;
+			top: 10px;
+			right: 15px;
+			font-size: 20px;
+			cursor: pointer;
+		}
+
+		.close:hover {
+			color: red;
+		}
+
+		#status {
+			margin-top: 15px;
+			font-weight: bold;
+			color: blue;
+		}
 	</style>
+
+	<!-- Interface modale -->
+	<div id="myModal" class="modal">
+		<div class="modal-content">
+			<span class="close">&times;</span> <!-- Bouton pour fermer la modale -->
+			<h2>Matchmaking</h2>
+			<p>Rejoignez une partie en ligne.</p>
+			<button id="matchmaking">Lancer la recherche</button>
+			<p id="status"></p>
+		</div>
+	</div>
+
 	<script>
-const canvas = document.getElementById('pong');
-const ctx = canvas.getContext('2d');
+		// Récupérer les éléments
+		const modal = document.getElementById('myModal');
+		const openModalButton = document.getElementById('openModalButton');
+		const closeModalButton = document.querySelector('.close');
+		const matchmakingButton = document.getElementById('matchmaking');
+		const statusText = document.getElementById('status');
 
-// Connexion au serveur WebSocket
-const socket = new WebSocket('ws://localhost:8000/ws/pongServer/');
+		// Ouvrir la modale lorsque l'utilisateur clique sur le bouton
+		openModalButton.addEventListener('click', () => {
+			modal.style.display = 'flex';
+		});
 
-socket.addEventListener('open', (event) => {
-  // La connexion est maintenant ouverte
-  console.log('WebSocket connected');
-});
+		// Fermer la modale lorsque l'utilisateur clique sur le bouton de fermeture (×)
+		closeModalButton.addEventListener('click', () => {
+			modal.style.display = 'none';
+		});
 
-// Écouter les messages du serveur
-socket.addEventListener('message', (event) => {
-    const gameState = JSON.parse(event.data);
+		// Fermer la modale lorsque l'utilisateur clique en dehors de la modale
+		window.addEventListener('click', (event) => {
+			if (event.target === modal) {
+				modal.style.display = 'none';
+			}
+		});
 
-    // Mettre à jour l'affichage
-    draw(gameState);
-});
+		// Lancer la recherche de partie
+		matchmakingButton.addEventListener('click', () => {
+			statusText.textContent = "Recherche de partie...";
+			matchmakingButton.disabled = true; // Désactiver le bouton pendant la recherche
 
-// Envoyer la position de la raquette au serveur
-function sendPadPosition(y) {
-    const message = JSON.stringify({ padY: y });
-    if (socket.readyState === WebSocket.OPEN) {
-    	socket.send(message);
-	} else {
-    	console.log("WebSocket not open yet.");
-}
-}
+			// Simuler une recherche de partie (ex: appel à un serveur)
+			setTimeout(() => {
+				statusText.textContent = "Partie trouvée ! 🎮";
+				matchmakingButton.textContent = "Rejoindre";
+				matchmakingButton.disabled = false;
 
-// Dessiner le jeu
-function draw(gameState) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Dessiner les raquettes
-    ctx.fillStyle = 'white';
-    ctx.fillRect(gameState.pads.player1.x, gameState.pads.player1.y, 20, 90);
-    ctx.fillRect(gameState.pads.player2.x, gameState.pads.player2.y, 20, 90);
-
-    // Dessiner la balle
-    ctx.beginPath();
-    ctx.arc(gameState.ball.x, gameState.ball.y, 15, 0, Math.PI * 2);
-    ctx.fill();
-}
-
-// Écouter les mouvements de la souris pour déplacer la raquette
-document.addEventListener('keydown', (event) => {
-    let input = 0;
-    if (event.key === 'ArrowUp') {
-        input = -1; // Déplacer vers le haut
-    } else if (event.key === 'ArrowDown') {
-        input = 1; // Déplacer vers le bas
-    }
-
-    // Envoyer la commande au serveur
-    const message = JSON.stringify({ input: input });
-    if (socket.readyState === WebSocket.OPEN) {
-    	socket.send(message);
-	} else {
-    	console.log("WebSocket not open yet.");
-}
-});
-
-document.addEventListener('keyup', (event) => {
-    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-        // Envoyer une commande neutre (arrêter le déplacement)
-        const message = JSON.stringify({ input: 0 });
-        if (socket.readyState === WebSocket.OPEN) {
-    		socket.send(message);
-		} else {
-    		console.log("WebSocket not open yet.");
-}
-    }
-});
+				// Ici, tu peux ajouter une redirection ou un appel API pour rejoindre la partie
+			}, 3000);
+		});
 	</script>
+
+	<script src="{% static 'js/pongserver.js' %}"></script>
 </div>
