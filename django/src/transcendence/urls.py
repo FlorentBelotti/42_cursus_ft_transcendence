@@ -24,6 +24,7 @@ urlpatterns = [
     path('vsBot/', views.define_render, name='vsBot'),
     path('leaderboard/', views.define_render, name='leaderboard'),
     path('pongserver/', views.define_render, name='pongServer'),
+    path('authentication/', views.define_render, name='authentication'),
     path('api/users/', user_controller.user_list, name='user_list'),
     path('api/users/<int:pk>/', user_controller.user_detail, name='user_detail'),
     path('api/users/create/', user_controller.user_create, name='user_create'),

@@ -23,6 +23,17 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     .then(data => {
         if (data.access) {
             console.log('Token stored successfully in cookie');
+            // Envoyer une requête à /api/send-verification-code/ avec le token et l'email
+            return fetch('/api/send-verification-code/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${data.access}`
+                },
+                body: JSON.stringify({
+                    "email": email
+                })
+            });
         } else {
             console.error('Error:', data);
         }
