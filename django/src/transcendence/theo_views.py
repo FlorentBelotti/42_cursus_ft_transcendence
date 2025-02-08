@@ -10,10 +10,10 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework import status
 from .models import VerificationCode
-from rest_framework.response import Response
 from .serializers import CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 import logging
+from rest_framework_simplejwt.tokens import RefreshToken
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,40 @@ class VerifyCodeView(APIView):
             if verification_code and (timezone.now() - verification_code.created_at).seconds < 300:
                 verification_code.is_used = True
                 verification_code.save()
-                return Response({"message": "Code verified"}, status=status.HTTP_200_OK)
+
+                # Générer le token JWT avec le rang approprié
+                refresh = RefreshToken.for_user(user)
+                access_token = refresh.access_token
+
+                # Ajouter le rang au token d'accès
+                if user.is_admin:
+                    access_token['rank'] = 2
+                else:
+                    access_token['rank'] = 1
+
+                # Créer la réponse
+                response = Response({
+                    "message": "Code verified",
+                    "access": str(access_token),
+                    "refresh": str(refresh)
+                }, status=status.HTTP_200_OK)
+
+                # Ajouter les tokens dans les cookies
+                response.set_cookie(
+                    key='access_token',
+                    value=str(access_token),
+                    httponly=True,
+                    secure=True,
+                    samesite='Strict'
+                )
+                response.set_cookie(
+                    key='refresh_token',
+                    value=str(refresh),
+                    httponly=True,
+                    secure=True,
+                    samesite='Strict'
+                )
+
+                return response
             return Response({"message": "Invalid or expired code"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
