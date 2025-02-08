@@ -16,7 +16,26 @@ document.addEventListener('DOMContentLoaded', function() {
             if (addToHistory) {
                 history.pushState({ url: url }, '', url);
             }
+
+            const scriptUrl = document.querySelector('#content script')?.src;
+            if (scriptUrl) {
+                loadScript(scriptUrl);
+            }
         });
+    }
+
+    // Function to load a script dynamically
+    function loadScript(url, callback) {
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = url;
+
+        script.onload = function() {
+            if (callback) {
+                callback();
+            }
+        };
+        document.head.appendChild(script);
     }
     
     // Select all links on the page
