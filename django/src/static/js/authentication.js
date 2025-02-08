@@ -26,6 +26,15 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             console.log('Verification successful');
+            fetch('/api/token-ranked/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "code": code
+                })
+            })
             // Rediriger vers une autre page ou effectuer une autre action
             window.location.href = '/home/';
         })

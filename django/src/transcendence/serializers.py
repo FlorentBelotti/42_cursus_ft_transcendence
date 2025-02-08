@@ -25,3 +25,4 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         token['rank'] = 0
         return token
+
