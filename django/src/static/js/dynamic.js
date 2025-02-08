@@ -12,18 +12,22 @@ document.addEventListener('DOMContentLoaded', function() {
             // Insert the content into the base.html dynamic content (id: content)
             document.getElementById('content').innerHTML = html;
 
-			if (document.getElementById('pong')){
-				initWebSocket();
-				// console.log('element pong found')
-			}
+            // Load all scripts found in the content
+            const scripts = document.querySelectorAll('#content script');
+            scripts.forEach(script => {
+                const scriptUrl = script.src;
+                if (scriptUrl) {
+                    loadScript(scriptUrl, function() {
+                        if (document.getElementById('pong')) {
+                            initWebSocket();
+                        }
+                    });
+                }
+            });
+
             // Add the URL to the browser history
             if (addToHistory) {
                 history.pushState({ url: url }, '', url);
-            }
-
-            const scriptUrl = document.querySelector('#content script')?.src;
-            if (scriptUrl) {
-                loadScript(scriptUrl);
             }
         });
     }
@@ -55,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             loadContent(url);
+            history.pushState({ url: url }, '', url); 
         });
     });
 
