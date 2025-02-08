@@ -56,6 +56,19 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
             console.error('Error:', data);
         }
     })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.detail || 'Bad Request');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Verification code sent successfully');
+        // Rediriger vers l'URL /authentication/
+        window.location.href = '/authentication/';
+    })
     .catch((error) => {
         console.error('Error:', error);
         alert('Invalid email or password. Please try again.');

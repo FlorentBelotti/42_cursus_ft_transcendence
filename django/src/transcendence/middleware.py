@@ -17,12 +17,12 @@ class AccessControlMiddleware(MiddlewareMixin):
             r'^/login/$',
             r'^/register/$',
             r'^/static/.*$',
-            r'^/authentication/$',
             r'^/api/users/$', # to delete
         ]
 
         rank_0_urls = [
             r'^/api/send-verification-code/$',
+            r'^/authentication/$',
             r'^/api/verify-code/$',
             r'^/api/token-ranked/$',
         ]
