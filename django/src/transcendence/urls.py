@@ -17,7 +17,7 @@ urlpatterns = [
     path('match/', views.match, name='match'),
     path('vsBot/', views.vsBot, name='vsBot'),
     path('leaderboard/', views.vsBot, name='leaderboard'),
-	path('pongServer/', views.pongServer, name='pongServer'),
+	path('pongserver/', views.pongServer, name='pongserver'),
 ]
 
 if settings.DEBUG:

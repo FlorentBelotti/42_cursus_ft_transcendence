@@ -1,8 +1,9 @@
+// const canvas = window.canvas;
+// const ctx = window.ctx;
 const canvas = document.getElementById('pong');
 const ctx = canvas.getContext('2d')
 const versus = document.getElementById('versus');
 const ia = document.getElementById('ia');
-let gameMode = null;
 let isGameRunning = false;
 let requestID = null;
 let ballTouched = false;
@@ -59,31 +60,35 @@ let directionBall = {
 
 // PAD //
 document.addEventListener('keydown', (event) => {
-	switch(event.key){
-		case 'ArrowUp':
-			direction2 = -1;
-			break;
-		case 'ArrowDown':
-			direction2 = 1;
-			break;
-		case 'z':
-			direction1 = -1;
-			break;
-		case 's':
-			direction1 = 1;
+	if (gameMode === 'versus' || gameMode === 'ia'){
+		switch(event.key){
+			case 'ArrowUp':
+				direction2 = -1;
+				break;
+			case 'ArrowDown':
+				direction2 = 1;
+				break;
+			case 'z':
+				direction1 = -1;
+				break;
+			case 's':
+				direction1 = 1;
+		}
 	}
 })
 
 document.addEventListener('keyup', (event) => {
-	switch(event.key){
-		case 'ArrowUp':
-		case 'ArrowDown':
-			direction2 = 0;
-			break;
-		case 'z':
-		case 's':
-			direction1 = 0;
-			break;
+	if (gameMode === 'versus' || gameMode === 'ia'){
+		switch(event.key){
+			case 'ArrowUp':
+			case 'ArrowDown':
+				direction2 = 0;
+				break;
+			case 'z':
+			case 's':
+				direction1 = 0;
+				break;
+		}
 	}
 })
 
@@ -334,12 +339,14 @@ function gameLoop(){
 		displayScore();
 		let winner = manageScore();
 		displayWinner(winner);
+		return ;
 	}
 	if (gameMode === 'versus'){
 		updatePad();
 		updateBall();
 		draw();
 		displayScore();
+		return ;
 	}
 	requestID = requestAnimationFrame(gameLoop);
 }

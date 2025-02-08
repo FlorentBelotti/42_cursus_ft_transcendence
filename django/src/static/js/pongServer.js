@@ -1,26 +1,101 @@
-const canvas = document.getElementById('pong');
-const ctx = canvas.getContext('2d');
+window.canvas = document.getElementById('pong');
+window.ctx = canvas.getContext('2d');
+const match = document.getElementById('matchmaking');
+let socket;
 
-// Connexion au serveur WebSocket
-// const socket = new WebSocket('ws://localhost:8000');
-const socket = new WebSocket('ws://localhost:8000/pongServer/');
 
-// Écouter les messages du serveur
-socket.addEventListener('message', (event) => {
-    const gameState = JSON.parse(event.data);
-
-    // Mettre à jour l'affichage
-    draw(gameState);
+match.addEventListener('click', () => {
+	if (window.gameMode === 'ia' || window.gameMode === 'versus'){
+		stopGame()
+	}
+	// gameMode = 'server';
+    if (!socket || socket.readyState === WebSocket.CLOSED) {
+        initWebSocket();
+    }
 });
 
-// Envoyer la position de la raquette au serveur
-function sendPadPosition(y) {
-    const message = JSON.stringify({ padY: y });
-    socket.send(message);
-}
+// function initWebSocket() {
+//     socket = new WebSocket('ws://localhost:8000/ws/pongserver/');
 
-// Dessiner le jeu
+//     socket.addEventListener('open', (event) => {
+//         console.log('WebSocket connected');
+//     });
+
+//     socket.addEventListener('message', (event) => {
+//         const gameState = JSON.parse(event.data);
+//         if (gameState && gameState.pads) {
+//             draw(gameState);
+//         }
+//         // if (gameState.waiting) {
+//         //     document.getElementById('status-message').innerText = "Vous êtes en attente d'un adversaire...";
+//         // } else if (gameState.waiting === false) {
+//         //     document.getElementById('status-message').innerText = "Vous avez trouvé votre adversaire";
+//         //     if (!countdownStarted) {
+//         //         countdownStarted = true; // Éviter d'appeler `startCountdown` plusieurs fois
+//         //         startCountdown();
+//         //     }
+//         // }
+//     });
+
+//     socket.addEventListener('close', () => {
+//         console.log("WebSocket closed.");
+//         if (!isPageUnloading) {
+//             console.log("Reconnecting...");
+//             reconnectTimeout = setTimeout(initWebSocket, 1000); // Reconnexion automatique après 1 seconde
+//         }
+//     });
+// }
+
+window.initWebSocket = function() {
+    socket = new WebSocket('ws://localhost:8000/ws/pongserver/');
+
+    socket.addEventListener('open', (event) => {
+        console.log('WebSocket connected');
+    });
+
+    socket.addEventListener('message', (event) => {
+        const gameState = JSON.parse(event.data);
+        if (gameState && gameState.pads) {
+            draw(gameState);
+        }
+    });
+
+    socket.addEventListener('close', () => {
+        console.log("WebSocket closed.");
+        if (!isPageUnloading) {
+            console.log("Reconnecting...");
+            reconnectTimeout = setTimeout(initWebSocket, 1000);
+        }
+    });
+
+    socket.addEventListener('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
+};
+
+let countdownStarted = false;
+let isPageUnloading = false;
+
+// function startCountdown() {
+//     let countdown = 3;
+//     const countdownInterval = setInterval(() => {
+//         ctx.clearRect(0, 0, 800, 550); // Efface tout le canvas
+//         draw(); // Redessine les éléments du jeu pour éviter un écran vide
+//         document.getElementById('status-message').innerText = `La partie va commencer dans ${countdown}...`;
+//         countdown--;
+//         if (countdown < 0) {
+//             clearInterval(countdownInterval);
+//             countdownStarted = false; // Réinitialiser pour une prochaine partie
+//         }
+//     }, 1000);
+// }
+
 function draw(gameState) {
+    // if (!gameState || !gameState.pads || !gameState.ball) {
+    //     console.error("Invalid game state:", gameState);
+    //     return;
+    // }
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Dessiner les raquettes
@@ -30,28 +105,46 @@ function draw(gameState) {
 
     // Dessiner la balle
     ctx.beginPath();
-    ctx.arc(gameState.ball.x, gameState.ball.y, 15, 0, Math.PI * 2);
+    ctx.fillRect(gameState.ball.x, gameState.ball.y, 15, 15);
     ctx.fill();
 }
 
-// Écouter les mouvements de la souris pour déplacer la raquette
-document.addEventListener('keydown', (event) => {
-    let input = 0;
-    if (event.key === 'ArrowUp') {
-        input = -1; // Déplacer vers le haut
-    } else if (event.key === 'ArrowDown') {
-        input = 1; // Déplacer vers le bas
+function sendMessage(data) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify(data));
     }
+}
 
-    // Envoyer la commande au serveur
-    const message = JSON.stringify({ input: input });
-    socket.send(message);
+document.addEventListener('keydown', (event) => {
+	// if (window.gameMode === 'server'){
+		let input = 0;
+		if (event.key === 'ArrowUp') {
+			input = -1;
+		} else if (event.key === 'ArrowDown') {
+			input = 1;
+		}
+		sendMessage({ input: input });
+	// }
 });
 
 document.addEventListener('keyup', (event) => {
-    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-        // Envoyer une commande neutre (arrêter le déplacement)
-        const message = JSON.stringify({ input: 0 });
-        socket.send(message);
+	// if (gameMode === 'server'){
+		if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+			sendMessage({ input: 0 });
+   		}
+	// }
+});
+
+window.addEventListener('beforeunload', () => {
+    isPageUnloading = true; // Indique que la page est en train de se décharger
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+        console.log("WebSocket closed.");
+    }
+    if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout); // Annule la reconnexion automatique
     }
 });
+
+
+

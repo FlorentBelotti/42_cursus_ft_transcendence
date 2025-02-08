@@ -9,7 +9,7 @@ canvas_height = 550
 pad_width = 20
 pad_height = 90
 pad_speed = 7
-ball_radius = 8
+ball_radius = 7
 ball_speed = 3
 
 class PongConsumer(AsyncWebsocketConsumer):
@@ -24,6 +24,9 @@ class PongConsumer(AsyncWebsocketConsumer):
         "ballTouched": False,
         "count": 0,
         "inputs": {"player1": 0, "player2": 0},
+        "waiting": True,
+        "countdown": 3,
+        "countdown_message": "",
     }
 
     clients = []
@@ -31,11 +34,30 @@ class PongConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
         self.clients.append(self)
+
         if len(self.clients) == 1:
+            self.game_state["waiting"] = True
+            await self.send(text_data=json.dumps({
+                "waiting": True,
+                "message": "Vous êtes en attente d'un adversaire..."
+            }))
+        elif len(self.clients) == 2:
+            self.game_state["waiting"] = False
+            self.game_state["countdown_message"] = "Vous avez trouvé votre adversaire, la partie va commencer dans ..."
+            await self.send(text_data=json.dumps(self.game_state))
+            await asyncio.sleep(3)
             asyncio.create_task(self.update_game_state())
 
     async def disconnect(self, close_code):
-        self.clients.remove(self)
+        if self in self.clients:
+            self.clients.remove(self)
+            if len(self.clients) == 1:
+                remaining_client = self.clients[0]
+                await remaining_client.send(text_data=json.dumps({
+                    "waiting": True,
+                    "message": "Votre adversaire a quitté la partie. Vous êtes de retour dans la salle d'attente."
+                }))
+                self.reset_game_state()
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -46,15 +68,45 @@ class PongConsumer(AsyncWebsocketConsumer):
                 self.game_state["inputs"]["player2"] = data["input"]
 
     async def update_game_state(self):
-        while len(self.clients) > 0:
+        while len(self.clients) == 2:
             self.update_pads()
             self.update_ball()
             self.collision_wall()
             self.collision_pad()
             self.check_goals()
+            disconnected_clients = []
             for client in self.clients:
-                await client.send(text_data=json.dumps(self.game_state))
-            await asyncio.sleep(1 / 60)
+                try:
+                    await client.send(text_data=json.dumps(self.game_state))
+                except:
+                    disconnected_clients.append(client)
+            for client in disconnected_clients:
+                self.clients.remove(client)
+                if len(self.clients) == 1:
+                    remaining_client = self.clients[0]
+                    await remaining_client.send(text_data=json.dumps({
+                        "waiting": True,
+                        "message": "Votre adversaire a quitté la partie. Vous êtes de retour dans la salle d'attente."
+                    }))
+                    self.reset_game_state()
+            await asyncio.sleep(1 / 120)
+
+    def reset_game_state(self):
+        self.game_state = {
+            "ball": {"x": canvas_width / 2 - ball_radius / 2, "y": canvas_height / 2 - ball_radius / 2},
+            "pads": {
+                "player1": {"x": 10, "y": (canvas_height - pad_height) / 2},
+                "player2": {"x": canvas_width - pad_width - 10, "y": (canvas_height - pad_height) / 2},
+            },
+            "score": {"player1": 0, "player2": 0},
+            "directionBall": {"x": 1 if random() < 0.5 else -1, "y": 1 if random() < 0.5 else -1},
+            "ballTouched": False,
+            "count": 0,
+            "inputs": {"player1": 0, "player2": 0},
+            "waiting": True,
+            "countdown": 3,
+            "countdown_message": "",
+        }
 
     def update_pads(self):
         for client in self.clients:
@@ -67,6 +119,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         self.game_state["pads"]["player2"]["y"] = max(0, min(self.game_state["pads"]["player2"]["y"], canvas_height - pad_height))
 
     def update_ball(self):
+        ball_speed = self.game_state.get("ballSpeed", 3)
         self.game_state["ball"]["x"] += self.game_state["directionBall"]["x"] * ball_speed
         if self.game_state["ballTouched"]:
             self.game_state["ball"]["y"] += self.game_state["directionBall"]["y"] * ball_speed
@@ -102,7 +155,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         self.game_state["directionBall"]["y"] /= magnitude
 
         self.game_state["count"] += 1
-        ball_speed = 4 + (self.game_state["count"] * 0.3)
+        self.game_state["ballSpeed"] = 4 + (self.game_state["count"] * 0.3)
 
         if player == "player1":
             self.game_state["ball"]["x"] = pad["x"] + pad_width + 1

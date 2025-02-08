@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    
+
     // Function to load content dynamically
     function loadContent(url, addToHistory = true) {
         fetch(url, {
@@ -12,13 +12,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Insert the content into the base.html dynamic content (id: content)
             document.getElementById('content').innerHTML = html;
 
+			if (document.getElementById('pong')){
+				initWebSocket();
+				// console.log('element pong found')
+			}
             // Add the URL to the browser history
             if (addToHistory) {
                 history.pushState({ url: url }, '', url);
             }
         });
     }
-    
+
     // Select all links on the page
     document.querySelectorAll('.nav-button').forEach(function(button) {
 
@@ -34,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
             loadContent(url);
         });
     });
-    
+
     // Handle the browser's back and forward buttons
     window.addEventListener('popstate', function(event) {
         if (event.state && event.state.url) {
