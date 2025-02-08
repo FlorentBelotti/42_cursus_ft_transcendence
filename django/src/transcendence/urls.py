@@ -26,6 +26,7 @@ urlpatterns = [
     path('pongserver/', views.define_render, name='pongServer'),
     path('authentication/', views.define_render, name='authentication'),
     path('account/', views.define_render, name='account'),
+    path('leaderboard/', views.define_render, name='leaderboard'),
     path('logout/', VerifyCodeView.logout_page, name='logout_page'),
     path('logout/action/', VerifyCodeView.logout_action, name='logout_action'),
     path('api/users/', user_controller.user_list, name='user_list'),

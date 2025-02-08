@@ -123,4 +123,4 @@ class VerifyCodeView(APIView):
             response.delete_cookie('access_token')
             response.delete_cookie('refresh_token')  # Supprime le cookie
             return response
-        return redirect('logout_page')  # Redirige vers la page de déconnexion si la méthode n'est pas POST
+        return redirect('logout_page')
