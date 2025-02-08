@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenObtainPairSerializer, CustomTokenObtainPairSerializerRank
+from .serializers import CustomTokenObtainPairSerializer
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
@@ -38,9 +38,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         else:
             logger.warning(f"Failed to set cookie, response status: {response.status_code}")
         return response
-
-class CustomTokenObtainPairViewRank(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializerRank
 
 class ProtectedView(APIView):
     permission_classes = [IsAuthenticated]

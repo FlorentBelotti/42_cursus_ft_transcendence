@@ -8,7 +8,7 @@ from transcendence.controller import user_controller
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .theo_views import SendVerificationCodeView, VerifyCodeView
 from .theo_views import CustomTokenObtainPairView, SendVerificationCodeView, VerifyCodeView
-from .theo_views import CustomTokenObtainPairViewRank, SendVerificationCodeView, VerifyCodeView
+from .theo_views import SendVerificationCodeView, VerifyCodeView
 
 
 urlpatterns = [
