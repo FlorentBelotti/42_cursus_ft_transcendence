@@ -17,6 +17,7 @@ class AccessControlMiddleware(MiddlewareMixin):
             r'^/login/$',
             r'^/register/$',
             r'^/static/.*$',
+            r'^/authentication/$',
             r'^/api/users/$', # to delete
         ]
 
@@ -33,6 +34,11 @@ class AccessControlMiddleware(MiddlewareMixin):
                 return
 
         # Authentifier le token JWT
+
+        token = request.COOKIES.get('access_token')
+        if token:
+            request.META['HTTP_AUTHORIZATION'] = f'Bearer {token}'
+
         jwt_authenticator = JWTAuthentication()
         try:
             auth_result = jwt_authenticator.authenticate(request)
@@ -44,16 +50,16 @@ class AccessControlMiddleware(MiddlewareMixin):
             logger.info(f"Authenticated user: {user}, token: {token}")
         except AuthenticationFailed:
             logger.warning(f"Authentication failed for URL: {request.path}")
-            return JsonResponse({'detail': 'Invalid token'}, status=401)
+            return JsonResponse({'detail': 'Invalid token 1'}, status=401)
 
         # Vérifier les permissions basées sur le rang
         for pattern in rank_0_urls:
             if re.match(pattern, request.path):
                 if request.token.get('rank') != 0:
                     logger.warning(f"Access denied for URL: {request.path}, rank: {request.token.get('rank')}")
-                    return JsonResponse({'detail': 'Access denied'}, status=403)
+                    return JsonResponse({'detail': 'Access denied 2'}, status=403)
                 return
 
         if request.token.get('rank') not in [1, 2]:
             logger.warning(f"Access denied for URL: {request.path}, rank: {request.token.get('rank')}")
-            return JsonResponse({'detail': 'Access denied'}, status=403)
+            return JsonResponse({'detail': 'Access denied 3'}, status=403)
