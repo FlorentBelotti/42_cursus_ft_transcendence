@@ -14,6 +14,11 @@ from .serializers import CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 import logging
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.response import Response
+from django.http import HttpResponseRedirect
+from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect
+from django.http import HttpResponseRedirect
 
 logger = logging.getLogger(__name__)
 
@@ -108,3 +113,14 @@ class VerifyCodeView(APIView):
                 return response
             return Response({"message": "Invalid or expired code"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def logout_page(request):
+        return render(request, 'logout.html')  # Affiche la page de déconnexion sans supprimer le cookie
+
+    def logout_action(request):
+        if request.method == 'POST':
+            response = HttpResponseRedirect('/home/')  # Redirige vers la page d'accueil
+            response.delete_cookie('access_token')
+            response.delete_cookie('refresh_token')  # Supprime le cookie
+            return response
+        return redirect('logout_page')  # Redirige vers la page de déconnexion si la méthode n'est pas POST
