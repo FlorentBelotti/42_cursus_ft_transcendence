@@ -21,6 +21,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (document.getElementById('pong')) {
                             initWebSocket();
                         }
+                        if (scriptUrl.includes('leaderboard.js')) {
+                            loadLeaderboard();
+                        }
                     });
                 }
             });

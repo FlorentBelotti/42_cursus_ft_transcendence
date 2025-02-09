@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+function loadLeaderboard() {
     fetch('/api/users/')
         .then(response => {
             if (!response.ok) {
@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Sélectionner le corps du tableau
             const tbody = document.getElementById('leaderboard').getElementsByTagName('tbody')[0];
 
+            // Vider le tableau avant d'ajouter de nouvelles données
+            tbody.innerHTML = '';
+
             // Insérer les données dans le tableau
             data.forEach(user => {
                 const row = tbody.insertRow();
@@ -25,4 +28,11 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('There was a problem with the fetch operation:', error);
         });
-});
+}
+
+// Exécuter la fonction si la page est chargée normalement
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    loadLeaderboard();
+} else {
+    document.addEventListener('DOMContentLoaded', loadLeaderboard);
+}
