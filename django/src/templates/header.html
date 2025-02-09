@@ -6,9 +6,10 @@
                 <button class="nav-button" data-url="{% url 'about' %}">About Us</button>
 				<button class="nav-button" data-url="{% url 'pong' %}">Pong Game</button>
                 <button class="nav-button" data-url="{% url 'pongServer' %}">PongServer</button>
+                <button class="nav-button" data-url="{% url 'leaderboard' %}">Leaderboard</button>
             {% if rank >= 1 %}
                 <button class="nav-button" data-url="{% url 'account' %}">Account</button>
-                <button class="nav-button" data-url="{% url 'loggout' %}">Loggout</button>
+                <button class="nav-button" data-url="{% url 'logout_page' %}">Logout</button>
             {% else %}
 				<button class="nav-button" data-url="{% url 'register' %}">Register</button>
 				<button class="nav-button" data-url="{% url 'login' %}">Login</button>

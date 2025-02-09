@@ -5,7 +5,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from transcendence.controller import user_controller
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 from .theo_views import SendVerificationCodeView, VerifyCodeView
 from .theo_views import CustomTokenObtainPairView, SendVerificationCodeView, VerifyCodeView
 from .theo_views import SendVerificationCodeView, VerifyCodeView
@@ -26,7 +26,9 @@ urlpatterns = [
     path('pongserver/', views.define_render, name='pongServer'),
     path('authentication/', views.define_render, name='authentication'),
     path('account/', views.define_render, name='account'),
-    path('loggout/', views.define_render, name='loggout'),
+    path('leaderboard/', views.define_render, name='leaderboard'),
+    path('logout/', VerifyCodeView.logout_page, name='logout_page'),
+    path('logout/action/', VerifyCodeView.logout_action, name='logout_action'),
     path('api/users/', user_controller.user_list, name='user_list'),
     path('api/users/<int:pk>/', user_controller.user_detail, name='user_detail'),
     path('api/users/create/', user_controller.user_create, name='user_create'),
