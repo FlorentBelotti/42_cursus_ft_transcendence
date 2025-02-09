@@ -1,35 +1,63 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    // Function to load content dynamically
     function loadContent(url, addToHistory = true) {
+        cleanupScriptsAndEvents();
+    
         fetch(url, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.text()) // Convert response to HTML text
+        .then(response => response.text())
         .then(html => {
-            // Insert the content into the base.html dynamic content (id: content)
             document.getElementById('content').innerHTML = html;
-
-            // Load all scripts found in the content
+    
             const scripts = document.querySelectorAll('#content script');
             scripts.forEach(script => {
                 const scriptUrl = script.src;
                 if (scriptUrl) {
                     loadScript(scriptUrl, function() {
-                        // if (document.getElementById('pongServer')) {
+                        // if (scriptUrl.includes('pongServer.js')) {
                         //     initWebSocket();
                         // }
+                        if (scriptUrl.includes('leaderboard.js')) {
+                            loadLeaderboard();
+                        }
+                        if (scriptUrl.includes('account.js')) {
+                            initAccountPage();
+                        }
+                        if (scriptUrl.includes('modal.js')) {
+                            initModal(); // Réinitialiser les écouteurs d'événements du modal
+                        }
                     });
                 }
             });
-
-            // Add the URL to the browser history
+    
             if (addToHistory) {
                 history.pushState({ url: url }, '', url);
             }
         });
+    }
+
+    function cleanupScriptsAndEvents() {
+        // Supprimer tous les scripts dynamiques
+        const dynamicScripts = document.querySelectorAll('script[data-dynamic]');
+        dynamicScripts.forEach(script => script.remove());
+    
+        // Supprimer tous les écouteurs d'événements (exemple pour le modal)
+        const openModalButton = document.getElementById('openModalButton');
+        const closeModalButton = document.querySelector('.close');
+        const matchmakingButton = document.getElementById('matchmaking');
+    
+        if (openModalButton) {
+            openModalButton.replaceWith(openModalButton.cloneNode(true)); // Cloner pour supprimer les événements
+        }
+        if (closeModalButton) {
+            closeModalButton.replaceWith(closeModalButton.cloneNode(true)); // Cloner pour supprimer les événements
+        }
+        if (matchmakingButton) {
+            matchmakingButton.replaceWith(matchmakingButton.cloneNode(true)); // Cloner pour supprimer les événements
+        }
     }
 
     // Function to load a script dynamically
@@ -37,7 +65,8 @@ document.addEventListener('DOMContentLoaded', function() {
         var script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = url;
-
+        script.setAttribute('data-dynamic', 'true'); // Marquer le script comme dynamique
+    
         script.onload = function() {
             if (callback) {
                 callback();

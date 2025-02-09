@@ -4,6 +4,8 @@ from django.conf import settings
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 import logging
+from django.shortcuts import render, redirect
+from django.http import HttpResponse
 
 logger = logging.getLogger(__name__)
 

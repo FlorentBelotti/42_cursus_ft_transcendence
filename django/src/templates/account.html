@@ -4,18 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account</title>
+    {% load static %}
 </head>
 <body>
     <header>
         <h1>Account Page</h1>
     </header>
     <main>
-        <p>Welcome, {{ user.username }}!</p>
+        <p>Nickname: <span id="nickname">{{ user.nickname }}</span></p>
         <p>Email: {{ user.email }}</p>
-        <!-- Add more account details here -->
+        <p>Elo: {{ user.elo }}</p>
+
+        <!-- Button to show nickname change form -->
+        <button id="show-nickname-form">Change Nickname</button>
+        <!-- Nickname change form (hidden by default) -->
+        <div id="nickname-form" style="display: none;">
+            <input type="text" id="new-nickname" placeholder="New Nickname">
+            <button id="update-nickname">Update</button>
+            <button id="cancel-nickname">Cancel</button>
+        </div>
+
+        <!-- Button to show password change form -->
+        <button id="show-password-form">Change Password</button>
+        <!-- Password change form (hidden by default) -->
+        <div id="password-form" style="display: none;">
+            <input type="password" id="current-password" placeholder="Current Password">
+            <input type="password" id="new-password" placeholder="New Password">
+            <button id="update-password">Update</button>
+            <button id="cancel-password">Cancel</button>
+        </div>
+
+        <!-- Button to show delete account confirmation -->
+        <button id="show-delete-account">Delete Account</button>
+        <!-- Delete account confirmation (hidden by default) -->
+        <div id="delete-account-confirm" style="display: none;">
+            <p>Are you sure you want to delete your account? This action cannot be undone.</p>
+            <button id="confirm-delete">Yes, Delete</button>
+            <button id="cancel-delete">Cancel</button>
+        </div>
     </main>
     <footer>
         <a href="{% url 'home' %}">Home</a>
     </footer>
+
+    <!-- JavaScript to handle button clicks and show/hide forms -->
+    <script src="{% static 'js/account.js' %}"></script>
 </body>
 </html>
