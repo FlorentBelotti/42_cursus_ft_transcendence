@@ -1,388 +1,330 @@
-// const canvas = window.canvas;
-// const ctx = window.ctx;
-const canvas = document.getElementById('pong');
-const ctx = canvas.getContext('2d')
-const versus = document.getElementById('versus');
-const ia = document.getElementById('ia');
-let isGameRunning = false;
-let requestID = null;
-let ballTouched = false;
-let gameMode = null;
+class PongGame {
+    constructor() {
+        this.canvas = document.getElementById('pong');
+        this.ctx = this.canvas.getContext('2d');
+        this.versus = document.getElementById('versus');
+        this.ia = document.getElementById('ia');
+        this.isGameRunning = false;
+        this.gameMode = null;
+        this.requestID = null;
+        this.ballTouched = false;
 
-// PAD PARAMS //
-versus.addEventListener('click', () => {
-	gameMode = 'versus';
-	console.log(versus);
-	startGameLoop();
-})
+        // PAD PARAMS
+        this.padWidth = 20;
+        this.padHeight = 90;
+        this.padSpeed = 7;
+        this.pad1 = { x: 10, y: 255 };
+        this.pad2 = { x: 770, y: 255 };
+        this.direction1 = 0;
+        this.direction2 = 0;
 
-ia.addEventListener('click', ()=>{
-	gameMode = 'ia';
-	console.log(ia);
-	startGameLoop();
-})
+        // BALL PARAMS
+        this.ballWidth = 15;
+        this.ballHeight = 15;
+        this.ball = {
+            x: this.canvas.width / 2 - this.ballWidth / 2,
+            y: this.canvas.height / 2 - this.ballHeight / 2,
+            ballSpeed: 3
+        };
+        this.directionBall = {
+            x: Math.random() < 0.5 ? -1 : 1,
+            y: Math.random() < 0.5 ? -1 : 1,
+        };
 
-const padWidth = 20;
-const padHeight = 90; //taille pad
-const padSpeed = 7;
-// Position Pad
-let pad1 = {
-	x:10,
-	y:255
-};
+        // SCORE
+        this.score = { score1: 0, score2: 0 };
 
-let pad2 = {
-	x: 770,
-	y:255
-};
+        // BOT
+        this.targetY = 0;
+        this.botRunning = false;
 
-let direction1 = 0;
-let direction2 = 0;
-
-let score = {
-	score1: 0,
-	score2: 0
-}
-
-// BALL PARAMS //
-const ballHeight = 15;
-const ballWidth =  15;
-
-let ball = {
-	x: canvas.width / 2 - ballWidth / 2,
-	y: canvas.height / 2 - ballHeight / 2,
-	ballSpeed: 3
-}
-
-let directionBall = {
-	x: Math.random() < 0.5 ? -1 : 1,
-	y: Math.random() < 0.5 ? -1 : 1,
-};
-
-// PAD //
-document.addEventListener('keydown', (event) => {
-	if (gameMode === 'versus' || gameMode === 'ia'){
-		switch(event.key){
-			case 'ArrowUp':
-				direction2 = -1;
-				break;
-			case 'ArrowDown':
-				direction2 = 1;
-				break;
-			case 'z':
-				direction1 = -1;
-				break;
-			case 's':
-				direction1 = 1;
-		}
-	}
-})
-
-document.addEventListener('keyup', (event) => {
-	if (gameMode === 'versus' || gameMode === 'ia'){
-		switch(event.key){
-			case 'ArrowUp':
-			case 'ArrowDown':
-				direction2 = 0;
-				break;
-			case 'z':
-			case 's':
-				direction1 = 0;
-				break;
-		}
-	}
-})
-
-
-function updatePad(){
-	pad1.y += direction1 * padSpeed;
-	pad2.y += direction2 * padSpeed;
-
-	pad1.y = Math.max(0, Math.min(pad1.y, canvas.height - padHeight));
-	pad2.y = Math.max(0, Math.min(pad2.y, canvas.height - padHeight));
-
-}
-
-function draw(){
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-	// Draw Pad //
-	ctx.fillStyle = 'white';
-	ctx.fillRect(pad1.x, pad1.y, padWidth, padHeight); //pos x / pos y / taille x/ taille y/
-	ctx.fillRect(pad2.x, pad2.y, padWidth, padHeight)
-
-	// Draw Ball //
-	ctx.fillRect(ball.x,ball.y,ballWidth, ballHeight);
-
-	// Pour centrer les éléments
-	// ctx.fillStyle = 'blue';
-	// ctx.fillRect(0,300, 800, 1);
-	// ctx.fillRect(790,0, 1, 600);
-}
-
-// BALL //
-let count = 0;
-
-function collisionWall(){
-	if (ball.y <= 0){
-		// ball.y = 0;
-		directionBall.y *= -1;
-	}
-	if (ball.y >= canvas.height - ballHeight){
-		// ball.y = canvas.height;
-		directionBall.y *= -1;
-	}
-
-}
-
-function collissionWithPad(){
-	// Collision Pad1 //
-	if (ball.x <= pad1.x + padWidth && ball.x >= pad1.x &&
-		 ball.y + ballHeight >= pad1.y && ball.y <= pad1.y + padHeight)
-	{
-		let impact = (ball.y + ballHeight / 2) - (pad1.y + padHeight / 2);
-		let normalizeImpact = impact / (padHeight / 2);
-
-		let bounceAngle = normalizeImpact * (Math.PI / 3);
-
-		directionBall.x = Math.cos(bounceAngle);
-		directionBall.y = Math.sin(bounceAngle);
-
-		if (directionBall.x < 0){
-			directionBall.x *= -1;
-		}
-		let magnitude = Math.sqrt(directionBall.x ** 2 + directionBall.y ** 2);
-		directionBall.x /= magnitude;
-		directionBall.y /= magnitude;
-		count++;
-		ball.ballSpeed = 4 + (count * 0.3);
-		ball.x = pad1.x + padWidth + 1;
-
-		ball.x = pad1.x + padWidth + Math.abs(directionBall.x) * ball.ballSpeed;
-
-		ballTouched = true;
-	}
-
-	// Collision Pad2 //
-	if (ball.x + ballWidth >= pad2.x && ball.x <= pad2.x + padWidth &&
-		ball.y + ballHeight >= pad2.y && ball.y <= pad2.y + padHeight)
-	{
-		let impact = (ball.y + ballHeight / 2) - (pad2.y + padHeight / 2);
-		let normalizeImpact = impact / (padHeight / 2);
-
-		let bounceAngle = normalizeImpact * (Math.PI / 3);
-
-		directionBall.x = -Math.cos(bounceAngle);
-		directionBall.y = Math.sin(bounceAngle);
-
-		let magnitude = Math.sqrt(directionBall.x ** 2 + directionBall.y ** 2);
-		directionBall.x /= magnitude;
-		directionBall.y /= magnitude;
-		count++;
-		ball.ballSpeed = 4 + (count * 0.3);
-		ball.x = pad2.x - ballWidth - 1;
-
-		ball.x = pad2.x - ballWidth - Math.abs(directionBall.x) * ball.ballSpeed;
-
-		ballTouched = true;
-	}
-}
-
-function BUTTTTT(){
-	if (ball.x <= 0){
-		resetBall('right');
-		score.score2 += 1;
-	}
-	if (ball.x >= canvas.width){
-		resetBall('left');
-		score.score1 += 1;
-	}
-}
-
-function updateBall(){
-	ball.x += directionBall.x * ball.ballSpeed;
-	if (ballTouched){
-		ball.y += directionBall.y * ball.ballSpeed;
-	}
-	// collision contre mur
-	collisionWall();
-	collissionWithPad()
-
-	// but à travailler
-	BUTTTTT();
-}
-
-function resetBall(scorer){
-	ball.x = canvas.width / 2 - ballWidth / 2;
-	ball.y = canvas.height / 2 - ballHeight / 2;
-	directionBall.x = scorer === 'left' ? -1 : 1;
-	directionBall.y = 0;
-	ball.ballSpeed = 3;
-	count = 0;
-	ballTouched = false;
-}
-
-//MANAGE SCORE//
-function displayScore(){
-	ctx.fillStyle = 'white';
-	ctx.textAlign = 'center'
-	ctx.font = '30px Arial';
-	ctx.fillText(score.score1 , canvas.width / 2 - 30, 30); //parametres arbitraire pour le moment
-	ctx.fillText(":", canvas.width / 2, 30);
-	ctx.fillText(score.score2, canvas.width / 2 + 30, 30);
-}
-
-function manageScore(){
-	if (score.score1 === 10)
-		return ('left');
-	if (score.score2 === 10)
-		return ('right');
-}
-
-function displayWinner(winner){
-    if (winner === 'left'){
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.font = '50px Arial';
-        ctx.fillText("Player 1 win !", canvas.width / 2, 50);
-        stopGame(); // Arrêter le jeu
+        this.init();
     }
-    if (winner === 'right'){
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.font = '50px Arial';
-        ctx.fillText("Player 2 win !", canvas.width / 2, 50);
-        stopGame(); // Arrêter le jeu
+
+    init() {
+        this.versus.addEventListener('click', () => {
+            this.gameMode = 'versus';
+            this.startGameLoop();
+        });
+
+        this.ia.addEventListener('click', () => {
+            this.gameMode = 'ia';
+            this.startGameLoop();
+        });
+
+        document.addEventListener('keydown', (event) => this.handleKeyDown(event));
+        document.addEventListener('keyup', (event) => this.handleKeyUp(event));
     }
-}
-// BOT //
-function updatePad1(){
-	pad1.y += direction1 * padSpeed;
-	pad1.y = Math.max(0, Math.min(pad1.y, canvas.height - padHeight));
-}
 
-let targetY = 0;
-let botRunning = false;
-
-function predictBallImpact() {
-	if (directionBall.x === 0) return pad2.y;
-
-	const distanceToPad2 = pad2.x - ball.x;
-	const timeToReachPad2 = distanceToPad2 / (directionBall.x * ball.ballSpeed);
-
-	let predictedY = ball.y + directionBall.y * ball.ballSpeed * timeToReachPad2;
-
-	// Utiliser une copie de directionBall.y pour la prédiction
-	let predictedDirectionY = directionBall.y;
-	let remainingTime = timeToReachPad2;
-	let currentY = ball.y;
-
-	while (remainingTime > 0) {
-		const timeToNextWall = predictedDirectionY > 0 ?
-			(canvas.height - ballHeight - currentY) / (predictedDirectionY * ball.ballSpeed) :
-			(currentY) / (-predictedDirectionY * ball.ballSpeed);
-
-		if (timeToNextWall >= remainingTime) {
-			currentY += predictedDirectionY * ball.ballSpeed * remainingTime;
-			break;
-		} else {
-			currentY += predictedDirectionY * ball.ballSpeed * timeToNextWall;
-			predictedDirectionY *= -1; // Inverser la direction Y après un rebond
-			remainingTime -= timeToNextWall;
-		}
-	}
-
-	return currentY - padHeight / 2;
-}
-
-async function botLoop() {
-	botRunning = true;
-	while (isGameRunning && gameMode === 'ia') {
-		targetY = predictBallImpact(); // Utiliser la prédiction
-		await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1 seconde
-	}
-	botRunning = false;
-}
-
-
-function moveBot() {
-	const step = padSpeed; // Vitesse de déplacement de l'AI
-
-	if (Math.abs(pad2.y - targetY) < step) {
-		pad2.y = targetY; // Si on est très proche, on se positionne directement
-	} else if (pad2.y < targetY) {
-		pad2.y += step;
-	} else if (pad2.y > targetY) {
-		pad2.y -= step;
-	}
-
-	// Empêcher la raquette de sortir du canvas
-	pad2.y = Math.max(0, Math.min(pad2.y, canvas.height - padHeight));
-}
-
-//GAME FUNCTIONS//
-
-function stopGame(){
-    if (requestID){
-        cancelAnimationFrame(requestID);
-    }
-    isGameRunning = false;
-    requestID = null;
-}
-
-function gameLoop(){
-    if (!isGameRunning)
-        return ;
-
-    if (gameMode === 'ia'){
-        updatePad1();
-        moveBot();
-        updateBall();
-        draw();
-        displayScore();
-        let winner = manageScore();
-        if (winner) {
-            displayWinner(winner);
-            return; // Arrêter la boucle si un joueur a gagné
-        }
-    }
-    if (gameMode === 'versus'){
-        updatePad();
-        updateBall();
-        draw();
-        displayScore();
-        let winner = manageScore();
-        if (winner) {
-            displayWinner(winner);
-            return; // Arrêter la boucle si un joueur a gagné
+    handleKeyDown(event) {
+        if (this.gameMode === 'versus' || this.gameMode === 'ia') {
+            switch (event.key) {
+                case 'ArrowUp':
+                    this.direction2 = -1;
+                    break;
+                case 'ArrowDown':
+                    this.direction2 = 1;
+                    break;
+                case 'z':
+                    this.direction1 = -1;
+                    break;
+                case 's':
+                    this.direction1 = 1;
+            }
         }
     }
 
-    requestID = requestAnimationFrame(gameLoop); // Répéter la boucle
-}
-
-function resetGame(){
-	pad1.y = 255;
-	pad2.y = 255;
-	score.score1 = 0;
-	score.score2 = 0;
-	ball.x = canvas.width / 2 - ballWidth / 2;
-	ball.y = canvas.height / 2 - ballHeight / 2;
-	directionBall = {
-		x: Math.random() < 0.5 ? -1 : 1,
-		y: Math.random() < 0.5 ? -1 : 1,
-	};
-	ball.ballSpeed = 3;
-	count = 0;
-}
-
-function startGameLoop(){
-    if(isGameRunning){
-        stopGame();
+    handleKeyUp(event) {
+        if (this.gameMode === 'versus' || this.gameMode === 'ia') {
+            switch (event.key) {
+                case 'ArrowUp':
+                case 'ArrowDown':
+                    this.direction2 = 0;
+                    break;
+                case 'z':
+                case 's':
+                    this.direction1 = 0;
+                    break;
+            }
+        }
     }
-    resetGame();
-    isGameRunning = true;
-    if (gameMode === 'ia' && !botRunning) {
-        botLoop();  // On démarre la boucle du bot
+
+    updatePad() {
+        this.pad1.y += this.direction1 * this.padSpeed;
+        this.pad2.y += this.direction2 * this.padSpeed;
+
+        this.pad1.y = Math.max(0, Math.min(this.pad1.y, this.canvas.height - this.padHeight));
+        this.pad2.y = Math.max(0, Math.min(this.pad2.y, this.canvas.height - this.padHeight));
     }
-    gameLoop(); // Démarrer la boucle de jeu
+
+    draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw Pad
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillRect(this.pad1.x, this.pad1.y, this.padWidth, this.padHeight);
+        this.ctx.fillRect(this.pad2.x, this.pad2.y, this.padWidth, this.padHeight);
+
+        // Draw Ball
+        this.ctx.fillRect(this.ball.x, this.ball.y, this.ballWidth, this.ballHeight);
+    }
+
+    collisionWall() {
+        if (this.ball.y <= 0 || this.ball.y >= this.canvas.height - this.ballHeight) {
+            this.directionBall.y *= -1;
+        }
+    }
+
+    collissionWithPad() {
+        // Collision Pad1
+        if (this.ball.x <= this.pad1.x + this.padWidth && this.ball.x >= this.pad1.x &&
+            this.ball.y + this.ballHeight >= this.pad1.y && this.ball.y <= this.pad1.y + this.padHeight) {
+            this.handleCollision(this.pad1, 1);
+        }
+
+        // Collision Pad2
+        if (this.ball.x + this.ballWidth >= this.pad2.x && this.ball.x <= this.pad2.x + this.padWidth &&
+            this.ball.y + this.ballHeight >= this.pad2.y && this.ball.y <= this.pad2.y + this.padHeight) {
+            this.handleCollision(this.pad2, -1);
+        }
+    }
+
+    handleCollision(pad, direction) {
+        const impact = (this.ball.y + this.ballHeight / 2) - (pad.y + this.padHeight / 2);
+        const normalizeImpact = impact / (this.padHeight / 2);
+        const bounceAngle = normalizeImpact * (Math.PI / 3);
+
+        this.directionBall.x = direction * Math.cos(bounceAngle);
+        this.directionBall.y = Math.sin(bounceAngle);
+
+        const magnitude = Math.sqrt(this.directionBall.x ** 2 + this.directionBall.y ** 2);
+        this.directionBall.x /= magnitude;
+        this.directionBall.y /= magnitude;
+
+        this.ball.ballSpeed = 4 + (this.count * 0.3);
+        this.ball.x = pad.x + (direction === 1 ? this.padWidth + 1 : -this.ballWidth - 1);
+        this.ballTouched = true;
+    }
+
+    BUTTTTT() {
+        if (this.ball.x <= 0) {
+            this.resetBall('right');
+            this.score.score2 += 1;
+        }
+        if (this.ball.x >= this.canvas.width) {
+            this.resetBall('left');
+            this.score.score1 += 1;
+        }
+    }
+
+    updateBall() {
+        this.ball.x += this.directionBall.x * this.ball.ballSpeed;
+        if (this.ballTouched) {
+            this.ball.y += this.directionBall.y * this.ball.ballSpeed;
+        }
+        this.collisionWall();
+        this.collissionWithPad();
+        this.BUTTTTT();
+    }
+
+    resetBall(scorer) {
+        this.ball.x = this.canvas.width / 2 - this.ballWidth / 2;
+        this.ball.y = this.canvas.height / 2 - this.ballHeight / 2;
+        this.directionBall.x = scorer === 'left' ? -1 : 1;
+        this.directionBall.y = 0;
+        this.ball.ballSpeed = 3;
+        this.count = 0;
+        this.ballTouched = false;
+    }
+
+    displayScore() {
+        this.ctx.fillStyle = 'white';
+        this.ctx.textAlign = 'center';
+        this.ctx.font = '30px Arial';
+        this.ctx.fillText(this.score.score1, this.canvas.width / 2 - 30, 30);
+        this.ctx.fillText(":", this.canvas.width / 2, 30);
+        this.ctx.fillText(this.score.score2, this.canvas.width / 2 + 30, 30);
+    }
+
+    manageScore() {
+        if (this.score.score1 === 10) return 'left';
+        if (this.score.score2 === 10) return 'right';
+        return null;
+    }
+
+    displayWinner(winner) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.font = '50px Arial';
+        this.ctx.fillText(`Player ${winner === 'left' ? 1 : 2} wins!`, this.canvas.width / 2, 50);
+        this.stopGame();
+    }
+
+    updatePad1() {
+        this.pad1.y += this.direction1 * this.padSpeed;
+        this.pad1.y = Math.max(0, Math.min(this.pad1.y, this.canvas.height - this.padHeight));
+    }
+
+    predictBallImpact() {
+        if (this.directionBall.x === 0) return this.pad2.y;
+
+        const distanceToPad2 = this.pad2.x - this.ball.x;
+        const timeToReachPad2 = distanceToPad2 / (this.directionBall.x * this.ball.ballSpeed);
+
+        let predictedY = this.ball.y + this.directionBall.y * this.ball.ballSpeed * timeToReachPad2;
+        let predictedDirectionY = this.directionBall.y;
+        let remainingTime = timeToReachPad2;
+        let currentY = this.ball.y;
+
+        while (remainingTime > 0) {
+            const timeToNextWall = predictedDirectionY > 0 ?
+                (this.canvas.height - this.ballHeight - currentY) / (predictedDirectionY * this.ball.ballSpeed) :
+                (currentY) / (-predictedDirectionY * this.ball.ballSpeed);
+
+            if (timeToNextWall >= remainingTime) {
+                currentY += predictedDirectionY * this.ball.ballSpeed * remainingTime;
+                break;
+            } else {
+                currentY += predictedDirectionY * this.ball.ballSpeed * timeToNextWall;
+                predictedDirectionY *= -1;
+                remainingTime -= timeToNextWall;
+            }
+        }
+
+        return currentY - this.padHeight / 2;
+    }
+
+    async botLoop() {
+        this.botRunning = true;
+        while (this.isGameRunning && this.gameMode === 'ia') {
+            this.targetY = this.predictBallImpact();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        this.botRunning = false;
+    }
+
+    moveBot() {
+        const step = this.padSpeed;
+
+        if (Math.abs(this.pad2.y - this.targetY) < step) {
+            this.pad2.y = this.targetY;
+        } else if (this.pad2.y < this.targetY) {
+            this.pad2.y += step;
+        } else if (this.pad2.y > this.targetY) {
+            this.pad2.y -= step;
+        }
+
+        this.pad2.y = Math.max(0, Math.min(this.pad2.y, this.canvas.height - this.padHeight));
+    }
+
+    stopGame() {
+        if (this.requestID) {
+            cancelAnimationFrame(this.requestID);
+        }
+        this.isGameRunning = false;
+        this.requestID = null;
+    }
+
+    gameLoop() {
+        if (!this.isGameRunning) return;
+
+        if (this.gameMode === 'ia') {
+            this.updatePad1();
+            this.moveBot();
+            this.updateBall();
+            this.draw();
+            this.displayScore();
+            const winner = this.manageScore();
+            if (winner) {
+                this.displayWinner(winner);
+                return;
+            }
+        }
+        if (this.gameMode === 'versus') {
+            this.updatePad();
+            this.updateBall();
+            this.draw();
+            this.displayScore();
+            const winner = this.manageScore();
+            if (winner) {
+                this.displayWinner(winner);
+                return;
+            }
+        }
+
+        this.requestID = requestAnimationFrame(() => this.gameLoop());
+    }
+
+    resetGame() {
+        this.pad1.y = 255;
+        this.pad2.y = 255;
+        this.score.score1 = 0;
+        this.score.score2 = 0;
+        this.ball.x = this.canvas.width / 2 - this.ballWidth / 2;
+        this.ball.y = this.canvas.height / 2 - this.ballHeight / 2;
+        this.directionBall = {
+            x: Math.random() < 0.5 ? -1 : 1,
+            y: Math.random() < 0.5 ? -1 : 1,
+        };
+        this.ball.ballSpeed = 3;
+        this.count = 0;
+    }
+
+    startGameLoop() {
+        if (this.isGameRunning) {
+            this.stopGame();
+        }
+        this.resetGame();
+        this.isGameRunning = true;
+        if (this.gameMode === 'ia' && !this.botRunning) {
+            this.botLoop();
+        }
+        this.gameLoop();
+    }
 }
 
+// Initialiser le jeu Pong
+let pongGame;
+
+function initPong() {
+    pongGame = new PongGame();
+}
