@@ -17,7 +17,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
-from django.shortcuts import render, redirect
 from django.http import HttpResponseRedirect
 
 logger = logging.getLogger(__name__)
@@ -114,13 +113,80 @@ class VerifyCodeView(APIView):
             return Response({"message": "Invalid or expired code"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    def logout_page(request):
-        return render(request, 'logout.html')  # Affiche la page de déconnexion sans supprimer le cookie
 
-    def logout_action(request):
-        if request.method == 'POST':
-            response = HttpResponseRedirect('/home/')  # Redirige vers la page d'accueil
-            response.delete_cookie('access_token')
-            response.delete_cookie('refresh_token')  # Supprime le cookie
-            return response
-        return redirect('logout_page')
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import customUser
+from .serializers import UserSerializer
+from django.shortcuts import render, redirect
+from django.contrib.auth import login
+from .forms import RegisterForm
+
+# Create
+@api_view(['POST'])
+def create_user(request):
+    serializer = UserSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Read (List)
+@api_view(['GET'])
+def list_users(request):
+    users = customUser.objects.all()
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data)
+
+# Read (Detail)
+@api_view(['GET'])
+def user_detail(request, pk):
+    try:
+        user = customUser.objects.get(pk=pk)
+    except customUser.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    serializer = UserSerializer(user)
+    return Response(serializer.data)
+
+# Update
+@api_view(['PUT'])
+def update_user(request, pk):
+    try:
+        user = customUser.objects.get(pk=pk)
+    except customUser.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    serializer = UserSerializer(user, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Delete
+@api_view(['DELETE'])
+def delete_user(request, pk):
+    try:
+        user = customUser.objects.get(pk=pk)
+    except customUser.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    user.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+def logout_action(request):
+    if request.method == 'POST':
+        response = HttpResponseRedirect('/home/')
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+        return response
+    return redirect('logout_page')
+
+def register(request):
+    if request.method == "POST":
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)  # Connecte l'utilisateur après l'inscription
+            return redirect("home")  # Redirige vers la page d'accueil
+    else:
+        form = RegisterForm()
+    return render(request, "register.html", {"form": form})

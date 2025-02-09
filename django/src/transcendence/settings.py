@@ -16,9 +16,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 	'channels',
-    'transcendence',
     'rest_framework',
-    'rest_framework_simplejwt'
+    'rest_framework_simplejwt',
+    'users',
+    'transcendence',
 ]
 
 REST_FRAMEWORK = {
@@ -27,7 +28,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-AUTH_USER_MODEL = 'transcendence.User'
+AUTH_USER_MODEL = 'users.customUser'
 
 from datetime import timedelta
 
@@ -46,7 +47,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'transcendence.middleware.AccessControlMiddleware',
+    'users.middleware.AccessControlMiddleware',
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

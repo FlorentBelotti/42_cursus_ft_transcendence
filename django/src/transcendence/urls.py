@@ -1,14 +1,9 @@
-from django.urls import path
+from django.urls import path, include
 from django.views.generic import RedirectView
 from views import views
 from django.conf import settings
 from django.conf.urls.static import static
-
-from transcendence.controller import user_controller
-from rest_framework_simplejwt.views import TokenRefreshView
-from .theo_views import SendVerificationCodeView, VerifyCodeView
-from .theo_views import CustomTokenObtainPairView, SendVerificationCodeView, VerifyCodeView
-from .theo_views import SendVerificationCodeView, VerifyCodeView
+from users.views import VerifyCodeView
 
 
 urlpatterns = [
@@ -27,17 +22,17 @@ urlpatterns = [
     path('authentication/', views.define_render, name='authentication'),
     path('account/', views.define_render, name='account'),
     path('leaderboard/', views.define_render, name='leaderboard'),
-    path('logout/', VerifyCodeView.logout_page, name='logout_page'),
-    path('logout/action/', VerifyCodeView.logout_action, name='logout_action'),
-    path('api/users/', user_controller.user_list, name='user_list'),
-    path('api/users/<int:pk>/', user_controller.user_detail, name='user_detail'),
-    path('api/users/create/', user_controller.user_create, name='user_create'),
-    path('api/users/<int:pk>/update/', user_controller.user_update, name='user_update'),
-    path('api/users/<int:pk>/delete/', user_controller.user_delete, name='user_delete'),
-    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/send-verification-code/', SendVerificationCodeView.as_view(), name='send_verification_code'),
-    path('api/verify-code/', VerifyCodeView.as_view(), name='verify_code'),
+    path('logout/', views.define_render, name='logout'),
+    # path('api/users/', user_controller.user_list, name='user_list'),
+    # path('api/users/<int:pk>/', user_controller.user_detail, name='user_detail'),
+    # path('api/users/create/', user_controller.user_create, name='user_create'),
+    # path('api/users/<int:pk>/update/', user_controller.user_update, name='user_update'),
+    # path('api/users/<int:pk>/delete/', user_controller.user_delete, name='user_delete'),
+    # path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # path('api/send-verification-code/', SendVerificationCodeView.as_view(), name='send_verification_code'),
+    # path('api/verify-code/', VerifyCodeView.as_view(), name='verify_code'),
+    path('api/', include('users.urls')),
 ]
 
 if settings.DEBUG:

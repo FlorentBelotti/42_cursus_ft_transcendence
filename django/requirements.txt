@@ -5,3 +5,4 @@ djangorestframework
 djangorestframework-simplejwt
 daphne
 channels
+Pillow

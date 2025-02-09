@@ -11,17 +11,17 @@
         <h1>Account Page</h1>
     </header>
     <main>
-        <p>Nickname: <span id="nickname">{{ user.nickname }}</span></p>
+        <p>Username: <span id="username">{{ user.username }}</span></p>
         <p>Email: {{ user.email }}</p>
         <p>Elo: {{ user.elo }}</p>
 
-        <!-- Button to show nickname change form -->
-        <button id="show-nickname-form">Change Nickname</button>
-        <!-- Nickname change form (hidden by default) -->
-        <div id="nickname-form" style="display: none;">
-            <input type="text" id="new-nickname" placeholder="New Nickname">
-            <button id="update-nickname">Update</button>
-            <button id="cancel-nickname">Cancel</button>
+        <!-- Button to show username change form -->
+        <button id="show-username-form">Change Username</button>
+        <!-- Username change form (hidden by default) -->
+        <div id="username-form" style="display: none;">
+            <input type="text" id="new-username" placeholder="New username">
+            <button id="update-username">Update</button>
+            <button id="cancel-username">Cancel</button>
         </div>
 
         <!-- Button to show password change form -->

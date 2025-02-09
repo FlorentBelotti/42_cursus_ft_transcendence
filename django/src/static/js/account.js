@@ -1,16 +1,16 @@
 function initAccountPage() {
-    // Nickname change
-    const showNicknameFormButton = document.getElementById('show-nickname-form');
-    const nicknameForm = document.getElementById('nickname-form');
-    const cancelNicknameButton = document.getElementById('cancel-nickname');
+    // Username change
+    const showUsernameFormButton = document.getElementById('show-username-form');
+    const usernameForm = document.getElementById('username-form');
+    const cancelUsernameButton = document.getElementById('cancel-username');
 
-    if (showNicknameFormButton && nicknameForm && cancelNicknameButton) {
-        showNicknameFormButton.addEventListener('click', function() {
-            nicknameForm.style.display = 'block';
+    if (showUsernameFormButton && usernameForm && cancelUsernameButton) {
+        showUsernameFormButton.addEventListener('click', function() {
+            usernameForm.style.display = 'block';
         });
 
-        cancelNicknameButton.addEventListener('click', function() {
-            nicknameForm.style.display = 'none';
+        cancelUsernameButton.addEventListener('click', function() {
+            usernameForm.style.display = 'none';
         });
     }
 

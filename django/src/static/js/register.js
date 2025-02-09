@@ -1,7 +1,7 @@
 document.getElementById('registerForm').addEventListener('submit', function(event) {
     event.preventDefault();
 
-    const nickname = document.getElementById('nickname').value;
+    const username = document.getElementById('username').value;
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 
@@ -11,7 +11,7 @@ document.getElementById('registerForm').addEventListener('submit', function(even
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            "nickname": nickname,
+            "username": username,
             "password": password,
             "email": email,
             "elo": 1000
