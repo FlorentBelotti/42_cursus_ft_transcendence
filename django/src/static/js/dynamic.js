@@ -18,9 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const scriptUrl = script.src;
                 if (scriptUrl) {
                     loadScript(scriptUrl, function() {
-                        if (document.getElementById('pong')) {
-                            initWebSocket();
-                        }
+                        // if (document.getElementById('pongServer')) {
+                        //     initWebSocket();
+                        // }
                     });
                 }
             });

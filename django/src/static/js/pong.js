@@ -239,20 +239,19 @@ function manageScore(){
 }
 
 function displayWinner(winner){
-	if (winner === 'left'){
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.font = '50px Arial';
-		ctx.fillText("Player 1 win !", canvas.width / 2, 50);
-		stopGame();
-	}
-	if (winner === 'right'){
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.font = '50px Arial';
-		ctx.fillText("Player 2 win !", canvas.width / 2, 50);
-		stopGame();
-	}
+    if (winner === 'left'){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '50px Arial';
+        ctx.fillText("Player 1 win !", canvas.width / 2, 50);
+        stopGame(); // Arrêter le jeu
+    }
+    if (winner === 'right'){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '50px Arial';
+        ctx.fillText("Player 2 win !", canvas.width / 2, 50);
+        stopGame(); // Arrêter le jeu
+    }
 }
-
 // BOT //
 function updatePad1(){
 	pad1.y += direction1 * padSpeed;
@@ -321,34 +320,42 @@ function moveBot() {
 //GAME FUNCTIONS//
 
 function stopGame(){
-	if (requestID){
-		cancelAnimationFrame(requestID);
-	}
-	isGameRunning = false;
-	requestID = null;
+    if (requestID){
+        cancelAnimationFrame(requestID);
+    }
+    isGameRunning = false;
+    requestID = null;
 }
 
 function gameLoop(){
-	if (!isGameRunning)
-		return ;
-	if (gameMode === 'ia'){
-		updatePad1();
-		moveBot();
-		updateBall();
-		draw();
-		displayScore();
-		let winner = manageScore();
-		displayWinner(winner);
-		return ;
-	}
-	if (gameMode === 'versus'){
-		updatePad();
-		updateBall();
-		draw();
-		displayScore();
-		return ;
-	}
-	requestID = requestAnimationFrame(gameLoop);
+    if (!isGameRunning)
+        return ;
+
+    if (gameMode === 'ia'){
+        updatePad1();
+        moveBot();
+        updateBall();
+        draw();
+        displayScore();
+        let winner = manageScore();
+        if (winner) {
+            displayWinner(winner);
+            return; // Arrêter la boucle si un joueur a gagné
+        }
+    }
+    if (gameMode === 'versus'){
+        updatePad();
+        updateBall();
+        draw();
+        displayScore();
+        let winner = manageScore();
+        if (winner) {
+            displayWinner(winner);
+            return; // Arrêter la boucle si un joueur a gagné
+        }
+    }
+
+    requestID = requestAnimationFrame(gameLoop); // Répéter la boucle
 }
 
 function resetGame(){
@@ -367,14 +374,14 @@ function resetGame(){
 }
 
 function startGameLoop(){
-	if(isGameRunning){
-		stopGame();
-	}
-	resetGame();
-	isGameRunning = true;
-	if (gameMode === 'ia' && !botRunning) {
-		botLoop();  // On démarre la boucle du bot
-	}
-	gameLoop();
+    if(isGameRunning){
+        stopGame();
+    }
+    resetGame();
+    isGameRunning = true;
+    if (gameMode === 'ia' && !botRunning) {
+        botLoop();  // On démarre la boucle du bot
+    }
+    gameLoop(); // Démarrer la boucle de jeu
 }
 

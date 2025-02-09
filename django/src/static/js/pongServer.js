@@ -1,4 +1,4 @@
-window.canvas = document.getElementById('pong');
+window.canvas = document.getElementById('pongServer');
 window.ctx = canvas.getContext('2d');
 const match = document.getElementById('matchmaking');
 let socket;
