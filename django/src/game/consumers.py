@@ -25,8 +25,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         "count": 0,
         "inputs": {"player1": 0, "player2": 0},
         "waiting": True,
-        "countdown": 3,
-        "countdown_message": "",
+        "type": ""
     }
 
     clients = []
@@ -43,9 +42,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             }))
         elif len(self.clients) == 2:
             self.game_state["waiting"] = False
-            self.game_state["countdown_message"] = "Vous avez trouvé votre adversaire, la partie va commencer dans ..."
             await self.send(text_data=json.dumps(self.game_state))
-            await asyncio.sleep(3)
             asyncio.create_task(self.update_game_state())
 
     async def disconnect(self, close_code):
@@ -54,10 +51,12 @@ class PongConsumer(AsyncWebsocketConsumer):
             if len(self.clients) == 1:
                 remaining_client = self.clients[0]
                 await remaining_client.send(text_data=json.dumps({
-                    "waiting": True,
-                    "message": "Votre adversaire a quitté la partie. Vous êtes de retour dans la salle d'attente."
+                    "type": "player_left",
+                    "message": "Votre adversaire a quitté la partie."
                 }))
                 self.reset_game_state()
+                await remaining_client.close()  # Fermer la connexion du client restant
+                self.clients.clear()  # Vider la liste des clients
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -74,21 +73,8 @@ class PongConsumer(AsyncWebsocketConsumer):
             self.collision_wall()
             self.collision_pad()
             self.check_goals()
-            disconnected_clients = []
             for client in self.clients:
-                try:
-                    await client.send(text_data=json.dumps(self.game_state))
-                except:
-                    disconnected_clients.append(client)
-            for client in disconnected_clients:
-                self.clients.remove(client)
-                if len(self.clients) == 1:
-                    remaining_client = self.clients[0]
-                    await remaining_client.send(text_data=json.dumps({
-                        "waiting": True,
-                        "message": "Votre adversaire a quitté la partie. Vous êtes de retour dans la salle d'attente."
-                    }))
-                    self.reset_game_state()
+                await client.send(text_data=json.dumps(self.game_state))
             await asyncio.sleep(1 / 120)
 
     def reset_game_state(self):
@@ -104,16 +90,11 @@ class PongConsumer(AsyncWebsocketConsumer):
             "count": 0,
             "inputs": {"player1": 0, "player2": 0},
             "waiting": True,
-            "countdown": 3,
-            "countdown_message": "",
         }
 
     def update_pads(self):
-        for client in self.clients:
-            if client == self.clients[0]:  # Joueur 1
-                self.game_state["pads"]["player1"]["y"] += self.game_state["inputs"]["player1"] * pad_speed
-            elif client == self.clients[1]:  # Joueur 2
-                self.game_state["pads"]["player2"]["y"] += self.game_state["inputs"]["player2"] * pad_speed
+        self.game_state["pads"]["player1"]["y"] += self.game_state["inputs"]["player1"] * pad_speed
+        self.game_state["pads"]["player2"]["y"] += self.game_state["inputs"]["player2"] * pad_speed
 
         self.game_state["pads"]["player1"]["y"] = max(0, min(self.game_state["pads"]["player1"]["y"], canvas_height - pad_height))
         self.game_state["pads"]["player2"]["y"] = max(0, min(self.game_state["pads"]["player2"]["y"], canvas_height - pad_height))
@@ -168,9 +149,28 @@ class PongConsumer(AsyncWebsocketConsumer):
         if self.game_state["ball"]["x"] <= 0:
             self.reset_ball("player2")
             self.game_state["score"]["player2"] += 1
+            print(f'score: {self.game_state["score"]["player2"]}')
+            if self.game_state["score"]["player2"] >= 10:
+                self.end_game("player2")
         elif self.game_state["ball"]["x"] >= canvas_width:
             self.reset_ball("player1")
             self.game_state["score"]["player1"] += 1
+            print(f'score: {self.game_state["score"]["player1"]}')
+            if self.game_state["score"]["player1"] >= 10:
+                self.end_game("player1")
+
+
+    async def end_game(self, winner):
+        for client in self.clients:
+            await client.send(text_data=json.dumps({
+                "type": "game_over",
+                "winner": winner,
+                "message": f"Le joueur {winner} a gagné avec un score de 10 points !"
+            }))
+        self.reset_game_state()
+        for client in self.clients:
+            await client.close()
+        self.clients.clear()
 
     def reset_ball(self, scorer):
         self.game_state["ball"]["x"] = canvas_width / 2 - ball_radius / 2

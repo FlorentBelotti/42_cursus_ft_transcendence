@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
     let pongGame = null; // Variable pour stocker l'instance du jeu Pong
+    let pongServerGame = null; // Variable pour stocker l'instance du jeu Pong Server
 
     function loadContent(url, addToHistory = true) {
         cleanupScriptsAndEvents();
@@ -20,6 +21,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         loadScript(scriptUrl, function () {
                             if (scriptUrl.includes('pong.js')) {
                                 initPong(); // Initialiser le jeu Pong
+                            }
+                            if (scriptUrl.includes('pongServer.js')) {
+                                initPongServer(); // Initialiser le jeu Pong Server
                             }
                             if (scriptUrl.includes('leaderboard.js')) {
                                 loadLeaderboard();
@@ -48,19 +52,35 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function initPongServer() {
+        if (window.pongServerGame) {
+            // Réinitialiser l'instance existante
+            window.pongServerGame.stopGame();
+            window.pongServerGame = new PongServerGame();
+        } else {
+            // Créer une nouvelle instance
+            window.pongServerGame = new PongServerGame();
+        }
+    }
+
     function cleanupScriptsAndEvents() {
         // Supprimer tous les scripts dynamiques
         const dynamicScripts = document.querySelectorAll('script[data-dynamic]');
         dynamicScripts.forEach(script => {
-            // Ne pas supprimer le script pong.js s'il est déjà chargé
-            if (!script.src.includes('pong.js')) {
+            // Ne pas supprimer le script pong.js ou pongServer.js s'ils sont déjà chargés
+            if (!script.src.includes('pong.js') && !script.src.includes('pongServer.js')) {
                 script.remove();
             }
         });
-    
+
         // Arrêter le jeu Pong s'il est en cours
         if (window.pongGame && window.pongGame.isGameRunning) {
             window.pongGame.stopGame();
+        }
+
+        // Arrêter le jeu Pong Server s'il est en cours
+        if (window.pongServerGame && window.pongServerGame.isGameRunning) {
+            window.pongServerGame.stopGame();
         }
     }
 
@@ -72,15 +92,18 @@ document.addEventListener('DOMContentLoaded', function () {
             if (callback) callback();
             return;
         }
-    
+
         // Charger le script
         const script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = url;
         script.setAttribute('data-dynamic', 'true');
-    
+
         script.onload = function () {
             if (callback) callback();
+            // if (url.includes('pongServer.js')) {
+            //     initPongServer(); // Initialiser le jeu Pong Server
+            // }
         };
         document.head.appendChild(script);
     }

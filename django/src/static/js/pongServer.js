@@ -1,150 +1,139 @@
-window.canvas = document.getElementById('pongServer');
-window.ctx = canvas.getContext('2d');
-const match = document.getElementById('matchmaking');
-let socket;
-
-
-match.addEventListener('click', () => {
-	if (window.gameMode === 'ia' || window.gameMode === 'versus'){
-		stopGame()
-	}
-	// gameMode = 'server';
-    if (!socket || socket.readyState === WebSocket.CLOSED) {
-        initWebSocket();
+class PongServerGame {
+    constructor() {
+        this.canvas = document.getElementById('pongServer');
+        this.ctx = this.canvas.getContext('2d');
+        this.matchmakingButton = document.getElementById('matchmaking');
+        this.socket = null;
+        this.isGameRunning = false;
+        this.isPageUnloading = false;
+        this.reconnectTimeout = null;
+        this.init();
     }
-});
 
-// function initWebSocket() {
-//     socket = new WebSocket('ws://localhost:8000/ws/pongserver/');
+    init() {
+        this.matchmakingButton.addEventListener('click', () => this.startMatchmaking());
+        this.addEventListeners();
+    }
 
-//     socket.addEventListener('open', (event) => {
-//         console.log('WebSocket connected');
-//     });
-
-//     socket.addEventListener('message', (event) => {
-//         const gameState = JSON.parse(event.data);
-//         if (gameState && gameState.pads) {
-//             draw(gameState);
-//         }
-//         // if (gameState.waiting) {
-//         //     document.getElementById('status-message').innerText = "Vous êtes en attente d'un adversaire...";
-//         // } else if (gameState.waiting === false) {
-//         //     document.getElementById('status-message').innerText = "Vous avez trouvé votre adversaire";
-//         //     if (!countdownStarted) {
-//         //         countdownStarted = true; // Éviter d'appeler `startCountdown` plusieurs fois
-//         //         startCountdown();
-//         //     }
-//         // }
-//     });
-
-//     socket.addEventListener('close', () => {
-//         console.log("WebSocket closed.");
-//         if (!isPageUnloading) {
-//             console.log("Reconnecting...");
-//             reconnectTimeout = setTimeout(initWebSocket, 1000); // Reconnexion automatique après 1 seconde
-//         }
-//     });
-// }
-
-window.initWebSocket = function() {
-    socket = new WebSocket('ws://localhost:8000/ws/pongserver/');
-
-    socket.addEventListener('open', (event) => {
-        console.log('WebSocket connected');
-    });
-
-    socket.addEventListener('message', (event) => {
-        const gameState = JSON.parse(event.data);
-        if (gameState && gameState.pads) {
-            draw(gameState);
+    startMatchmaking() {
+        if (!this.socket || this.socket.readyState === WebSocket.CLOSED) {
+            this.connectWebSocket();
         }
-    });
+    }
 
-    socket.addEventListener('close', () => {
-        console.log("WebSocket closed.");
-        if (!isPageUnloading) {
-            console.log("Reconnecting...");
-            reconnectTimeout = setTimeout(initWebSocket, 1000);
+    connectWebSocket() {
+        this.socket = new WebSocket('ws://localhost:8000/ws/pongserver/');
+    
+        this.socket.onopen = () => {
+            console.log('WebSocket connection established.');
+            this.socket.send(JSON.stringify({ type: 'matchmaking' }));
+        };
+    
+        this.socket.onmessage = (event) => {
+            const gameState = JSON.parse(event.data);
+            this.handleMessage(gameState);
+        };
+    
+        this.socket.onclose = () => {
+            console.log('WebSocket connection closed.');
+            // if (!this.isPageUnloading) {
+            //     console.log('Reconnecting...');
+            //     this.reconnectTimeout = setTimeout(() => this.connectWebSocket(), 1000);
+            // }
+        };
+    
+        this.socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+    }
+
+    handleMessage(gameState) {
+        if (gameState.type === 'player_left') {
+            this.displayMessage(gameState.message);
+            this.stopGame();
+        } else if (gameState.type === 'game_over') {
+            this.displayMessage(gameState.message);
+            this.stopGame();
+        } else if (gameState.waiting) {
+            console.log('Waiting for an opponent...');
+        } else if (gameState.pads && gameState.ball) {
+            this.draw(gameState);
         }
-    });
+    }
 
-    socket.addEventListener('error', (error) => {
-        console.error('WebSocket error:', error);
-    });
-};
+    displayMessage(message) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '30px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(message, this.canvas.width / 2, this.canvas.height / 2);
+    }
 
-let countdownStarted = false;
-let isPageUnloading = false;
+    stopGame() {
+        this.isGameRunning = false;
+        if (this.socket) {
+            this.socket.close();
+        }
+        if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+        }
+    }
 
-// function startCountdown() {
-//     let countdown = 3;
-//     const countdownInterval = setInterval(() => {
-//         ctx.clearRect(0, 0, 800, 550); // Efface tout le canvas
-//         draw(); // Redessine les éléments du jeu pour éviter un écran vide
-//         document.getElementById('status-message').innerText = `La partie va commencer dans ${countdown}...`;
-//         countdown--;
-//         if (countdown < 0) {
-//             clearInterval(countdownInterval);
-//             countdownStarted = false; // Réinitialiser pour une prochaine partie
-//         }
-//     }, 1000);
-// }
+    draw(gameState) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-function draw(gameState) {
-    // if (!gameState || !gameState.pads || !gameState.ball) {
-    //     console.error("Invalid game state:", gameState);
-    //     return;
-    // }
+        // Dessiner les raquettes
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillRect(gameState.pads.player1.x, gameState.pads.player1.y, 20, 90);
+        this.ctx.fillRect(gameState.pads.player2.x, gameState.pads.player2.y, 20, 90);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Dessiner la balle
+        this.ctx.beginPath();
+        this.ctx.fillRect(gameState.ball.x, gameState.ball.y, 15, 15);
+        this.ctx.fill();
 
-    // Dessiner les raquettes
-    ctx.fillStyle = 'white';
-    ctx.fillRect(gameState.pads.player1.x, gameState.pads.player1.y, 20, 90);
-    ctx.fillRect(gameState.pads.player2.x, gameState.pads.player2.y, 20, 90);
+        // Afficher les scores
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '30px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(gameState.score.player1, this.canvas.width / 4, 50);
+        this.ctx.fillText(gameState.score.player2, (3 * this.canvas.width) / 4, 50);
+    }
 
-    // Dessiner la balle
-    ctx.beginPath();
-    ctx.fillRect(gameState.ball.x, gameState.ball.y, 15, 15);
-    ctx.fill();
+    sendInput(input) {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.send(JSON.stringify({ input: input }));
+        }
+    }
+
+    addEventListeners() {
+        document.addEventListener('keydown', (event) => {
+            let input = 0;
+            if (event.key === 'ArrowUp') {
+                input = -1;
+            } else if (event.key === 'ArrowDown') {
+                input = 1;
+            }
+            this.sendInput(input);
+        });
+
+        document.addEventListener('keyup', (event) => {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                this.sendInput(0);
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            this.isPageUnloading = true;
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                this.socket.close();
+            }
+            if (this.reconnectTimeout) {
+                clearTimeout(this.reconnectTimeout);
+            }
+        });
+    }
 }
 
-function sendMessage(data) {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify(data));
-    }
-}
-
-document.addEventListener('keydown', (event) => {
-	// if (window.gameMode === 'server'){
-		let input = 0;
-		if (event.key === 'ArrowUp') {
-			input = -1;
-		} else if (event.key === 'ArrowDown') {
-			input = 1;
-		}
-		sendMessage({ input: input });
-	// }
-});
-
-document.addEventListener('keyup', (event) => {
-	// if (gameMode === 'server'){
-		if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-			sendMessage({ input: 0 });
-   		}
-	// }
-});
-
-window.addEventListener('beforeunload', () => {
-    isPageUnloading = true; // Indique que la page est en train de se décharger
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.close();
-        console.log("WebSocket closed.");
-    }
-    if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout); // Annule la reconnexion automatique
-    }
-});
-
-
-
+// Exposer la classe pour une utilisation globale
+window.PongServerGame = PongServerGame;
