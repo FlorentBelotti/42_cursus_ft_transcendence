@@ -7,7 +7,7 @@
 				<button class="nav-button" data-url="{% url 'pong' %}">Pong Game</button>
                 <button class="nav-button" data-url="{% url 'pongServer' %}">PongServer</button>
                 <button class="nav-button" data-url="{% url 'leaderboard' %}">Leaderboard</button>
-            {% if rank >= 1 %}
+            {% if user.is_authenticated %}
                 <button class="nav-button" data-url="{% url 'account' %}">Account</button>
                 <button class="nav-button" data-url="{% url 'logout_page' %}">Logout</button>
             {% else %}

@@ -5,7 +5,18 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = customUser
-        fields = ['id', 'username', 'elo', 'email', 'password', 'is_admin']
+        fields = ['username', 'email', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+
+class UserDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = customUser
+        fields = ['id', 'username', 'email', 'password', 'elo']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -25,8 +36,3 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         token['rank'] = 0
         return token
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = customUser
-        fields = ['id', 'username', 'email', 'elo', 'profile_picture']
