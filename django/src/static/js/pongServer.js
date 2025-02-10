@@ -48,6 +48,7 @@ class PongServerGame {
     }
 
     handleMessage(gameState) {
+        // console.log('Received game state:', gameState);
         if (gameState.type === 'player_left') {
             this.displayMessage(gameState.message);
             console.log('Player left the game.');
