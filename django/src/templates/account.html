@@ -2,52 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account</title>
-    {% load static %}
+    <title>Mon Compte</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>Account Page</h1>
-    </header>
-    <main>
-        <p>Username: <span id="username">{{ user.username }}</span></p>
-        <p>Email: {{ user.email }}</p>
-        <p>Elo: {{ user.elo }}</p>
-
-        <!-- Button to show username change form -->
-        <button id="show-username-form">Change Username</button>
-        <!-- Username change form (hidden by default) -->
-        <div id="username-form" style="display: none;">
-            <input type="text" id="new-username" placeholder="New username">
-            <button id="update-username">Update</button>
-            <button id="cancel-username">Cancel</button>
+    <div class="container mt-5">
+        <h1>Mon Compte</h1>
+        
+        <!-- Affichage des informations -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <img src="{{ user.profile_picture.url }}" class="img-thumbnail mb-3" width="200">
+                <h5 class="card-title">{{ user.username }}</h5>
+                <p class="card-text">Email: {{ user.email }}</p>
+                <p class="card-text">Elo: {{ user.elo }}</p>
+            </div>
         </div>
 
-        <!-- Button to show password change form -->
-        <button id="show-password-form">Change Password</button>
-        <!-- Password change form (hidden by default) -->
-        <div id="password-form" style="display: none;">
-            <input type="password" id="current-password" placeholder="Current Password">
-            <input type="password" id="new-password" placeholder="New Password">
-            <button id="update-password">Update</button>
-            <button id="cancel-password">Cancel</button>
-        </div>
+        <!-- Formulaire de mise à jour -->
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ user_form.as_p }}
+            <button type="submit" name="update_info" class="btn btn-primary">Mettre à jour</button>
+        </form>
 
-        <!-- Button to show delete account confirmation -->
-        <button id="show-delete-account">Delete Account</button>
-        <!-- Delete account confirmation (hidden by default) -->
-        <div id="delete-account-confirm" style="display: none;">
-            <p>Are you sure you want to delete your account? This action cannot be undone.</p>
-            <button id="confirm-delete">Yes, Delete</button>
-            <button id="cancel-delete">Cancel</button>
-        </div>
-    </main>
-    <footer>
-        <a href="{% url 'home' %}">Home</a>
-    </footer>
+        <!-- Formulaire de changement de mot de passe -->
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            {{ password_form.as_p }}
+            <button type="submit" name="change_password" class="btn btn-warning">Changer le mot de passe</button>
+        </form>
 
-    <!-- JavaScript to handle button clicks and show/hide forms -->
-    <script src="{% static 'js/account.js' %}"></script>
+        <!-- Suppression du compte -->
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            <button type="submit" name="delete_account" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr ?')">Supprimer le compte</button>
+        </form>
+    </div>
 </body>
 </html>

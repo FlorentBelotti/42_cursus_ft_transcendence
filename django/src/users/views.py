@@ -1,7 +1,5 @@
-from django.contrib.auth import get_user_model
 from rest_framework.response import Response
 from django.core.mail import send_mail
-from django.utils import timezone
 from rest_framework import status
 from .models import VerificationCode
 import logging
@@ -15,6 +13,17 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.conf import settings
 import uuid
+from django.http import JsonResponse
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
+from django.shortcuts import render, redirect
+from .models import customUser
+
+def protected_view(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Non authentifié"}, status=401)
+    
+    return JsonResponse({"message": f"Bienvenue, {request.user.username} !"})
 
 # Create
 @api_view(['POST'])
@@ -121,15 +130,76 @@ def verify_code(request, user_id):
         code = request.POST.get('code')
         try:
             verification_code = VerificationCode.objects.get(user_id=user_id, code=code, is_used=False)
+            
             if verification_code.is_expired():
                 return render(request, "verify_code.html", {"error": "Le code a expiré."})
+            
             verification_code.is_used = True
             verification_code.save()
 
-            # Connecte l'utilisateur
+            # Génère un access token et un refresh token
             user = verification_code.user
-            login(request, user)
-            return redirect("home")
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+
+            # Stocke les tokens dans les cookies (ou renvoie-les en JSON)
+            response = redirect("home")
+            response.set_cookie(
+                key='access_token',
+                value=access_token,
+                httponly=True,
+                secure=True  # En production uniquement
+            )
+            response.set_cookie(
+                key='refresh_token',
+                value=refresh_token,
+                httponly=True,
+                secure=True  # En production uniquement
+            )
+            
+            return response
+            
         except VerificationCode.DoesNotExist:
-            return render(request, "verify_code.html", {"error": "Code invalide ou déjà utilisé."})
+            return render(request, "verify_code.html", {"error": "Code invalide."})
     return render(request, "verify_code.html")
+
+class RefreshTokenView(APIView):
+    def post(self, request):
+        refresh_token = request.COOKIES.get('refresh_token') or request.data.get('refresh_token')
+        
+        if not refresh_token:
+            return Response({"error": "Refresh token manquant"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            refresh = RefreshToken(refresh_token)
+            access_token = str(refresh.access_token)
+            
+            # Renvoie le nouvel access token
+            response = Response({"access_token": access_token}, status=status.HTTP_200_OK)
+            response.set_cookie(
+                key='access_token',
+                value=access_token,
+                httponly=True,
+                secure=True  # En production uniquement
+            )
+            return response
+            
+        except Exception as e:
+            return Response({"error": "Refresh token invalide"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
+from django.contrib import messages
+
+@login_required
+def account(request):
+    if request.method == "POST":
+        form = RegisterForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, form.instance)
+            messages.success(request, "Votre compte a été mis à jour !")
+            return redirect("account")

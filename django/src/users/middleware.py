@@ -1,66 +1,45 @@
-from django.utils.deprecation import MiddlewareMixin
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.exceptions import AuthenticationFailed
 from django.http import JsonResponse
-import re
-import logging
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+from django.contrib.auth import get_user_model
 
-logger = logging.getLogger(__name__)
+User = get_user_model()
 
-class AccessControlMiddleware(MiddlewareMixin):
-    def process_request(self, request):
-        public_urls = [
-            r'^/api/token/$',
-            r'^/$',
-            r'^/api/users/create/$',
-            r'^/home/$',
-            r'^/about/$',
-            r'^/login/$',
-            r'^/register/$',
-            r'^/static/.*$',
-            r'^/api/users/$', # to delete
-        ]
+class JWTAuthenticationMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
 
-        rank_0_urls = [
-            r'^/api/send-verification-code/$',
-            r'^/authentication/$',
-            r'^/api/verify-code/$',
-            r'^/api/token-ranked/$',
-        ]
-
-        # Vérifier si l'URL est publique
-        for pattern in public_urls:
-            if re.match(pattern, request.path):
-                logger.info(f"Public URL accessed: {request.path}")
-                return
-
-        # Authentifier le token JWT
-
-        token = request.COOKIES.get('access_token')
-        if token:
-            request.META['HTTP_AUTHORIZATION'] = f'Bearer {token}'
-
-        jwt_authenticator = JWTAuthentication()
-        try:
-            auth_result = jwt_authenticator.authenticate(request)
-            if auth_result is None:
-                raise AuthenticationFailed('Invalid token')
-            user, token = auth_result
-            request.user = user
-            request.token = token
-            logger.info(f"Authenticated user: {user}, token: {token}")
-        except AuthenticationFailed:
-            logger.warning(f"Authentication failed for URL: {request.path}")
-            return JsonResponse({'detail': 'Invalid token 1'}, status=401)
-
-        # Vérifier les permissions basées sur le rang
-        for pattern in rank_0_urls:
-            if re.match(pattern, request.path):
-                if request.token.get('rank') != 0:
-                    logger.warning(f"Access denied for URL: {request.path}, rank: {request.token.get('rank')}")
-                    return JsonResponse({'detail': 'Access denied 2'}, status=403)
-                return
-
-        if request.token.get('rank') not in [1, 2]:
-            logger.warning(f"Access denied for URL: {request.path}, rank: {request.token.get('rank')}")
-            return JsonResponse({'detail': 'Access denied 3'}, status=403)
+    def __call__(self, request):
+        access_token = request.COOKIES.get('access_token') or request.headers.get('Authorization', '').split('Bearer ')[-1]
+        refresh_token = request.COOKIES.get('refresh_token')
+        
+        if access_token:
+            try:
+                token = AccessToken(access_token)
+                user_id = token.payload.get('user_id')
+                user = User.objects.get(id=user_id)
+                request.user = user  # Attache l'utilisateur à la requête
+                
+            except (TokenError, InvalidToken, User.DoesNotExist) as e:
+                # Si le token est expiré, tente de le rafraîchir
+                if refresh_token:
+                    try:
+                        refresh = RefreshToken(refresh_token)
+                        new_access_token = str(refresh.access_token)
+                        
+                        # Met à jour le cookie avec le nouvel access token
+                        response = self.get_response(request)
+                        response.set_cookie(
+                            key='access_token',
+                            value=new_access_token,
+                            httponly=True,
+                            secure=True
+                        )
+                        return response
+                        
+                    except (TokenError, InvalidToken) as e:
+                        return JsonResponse({"error": "Token invalide"}, status=401)
+                
+                return JsonResponse({"error": "Token invalide"}, status=401)
+        
+        return self.get_response(request)

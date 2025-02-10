@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.utils import timezone
+from django.db import models
 
 class customUser(AbstractUser):
     elo = models.IntegerField(default=1000)
