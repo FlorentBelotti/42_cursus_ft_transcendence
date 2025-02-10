@@ -25,7 +25,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         "count": 0,
         "inputs": {"player1": 0, "player2": 0},
         "waiting": True,
-        "type": ""
+        "game_over": False,  # Nouvelle variable pour contrôler la fin de la partie
     }
 
     clients = []
@@ -67,7 +67,7 @@ class PongConsumer(AsyncWebsocketConsumer):
                 self.game_state["inputs"]["player2"] = data["input"]
 
     async def update_game_state(self):
-        while len(self.clients) == 2:
+        while len(self.clients) == 2 and not self.game_state.get("game_over", False):
             self.update_pads()
             self.update_ball()
             self.collision_wall()
@@ -90,7 +90,11 @@ class PongConsumer(AsyncWebsocketConsumer):
             "count": 0,
             "inputs": {"player1": 0, "player2": 0},
             "waiting": True,
+            "game_over": False,
         }
+        # Envoyer l'état réinitialisé à tous les clients
+        for client in self.clients:
+            asyncio.create_task(client.send(text_data=json.dumps(self.game_state)))
 
     def update_pads(self):
         self.game_state["pads"]["player1"]["y"] += self.game_state["inputs"]["player1"] * pad_speed
@@ -149,23 +153,22 @@ class PongConsumer(AsyncWebsocketConsumer):
         if self.game_state["ball"]["x"] <= 0:
             self.reset_ball("player2")
             self.game_state["score"]["player2"] += 1
-            print(f'score: {self.game_state["score"]["player2"]}')
-            if self.game_state["score"]["player2"] >= 10:
+            if self.game_state["score"]["player2"] >= 3:
                 self.end_game("player2")
+                self.game_state["game_over"] = True
         elif self.game_state["ball"]["x"] >= canvas_width:
             self.reset_ball("player1")
             self.game_state["score"]["player1"] += 1
-            print(f'score: {self.game_state["score"]["player1"]}')
-            if self.game_state["score"]["player1"] >= 10:
+            if self.game_state["score"]["player1"] >= 3:
                 self.end_game("player1")
-
+                self.game_state["game_over"] = True
 
     async def end_game(self, winner):
         for client in self.clients:
             await client.send(text_data=json.dumps({
                 "type": "game_over",
                 "winner": winner,
-                "message": f"Le joueur {winner} a gagné avec un score de 10 points !"
+                "message": f"Le joueur {winner} a gagné avec un score de 3 points !"
             }))
         self.reset_game_state()
         for client in self.clients:

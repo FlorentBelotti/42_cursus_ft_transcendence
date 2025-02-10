@@ -50,9 +50,11 @@ class PongServerGame {
     handleMessage(gameState) {
         if (gameState.type === 'player_left') {
             this.displayMessage(gameState.message);
+            console.log('Player left the game.');
             this.stopGame();
         } else if (gameState.type === 'game_over') {
             this.displayMessage(gameState.message);
+            console.log('Game over.');
             this.stopGame();
         } else if (gameState.waiting) {
             console.log('Waiting for an opponent...');
