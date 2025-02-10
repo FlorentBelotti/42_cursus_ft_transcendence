@@ -9,7 +9,6 @@
                 <button class="nav-button" data-url="{% url 'leaderboard' %}">Leaderboard</button>
             {% if user.is_authenticated %}
                 <button class="nav-button" data-url="{% url 'account' %}">Account</button>
-                <button class="nav-button" data-url="{% url 'logout_page' %}">Logout</button>
             {% else %}
 				<button class="nav-button" data-url="{% url 'register' %}">Register</button>
 				<button class="nav-button" data-url="{% url 'login' %}">Login</button>

@@ -9,16 +9,14 @@ from rest_framework.decorators import api_view
 from .models import customUser
 from .serializers import UserSerializer, UserDataSerializer
 from .forms import RegisterForm
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.conf import settings
 import uuid
 from django.http import JsonResponse
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
-from django.shortcuts import render, redirect
 from .models import customUser
-from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
@@ -227,3 +225,10 @@ def account(request):
         'user_form': user_form,
         'password_form': password_form
     })
+
+def logout_view(request):
+    response = redirect('home')
+    response.delete_cookie('access_token')
+    response.delete_cookie('refresh_token')
+    logout(request)
+    return response

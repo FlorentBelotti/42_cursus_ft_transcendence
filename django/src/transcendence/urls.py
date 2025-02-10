@@ -3,8 +3,7 @@ from django.views.generic import RedirectView
 from views import views
 from django.conf import settings
 from django.conf.urls.static import static
-from users.views import register, user_login, verify_code, account
-
+from users.views import register, user_login, verify_code, account, logout_view
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/home/', permanent=True)),
@@ -23,16 +22,7 @@ urlpatterns = [
     path('authentication/', views.define_render, name='authentication'),
     path('account/', account, name='account'),
     path('leaderboard/', views.define_render, name='leaderboard'),
-    path('logout/', views.define_render, name='logout'),
-    # path('api/users/', user_controller.user_list, name='user_list'),
-    # path('api/users/<int:pk>/', user_controller.user_detail, name='user_detail'),
-    # path('api/users/create/', user_controller.user_create, name='user_create'),
-    # path('api/users/<int:pk>/update/', user_controller.user_update, name='user_update'),
-    # path('api/users/<int:pk>/delete/', user_controller.user_delete, name='user_delete'),
-    # path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    # path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # path('api/send-verification-code/', SendVerificationCodeView.as_view(), name='send_verification_code'),
-    # path('api/verify-code/', VerifyCodeView.as_view(), name='verify_code'),
+    path('logout/', logout_view, name='logout'),
     path('api/', include('users.urls')),
 ]
 
