@@ -18,6 +18,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from django.shortcuts import render, redirect
 from .models import customUser
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
+from django.contrib import messages
+from .forms import UserUpdateForm, CustomPasswordChangeForm
 
 def protected_view(request):
     if not request.user.is_authenticated:
@@ -188,18 +193,37 @@ class RefreshTokenView(APIView):
         except Exception as e:
             return Response({"error": "Refresh token invalide"}, status=status.HTTP_401_UNAUTHORIZED)
 
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import update_session_auth_hash
-from django.contrib import messages
-
 @login_required
 def account(request):
     if request.method == "POST":
-        form = RegisterForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
-            update_session_auth_hash(request, form.instance)
-            messages.success(request, "Votre compte a été mis à jour !")
-            return redirect("account")
+        user_form = UserUpdateForm(request.POST, request.FILES, instance=request.user)
+        password_form = CustomPasswordChangeForm(request.user, request.POST)
+
+        if 'update_info' in request.POST:
+            if user_form.is_valid():
+                user_form.save()
+                messages.success(request, "Informations mises à jour !")
+                return redirect('account')
+
+        elif 'change_password' in request.POST:
+            if password_form.is_valid():
+                password_form.save()
+                update_session_auth_hash(request, request.user)
+                messages.success(request, "Mot de passe mis à jour !")
+                return redirect('account')
+
+        elif 'delete_account' in request.POST:
+            request.user.delete()
+            response = redirect('home')
+            response.delete_cookie('access_token')
+            response.delete_cookie('refresh_token')
+            return response
+
+    else:
+        user_form = UserUpdateForm(instance=request.user)
+        password_form = CustomPasswordChangeForm(request.user)
+
+    return render(request, 'account.html', {
+        'user_form': user_form,
+        'password_form': password_form
+    })
