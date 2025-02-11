@@ -28,7 +28,7 @@ class PongGame {
         };
         this.directionBall = {
             x: Math.random() < 0.5 ? -1 : 1,
-            y: Math.random() < 0.5 ? -1 : 1,
+            y: 0,
         };
 
         // SCORE
