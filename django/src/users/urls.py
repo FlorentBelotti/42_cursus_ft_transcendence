@@ -8,8 +8,5 @@ urlpatterns = [
     path('users/<int:pk>/update/', update_user, name='update_user'),
     path('users/<int:pk>/delete/', delete_user, name='delete_user'),
     path('logout/action', logout_action, name='logout_page'),
-    # path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('refresh-token/', RefreshTokenView.as_view(), name='token_refresh'),
-    # path('api/send-verification-code/', SendVerificationCodeView.as_view(), name='send_verification_code'),
-    # path('api/verify-code/', VerifyCodeView.as_view(), name='verify_code'),
 ]

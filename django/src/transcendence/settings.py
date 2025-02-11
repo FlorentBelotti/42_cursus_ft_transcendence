@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'users',
     'transcendence',
+    'social_django',
 ]
 
 REST_FRAMEWORK = {
@@ -27,6 +28,12 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.open_id.OpenIdAuth',
+    'users.42auth.fortytwoOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
 
 AUTH_USER_MODEL = 'users.customUser'
 
@@ -58,6 +65,12 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+SOCIAL_AUTH_42_KEY = os.getenv("SOCIAL_AUTH_42_KEY")
+SOCIAL_AUTH_42_SECRET = os.getenv("SOCIAL_AUTH_42_SECRET")
+SOCIAL_AUTH_42_SCOPE = os.getenv("SOCIAL_AUTH_42_SCOPE", "public,profile").split(",")
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = os.getenv("SOCIAL_AUTH_LOGIN_REDIRECT_URL")
+SOCIAL_AUTH_URL_NAMESPACE = os.getenv("SOCIAL_AUTH_URL_NAMESPACE", "social")
 
 ROOT_URLCONF = 'transcendence.urls'
 

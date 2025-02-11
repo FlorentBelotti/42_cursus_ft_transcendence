@@ -23,6 +23,7 @@ urlpatterns = [
     path('leaderboard/', leaderboard, name='leaderboard'),
     path('logout/', logout_view, name='logout'),
     path('api/', include('users.urls')),
+    path('auth/', include('social_django.urls', namespace='social')),
 ]
 
 if settings.DEBUG:
