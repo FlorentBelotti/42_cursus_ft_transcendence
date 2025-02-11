@@ -133,7 +133,14 @@ def user_login(request):
                 return redirect("verify_code", user_id=user.id)
     else:
         form = AuthenticationForm()
-    return render(request, "login.html", {"form": form})
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, "login.html", {"form": form})
+    else:
+        return render(request, 'base.html', {
+            'content_template': 'login.html',
+            'form': form
+        })
 
 def verify_code(request, user_id):
     if request.method == "POST":
@@ -142,7 +149,14 @@ def verify_code(request, user_id):
             verification_code = VerificationCode.objects.get(user_id=user_id, code=code, is_used=False)
             
             if verification_code.is_expired():
-                return render(request, "verify_code.html", {"error": "Le code a expiré."})
+                error = "Le code a expiré."
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return render(request, "verify_code.html", {"error": error})
+                else:
+                    return render(request, 'base.html', {
+                        'content_template': 'verify_code.html',
+                        'error': error
+                    })
             
             verification_code.is_used = True
             verification_code.save()
@@ -171,8 +185,21 @@ def verify_code(request, user_id):
             return response
             
         except VerificationCode.DoesNotExist:
-            return render(request, "verify_code.html", {"error": "Code invalide."})
-    return render(request, "verify_code.html")
+            error = "Code invalide."
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return render(request, "verify_code.html", {"error": error})
+            else:
+                return render(request, 'base.html', {
+                    'content_template': 'verify_code.html',
+                    'error': error
+                })
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, "verify_code.html")
+    else:
+        return render(request, 'base.html', {
+            'content_template': 'verify_code.html'
+        })
 
 class RefreshTokenView(APIView):
     def post(self, request):
