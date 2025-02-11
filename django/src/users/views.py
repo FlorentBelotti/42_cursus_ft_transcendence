@@ -21,6 +21,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 from .forms import UserUpdateForm, CustomPasswordChangeForm
+from django.core.paginator import Paginator
 
 def protected_view(request):
     if not request.user.is_authenticated:
@@ -94,8 +95,7 @@ def register(request):
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)  # Connecte l'utilisateur après l'inscription
+            form.save()
             return redirect("home")  # Redirige vers la page d'accueil
     else:
         form = RegisterForm()
@@ -232,3 +232,10 @@ def logout_view(request):
     response.delete_cookie('refresh_token')
     logout(request)
     return response
+
+def leaderboard(request):
+    users = customUser.objects.all().order_by('-elo')
+    paginator = Paginator(users, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'leaderboard.html', {'page_obj': page_obj})
