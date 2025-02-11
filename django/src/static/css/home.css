@@ -1,8 +1,65 @@
-.background{
-	background-color: red;
-
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Bebas Neue', sans-serif;
 }
 
-.font{
-	font-size: 500;
+.background {
+    background-color: #5D3136;
+    display: flex;
+    justify-content: center;
+    align-items: center
+    /* height: 100vh; */
+/* trouver l'espace qui se fait en trop */
+}
+
+.second-layer {
+    background-color: #F9EBDE;
+    border-radius: 20px;
+    padding: 20px;
+    width: 95%;
+    max-width: 100%;
+    height: 90vh;
+    max-height: 90vh;
+    text-align: center;
+    display: flex; /* Active Flexbox */
+    flex-direction: column; /* Alignement vertical */
+    justify-content: center; /* Centre verticalement */
+}
+
+.text-section {
+    margin-bottom: 10px;
+    color: #5D3136;
+}
+
+.text-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.text-section p {
+    font-family: 'Chivo', sans-serif;
+    font-weight: 300;
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.text-transcendence p {
+    font-family: 'Chivo', sans-serif;
+    font-weight: 700;
+    margin: 0;
+    font-size: 1.2em;
+	color: #5D3136;
+}
+
+.transcendence {
+    font-size: 270px;
+    font-weight: bold;
+    margin-top: 0; /* Supprime la marge supérieure */
+}
+
+.pong{
+	
 }

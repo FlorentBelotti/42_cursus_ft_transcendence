@@ -1,26 +1,29 @@
+{% load static %}
+{% block content %}
 <header>
-    <nav>
-        <ul>
-            <li>
-                <button class="nav-button" data-url="{% url 'home' %}">Home</button>
-                <button class="nav-button" data-url="{% url 'about' %}">About Us</button>
-				<button class="nav-button" data-url="{% url 'pong' %}">Pong Game</button>
-                <button class="nav-button" data-url="{% url 'pongServer' %}">PongServer</button>
-                <button class="nav-button" data-url="{% url 'leaderboard' %}">Leaderboard</button>
-            {% if rank >= 1 %}
-                <button class="nav-button" data-url="{% url 'account' %}">Account</button>
-                <button class="nav-button" data-url="{% url 'logout_page' %}">Logout</button>
-            {% else %}
-				<button class="nav-button" data-url="{% url 'register' %}">Register</button>
-				<button class="nav-button" data-url="{% url 'login' %}">Login</button>
-            {% endif %}
-            </li>
-            <style>
-                li{
-                    list-style: none;
-                }
-            </style>
-            <!-- <li><a href="{% url 'about' %}">About Us</a></li> -->
-        </ul>
-    </nav>
+	<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chivo:ital,wght@0,100..900;1,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="{% static 'css/header.css' %}">
+	<div class="background-header">
+		<div class="second-layer-header">
+		<nav>
+			<ul>
+				<li><button class="nav-button" data-url="{% url 'home' %}">Home</button></li>
+				<li><button class="nav-button" data-url="{% url 'about' %}">About Us</button></li>
+				<li><button class="nav-button" data-url="{% url 'pong' %}">Pong Game</button></li>
+				<li><button class="nav-button" data-url="{% url 'pongServer' %}">PongServer</button></li>
+				<li><button class="nav-button" data-url="{% url 'leaderboard' %}">Leaderboard</button></li>
+				{% if rank >= 1 %}
+					<li><button class="nav-button" data-url="{% url 'account' %}">Account</button></li>
+					<li><button class="nav-button login" data-url="{% url 'logout_page' %}">Logout</button></li>
+				{% else %}
+					<li><button class="nav-button login" data-url="{% url 'register' %}">Register</button></li>
+					<li><button class="nav-button login" data-url="{% url 'login' %}">Login</button></li>
+				{% endif %}
+			</ul>
+		</nav>
+		</div>
+	</div>
 </header>
+{% endblock %}
+
+
