@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérification du code</title>
+    {% load static %}
+</head>
+<body>
+    <h1>Vérification du code</h1>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <label for="code">Code de vérification :</label>
+        <input type="text" id="code" name="code" required>
+        <button type="submit">Vérifier</button>
+    </form>
+</body>
+</html>

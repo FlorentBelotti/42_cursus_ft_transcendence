@@ -5,3 +5,5 @@ djangorestframework
 djangorestframework-simplejwt
 daphne
 channels
+Pillow
+social-auth-app-django

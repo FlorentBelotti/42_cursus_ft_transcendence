@@ -16,9 +16,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 	'channels',
-    'transcendence',
     'rest_framework',
-    'rest_framework_simplejwt'
+    'rest_framework_simplejwt',
+    'users',
+    'transcendence',
+    'social_django',
 ]
 
 REST_FRAMEWORK = {
@@ -27,15 +29,23 @@ REST_FRAMEWORK = {
     ),
 }
 
-AUTH_USER_MODEL = 'transcendence.User'
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.open_id.OpenIdAuth',
+    'users.42auth.fortytwoOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+AUTH_USER_MODEL = 'users.customUser'
 
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=50),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': True,
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Durée de validité courte
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),   # Durée de validité longue
+    'ROTATE_REFRESH_TOKENS': True,  # Génère un nouveau refresh token à chaque rafraîchissement
+    'BLACKLIST_AFTER_ROTATION': True,  # Ajoute l'ancien refresh token à une liste noire
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
 }
 
 MIDDLEWARE = [
@@ -46,8 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'transcendence.middleware.AccessControlMiddleware',
-    # 'transcendence.middleware.TwoFactorAuthenticationMiddleware',
+    'users.middleware.JWTAuthenticationMiddleware',
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -56,6 +65,12 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+SOCIAL_AUTH_42_KEY = os.getenv("SOCIAL_AUTH_42_KEY")
+SOCIAL_AUTH_42_SECRET = os.getenv("SOCIAL_AUTH_42_SECRET")
+SOCIAL_AUTH_42_SCOPE = os.getenv("SOCIAL_AUTH_42_SCOPE", "public,profile").split(",")
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = os.getenv("SOCIAL_AUTH_LOGIN_REDIRECT_URL")
+SOCIAL_AUTH_URL_NAMESPACE = os.getenv("SOCIAL_AUTH_URL_NAMESPACE", "social")
 
 ROOT_URLCONF = 'transcendence.urls'
 
