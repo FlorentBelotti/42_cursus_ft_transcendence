@@ -99,7 +99,14 @@ def register(request):
             return redirect("home")  # Redirige vers la page d'accueil
     else:
         form = RegisterForm()
-    return render(request, "register.html", {"form": form})
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, "register.html", {"form": form})
+    else:
+        return render(request, 'base.html', {
+            'content_template': 'register.html',
+            'form': form  # On ajoute le formulaire dans le contexte
+        })
 
 def user_login(request):
     if request.method == "POST":
