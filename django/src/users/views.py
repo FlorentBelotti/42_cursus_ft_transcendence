@@ -91,22 +91,22 @@ def logout_action(request):
         return response
     return redirect('logout_page')
 
-def register(request):
-    if request.method == "POST":
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("home")  # Redirige vers la page d'accueil
-    else:
-        form = RegisterForm()
+# def register(request):
+#     if request.method == "POST":
+#         form = RegisterForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect("home")  # Redirige vers la page d'accueil
+#     else:
+#         form = RegisterForm()
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return render(request, "register.html", {"form": form})
-    else:
-        return render(request, 'base.html', {
-            'content_template': 'register.html',
-            'form': form  # On ajoute le formulaire dans le contexte
-        })
+#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#         return render(request, "register.html", {"form": form})
+#     else:
+#         return render(request, 'base.html', {
+#             'content_template': 'register.html',
+#             'form': form  # On ajoute le formulaire dans le contexte
+#         })
 
 def user_login(request):
     if request.method == "POST":

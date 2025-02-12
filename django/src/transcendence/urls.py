@@ -3,7 +3,7 @@ from django.views.generic import RedirectView
 from views import views
 from django.conf import settings
 from django.conf.urls.static import static
-from users.views import register, user_login, verify_code, account, logout_view, leaderboard
+from users.views import user_login, verify_code, account, logout_view, leaderboard
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/home/', permanent=True)),
@@ -17,9 +17,11 @@ urlpatterns = [
     path('pongserver/', views.define_render, name='pongServer'),
     path('authentication/', views.define_render, name='authentication'),
 
+    path('register/', views.register, name='register'),
+
+
     path('verify_code/<int:user_id>/', verify_code, name='verify_code'),
     path('login/', user_login, name='login'),
-    path('register/', register, name='register'),
     path('account/', account, name='account'),
     path('leaderboard/', leaderboard, name='leaderboard'),
     path('logout/', logout_view, name='logout'),
