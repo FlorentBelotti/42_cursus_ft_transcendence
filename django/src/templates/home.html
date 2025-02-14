@@ -16,34 +16,75 @@
             <div class="text-transcendence">
                 <p>Transcendence</p>
             </div>
-            <div class="text-section" id="carroussel">
-                <p>Fbelotti Tgerardi Romlambe</p>
+            <div class="name-section" id="carroussel">
+                <p class="name visible">Fbelotti</p>
+				<p class="name">Tgerardi</p>
+				<p class="name">Romlambe</p>
             </div>
         </div>
         <div class="text-section transcendence">TRANSCENDENCE</div>
 	</div>
 </div>
-<div class="background">
-	<div>
-		<h1>MODULES</h1>
+<div class="background2">
+	<div class="module">
+		<div class="module-title">
+			<h1>MODULES</h1>
+		</div>
+		<div class="module-text">
+			<p>Text1</p>
+			<p>Text1</p>
+			<p>Text1</p>
+			<p>Text1</p>
+			<p>Text1</p>
+			<p>Text1</p>
+			<p>Text1</p>
+			<p>Text1</p>
+			<p>Text1</p>
+			<p>Text1</p>
+		</div>
 	</div>
-	<div>
-		<h1>PONG</h1>
-	</div>
-	<div>
-		<p>Text1</p>
-		<p>Text1</p>
-		<p>Text1</p>
-		<p>Text1</p>
-		<p>Text1</p>
-		<p>Text1</p>
-		<p>Text1</p>
-		<p>Text1</p>
-		<p>Text1</p>
-		<p>Text1</p>
-	</div>
-	<div>
-	</div>
+	<div class="right-container"> <!-- Nouveau conteneur pour pong et language -->
+        <div class="pong">
+            <div class="pong-title">
+                <h1>PONG</h1>
+            </div>
+            <div class="pong-class">
+                <canvas class="pong-canvas" width="600" height="400"></canvas>
+            </div>
+        </div>
+        <div class="language">
+            <h1>Techno used</h1>
+			<div class="language-src">
+				<img src="{% static 'assets/html.svg' %}" alt="html">
+				<img src="{% static 'assets/css.svg' %}" alt="css">
+				<img src="{% static 'assets/javascript.svg' %}" alt="js">
+				<img src="{% static 'assets/python.svg' %}" alt="python">
+				<img src="{% static 'assets/django.svg' %}" alt="django">
+			</div>
+		</div>
+    </div>
+	<script src="{% static 'js/animationPong.js' %}"></script>
 </div>
+<script>
+	const names = document.querySelectorAll('.name');
+	let currentIndex = 0;
+	const displayTime = 2000; // Temps d'affichage en millisecondes (2 secondes)
+	const fadeTime = 500; // Temps de transition en millisecondes (0.5 seconde)
 
+	function showNextName() {
+	// Masquer le nom actuel
+	names[currentIndex].classList.remove('visible');
+
+	// Passer au nom suivant
+	currentIndex = (currentIndex + 1) % names.length;
+
+	// Afficher le nouveau nom
+	setTimeout(() => {
+		names[currentIndex].classList.add('visible');
+	}, fadeTime);
+	}
+
+	// Démarrer l'animation
+	setInterval(showNextName, displayTime + fadeTime);
+</script>
 {% endblock %}

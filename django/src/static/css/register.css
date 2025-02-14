@@ -1,0 +1,33 @@
+.body{
+	margin: 0;
+	padding: 0;
+}
+
+.background{
+	background-color: #5D3136;
+	height: 85vh;
+	padding: 20px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+
+.register{
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	background-color: #F9EBDE;
+	padding: 15px;
+	border-radius: 15px;
+	font-family: 'Chivo', sans-serif;
+	color: #5D3136;
+}
+
+.register button{
+	background-color: #F9EBDE;
+	border: solid 2px #5D3136;
+	padding: 10px;
+	border-radius: 50px;
+}

@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (scriptUrl.includes('account.js')) {
                                 initAccountPage();
                             }
+							if (scriptUrl.includes('animationPong.js')){
+								initPongAnimation();
+							}
                         });
                     }
                 });
@@ -62,6 +65,15 @@ document.addEventListener('DOMContentLoaded', function () {
             window.pongServerGame = new PongServerGame();
         }
     }
+
+	function  initPongAnimation(){
+		if (window.PongAnimation){
+			window.PongAnimation.stopAnimation();
+			window.PongAnimation = new PongAnimation();
+		}else{
+			window.PongAnimation = new PongAnimation();
+		}
+	}
 
     function cleanupScriptsAndEvents() {
         // Supprimer tous les scripts dynamiques
@@ -101,9 +113,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         script.onload = function () {
             if (callback) callback();
-            // if (url.includes('pongServer.js')) {
-            //     initPongServer(); // Initialiser le jeu Pong Server
-            // }
         };
         document.head.appendChild(script);
     }
