@@ -43,7 +43,7 @@ def define_render(request, additional_context=None):
         context.update(additional_context)
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return render(request, template_name)
+        return render(request, template_name, context)
     else:
         return render(request, 'base.html', context)
 
@@ -52,11 +52,10 @@ def register(request):
         form = RegisterForm(request.POST)
         if form.is_valid():
             form.save()
-            return JsonResponse({
-                'success': True,
-                'redirect_url': '/home/'
-            }) if request.headers.get('x-requested-with') == 'XMLHttpRequest' else redirect("home")
+            request.path = '/home/'
+            return define_render(request)
+        else:
+            return define_render(request, {'form': form})
     else:
         form = RegisterForm()
-    
-    return define_render(request, {'form': form})
+        return define_render(request, {'form': form})
