@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let pongGame = null; // Variable pour stocker l'instance du jeu Pong
     let pongServerGame = null; // Variable pour stocker l'instance du jeu Pong Server
 
-    function loadContent(url, addToHistory = true) {
+    window.loadContent = function(url, addToHistory = true) {
         cleanupScriptsAndEvents();
 
         fetch(url, {
@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (scriptUrl.includes('account.js')) {
                                 initAccountPage();
                             }
+                            if (scriptUrl.includes('register.js')) {
+                                registerFormEvent();
+                            }
                         });
                     }
                 });
@@ -40,6 +43,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
     }
+
+    // function registerFormEvent() {
+    //     document.getElementById("registerForm").addEventListener("submit", async function (event){
+    //         event.preventDefault();
+    //         let registerFormData = new FormData(event.target);
+    //         console.log(registerFormData.get("username"))
+    //         let response = await fetch('/register/', {
+    //             method:"post",
+    //             body:registerFormData,
+    //             headers: {
+    //                 "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+    //             }
+    //         })
+    //         let data = await response.json()
+    //         if (data.success) {
+    //             loadContent('/home/')
+    //         }
+    //         console.log(data)
+    //     })
+    // }
 
     function initPong() {
         if (window.pongGame) {
@@ -119,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            loadContent(url);
+            window.loadContent(url);
             history.pushState({ url: url }, '', url);
         });
     });
@@ -127,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Handle the browser's back and forward buttons
     window.addEventListener('popstate', function (event) {
         if (event.state && event.state.url) {
-            loadContent(event.state.url, false);
+            window.loadContent(event.state.url, false);
         }
     });
 });

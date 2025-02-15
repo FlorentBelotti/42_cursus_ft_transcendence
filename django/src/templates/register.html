@@ -8,10 +8,11 @@
 </head>
 <body>
     <h1>Inscription</h1>
-    <form method="post">
+    <form id="registerForm">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit">S'inscrire</button>
     </form>
+    <script src="{% static 'js/register.js' %}"></script>
 </body>
 </html>

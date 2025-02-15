@@ -108,98 +108,98 @@ def logout_action(request):
 #             'form': form  # On ajoute le formulaire dans le contexte
 #         })
 
-def user_login(request):
-    if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                # Génère un code de vérification
-                code = str(uuid.uuid4())
-                VerificationCode.objects.create(user=user, code=code)
+# def user_login(request):
+#     if request.method == "POST":
+#         form = AuthenticationForm(request, data=request.POST)
+#         if form.is_valid():
+#             username = form.cleaned_data.get('username')
+#             password = form.cleaned_data.get('password')
+#             user = authenticate(request, username=username, password=password)
+#             if user is not None:
+#                 # Génère un code de vérification
+#                 code = str(uuid.uuid4())
+#                 VerificationCode.objects.create(user=user, code=code)
 
-                # Envoie le code par email
-                send_mail(
-                    'Votre code de vérification',
-                    f'Votre code de vérification est : {code}',
-                    settings.EMAIL_HOST_USER,
-                    [user.email],
-                    fail_silently=False,
-                )
+#                 # Envoie le code par email
+#                 send_mail(
+#                     'Votre code de vérification',
+#                     f'Votre code de vérification est : {code}',
+#                     settings.EMAIL_HOST_USER,
+#                     [user.email],
+#                     fail_silently=False,
+#                 )
 
-                # Redirige vers la page de vérification du code
-                return redirect("verify_code", user_id=user.id)
-    else:
-        form = AuthenticationForm()
+#                 # Redirige vers la page de vérification du code
+#                 return redirect("verify_code", user_id=user.id)
+#     else:
+#         form = AuthenticationForm()
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return render(request, "login.html", {"form": form})
-    else:
-        return render(request, 'base.html', {
-            'content_template': 'login.html',
-            'form': form
-        })
+#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#         return render(request, "login.html", {"form": form})
+#     else:
+#         return render(request, 'base.html', {
+#             'content_template': 'login.html',
+#             'form': form
+#         })
 
-def verify_code(request, user_id):
-    if request.method == "POST":
-        code = request.POST.get('code')
-        try:
-            verification_code = VerificationCode.objects.get(user_id=user_id, code=code, is_used=False)
+# def verify_code(request, user_id):
+#     if request.method == "POST":
+#         code = request.POST.get('code')
+#         try:
+#             verification_code = VerificationCode.objects.get(user_id=user_id, code=code, is_used=False)
             
-            if verification_code.is_expired():
-                error = "Le code a expiré."
-                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return render(request, "verify_code.html", {"error": error})
-                else:
-                    return render(request, 'base.html', {
-                        'content_template': 'verify_code.html',
-                        'error': error
-                    })
+#             if verification_code.is_expired():
+#                 error = "Le code a expiré."
+#                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#                     return render(request, "verify_code.html", {"error": error})
+#                 else:
+#                     return render(request, 'base.html', {
+#                         'content_template': 'verify_code.html',
+#                         'error': error
+#                     })
             
-            verification_code.is_used = True
-            verification_code.save()
+#             verification_code.is_used = True
+#             verification_code.save()
 
-            # Génère un access token et un refresh token
-            user = verification_code.user
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-            refresh_token = str(refresh)
+#             # Génère un access token et un refresh token
+#             user = verification_code.user
+#             refresh = RefreshToken.for_user(user)
+#             access_token = str(refresh.access_token)
+#             refresh_token = str(refresh)
 
-            # Stocke les tokens dans les cookies (ou renvoie-les en JSON)
-            response = redirect("home")
-            response.set_cookie(
-                key='access_token',
-                value=access_token,
-                httponly=True,
-                secure=True  # En production uniquement
-            )
-            response.set_cookie(
-                key='refresh_token',
-                value=refresh_token,
-                httponly=True,
-                secure=True  # En production uniquement
-            )
+#             # Stocke les tokens dans les cookies (ou renvoie-les en JSON)
+#             response = redirect("home")
+#             response.set_cookie(
+#                 key='access_token',
+#                 value=access_token,
+#                 httponly=True,
+#                 secure=True  # En production uniquement
+#             )
+#             response.set_cookie(
+#                 key='refresh_token',
+#                 value=refresh_token,
+#                 httponly=True,
+#                 secure=True  # En production uniquement
+#             )
             
-            return response
+#             return response
             
-        except VerificationCode.DoesNotExist:
-            error = "Code invalide."
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return render(request, "verify_code.html", {"error": error})
-            else:
-                return render(request, 'base.html', {
-                    'content_template': 'verify_code.html',
-                    'error': error
-                })
+#         except VerificationCode.DoesNotExist:
+#             error = "Code invalide."
+#             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#                 return render(request, "verify_code.html", {"error": error})
+#             else:
+#                 return render(request, 'base.html', {
+#                     'content_template': 'verify_code.html',
+#                     'error': error
+#                 })
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return render(request, "verify_code.html")
-    else:
-        return render(request, 'base.html', {
-            'content_template': 'verify_code.html'
-        })
+#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#         return render(request, "verify_code.html")
+#     else:
+#         return render(request, 'base.html', {
+#             'content_template': 'verify_code.html'
+#         })
 
 class RefreshTokenView(APIView):
     def post(self, request):
