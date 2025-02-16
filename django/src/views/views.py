@@ -99,50 +99,41 @@ def verify_code(request, user_id):
             verification_code = VerificationCode.objects.get(user_id=user_id, code=code, is_used=False)
             
             if verification_code.is_expired():
-                error = "Le code a expiré."
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return render(request, "verify_code.html", {"error": error})
-                else:
-                    return render(request, 'base.html', {
-                        'content_template': 'verify_code.html',
-                        'error': error
-                    })
+                    return JsonResponse({"error": "Code expired"}, status=401)
             
             verification_code.is_used = True
             verification_code.save()
 
-            # Génère un access token et un refresh token
             user = verification_code.user
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
 
-            # Stocke les tokens dans les cookies (ou renvoie-les en JSON)
-            response = redirect("home")
+            response = JsonResponse({
+                "success": "Code verified successfully",
+                "redirect_url": "/home/"
+            })
+
             response.set_cookie(
                 key='access_token',
                 value=access_token,
                 httponly=True,
-                secure=True  # En production uniquement
+                secure=True,  
+                samesite='Strict'  
             )
             response.set_cookie(
                 key='refresh_token',
                 value=refresh_token,
                 httponly=True,
-                secure=True  # En production uniquement
+                secure=True,  
+                samesite='Strict'  
             )
-            
+
             return response
             
         except VerificationCode.DoesNotExist:
-            error = "Code invalide."
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return render(request, "verify_code.html", {"error": error})
-            else:
-                return render(request, 'base.html', {
-                    'content_template': 'verify_code.html',
-                    'error': error
-                })
+            return JsonResponse({"error": "Invalid code"}, status=401)
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return render(request, "verify_code.html")

@@ -12,8 +12,8 @@ function loginFormEvent() {
         })
         let data = await response.json()
         if (data.success) {
-            let user_id = data.user_id;
-            let verifyCodeUrl = `/verify_code/${user_id}/`;
+            localStorage.setItem('user_id', data.user_id);
+            let verifyCodeUrl = `/verify_code/${data.user_id}/`;
             window.loadContent(verifyCodeUrl);
         }
     })

@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (scriptUrl.includes('login.js')) {
                                 loginFormEvent();
                             }
+                            if (scriptUrl.includes('verify_code.js')) {
+                                verifyCodeFormEvent();
+                            }                            
                         });
                     }
                 });
