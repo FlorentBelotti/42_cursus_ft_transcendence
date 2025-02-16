@@ -20,10 +20,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (scriptUrl) {
                         loadScript(scriptUrl, function () {
                             if (scriptUrl.includes('pong.js')) {
-                                initPong(); // Initialiser le jeu Pong
+                                initPong();
                             }
                             if (scriptUrl.includes('pongServer.js')) {
-                                initPongServer(); // Initialiser le jeu Pong Server
+                                initPongServer();
                             }
                             if (scriptUrl.includes('leaderboard.js')) {
                                 loadLeaderboard();
@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (scriptUrl.includes('register.js')) {
                                 registerFormEvent();
                             }
+                            if (scriptUrl.includes('login.js')) {
+                                loginFormEvent();
+                            }
                         });
                     }
                 });
@@ -43,26 +46,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
     }
-
-    // function registerFormEvent() {
-    //     document.getElementById("registerForm").addEventListener("submit", async function (event){
-    //         event.preventDefault();
-    //         let registerFormData = new FormData(event.target);
-    //         console.log(registerFormData.get("username"))
-    //         let response = await fetch('/register/', {
-    //             method:"post",
-    //             body:registerFormData,
-    //             headers: {
-    //                 "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
-    //             }
-    //         })
-    //         let data = await response.json()
-    //         if (data.success) {
-    //             loadContent('/home/')
-    //         }
-    //         console.log(data)
-    //     })
-    // }
 
     function initPong() {
         if (window.pongGame) {

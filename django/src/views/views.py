@@ -81,14 +81,13 @@ def user_login(request):
                     [user.email],
                     fail_silently=False,
                 )
-
-                # return redirect("verify_code", user_id=user.id)
-                request.path = '/verify_code/'
-                return define_render(request, {'user_id': user.id})
+                return JsonResponse({
+                    "success": "User logged in",
+                    "user_id": user.id  # Inclure l'user_id dans la réponse
+                }, status=201)
         else:
-            return define_render(request, {'form': form})
+            return JsonResponse({"error": "User failed to log in"}, status=401)
     else:
-        # Afficher le formulaire vide lors de la première visite
         form = AuthenticationForm()
         return define_render(request, {'form': form})
 
