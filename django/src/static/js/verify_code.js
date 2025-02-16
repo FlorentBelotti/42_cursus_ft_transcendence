@@ -19,6 +19,7 @@ function verifyCodeFormEvent() {
         })
         let data = await response.json();
         if (data.success) {
+            await updateAuthButtons();
             window.loadContent(data.redirect_url);
         } else {
             console.error("Error verifying code:", data.error);

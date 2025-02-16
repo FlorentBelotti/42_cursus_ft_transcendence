@@ -20,6 +20,7 @@ urlpatterns = [
     
     path('login/', views.user_login, name='login'),
     path('verify_code/<int:user_id>/', views.verify_code, name='verify_code'),
+    path('api/auth-status/', views.check_auth_status, name='auth_status'),
 
     path('account/', account, name='account'),
     path('leaderboard/', leaderboard, name='leaderboard'),

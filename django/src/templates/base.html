@@ -7,17 +7,14 @@
     {% load static %}
 </head>
 <body>
-    <!-- header -->
     {% include 'header.html' %}
-
-    <!-- Dynamic content -->
     <div id="content">
         {% block content %}
         {% include content_template %}
         {% endblock %}
     </div>
 
-    <!-- JS scripts allowing dynamic content -->
+    <script src="{% static 'js/auth-header.js' %}"></script>
     <script src="{% static 'js/dynamic.js' %}"></script>
 </body>
 </html>
