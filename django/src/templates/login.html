@@ -8,6 +8,7 @@
 </head>
 <body>
     <h1>Connexion</h1>
+    <div id="errorMessage" style="color: red; display: none;"></div>
     <form id="loginForm">
         {% csrf_token %}
         {{ form.as_p }}

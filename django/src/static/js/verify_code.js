@@ -9,7 +9,7 @@ function verifyCodeFormEvent() {
             return;
         }
         let verifyCodeUrl = `/verify_code/${user_id}/`;
-        console.log(verifyCodeUrl)
+        // console.log(verifyCodeUrl)
         let response = await fetch(verifyCodeUrl, {
             method:"post",
             body:verifyCodeFormData,

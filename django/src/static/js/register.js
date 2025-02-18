@@ -2,7 +2,7 @@ function registerFormEvent() {
     document.getElementById("registerForm").addEventListener("submit", async function (event){
         event.preventDefault();
         let registerFormData = new FormData(event.target);
-        console.log(registerFormData.get("username"))
+        // console.log(registerFormData.get("username"))
         let response = await fetch('/register/', {
             method:"post",
             body:registerFormData,

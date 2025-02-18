@@ -1,37 +1,35 @@
-from django.shortcuts import render
 import jwt
+import uuid
+import logging
+import json
+
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.conf import settings
+from django.shortcuts import render, redirect
+from django.core.mail import send_mail
+from django.core.paginator import Paginator
+from django.contrib.auth import update_session_auth_hash
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.forms import AuthenticationForm
+from django.urls import reverse
+
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import AuthenticationFailed
-import logging
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
-
 from rest_framework.response import Response
-from django.core.mail import send_mail
-from rest_framework import status
-from users.models import VerificationCode
-import logging
-from django.http import HttpResponseRedirect
-from django.shortcuts import render, redirect
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
 from rest_framework.decorators import api_view
+from rest_framework import status
+
+from users.models import VerificationCode
 from users.models import customUser
 from users.serializers import UserSerializer, UserDataSerializer
 from users.forms import RegisterForm
-from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.forms import AuthenticationForm
-from django.conf import settings
-import uuid
-from django.http import JsonResponse
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.views import APIView
 from users.models import customUser
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import update_session_auth_hash
-from django.contrib import messages
 from users.forms import UserUpdateForm, CustomPasswordChangeForm
-from django.core.paginator import Paginator
-from django.urls import reverse
 
 def check_auth_status(request):
     return JsonResponse({
@@ -94,8 +92,10 @@ def user_login(request):
                     "success": "User logged in",
                     "user_id": user.id
                 }, status=201)
+            else:
+                return JsonResponse({"error": "User does not exist"}, status=201)
         else:
-            return JsonResponse({"error": "User failed to log in"}, status=401)
+            return JsonResponse({"error": "Wrong username or password"}, status=201)
     else:
         form = AuthenticationForm()
         return define_render(request, {'form': form})
