@@ -93,13 +93,12 @@ def user_login(request):
                     "user_id": user.id
                 }, status=201)
             else:
-                return JsonResponse({"error": "User does not exist"}, status=201)
+                return JsonResponse({"error": "User does not exist"}, status=400)
         else:
-            return JsonResponse({"error": "Wrong username or password"}, status=201)
+            return JsonResponse({"error": "Wrong username or password"}, status=400)
     else:
         form = AuthenticationForm()
         return define_render(request, {'form': form})
-
 
 def verify_code(request, user_id):
     if request.method == "POST":
