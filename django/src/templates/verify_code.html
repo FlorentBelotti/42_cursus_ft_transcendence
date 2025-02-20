@@ -8,9 +8,7 @@
 </head>
 <body>
     <h1>Vérification du code</h1>
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+    <div id="errorMessage" style="color: red; display: none;"></div>
     <form id="verifyCodeForm">
         {% csrf_token %}
         <label for="code">Code de vérification :</label>

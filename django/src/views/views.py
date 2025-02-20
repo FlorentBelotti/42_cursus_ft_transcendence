@@ -4,6 +4,8 @@ import logging
 import json
 
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.core.exceptions import ValidationError, PermissionDenied
+from django.db.utils import DatabaseError
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
@@ -102,12 +104,20 @@ def user_login(request):
 
 def verify_code(request, user_id):
     if request.method == "POST":
-        code = request.POST.get('code')
         try:
-            verification_code = VerificationCode.objects.get(user_id=user_id, code=code, is_used=False)
+            code = request.POST.get('code')
+            if not code:
+                return JsonResponse({"error": "Code is required"}, status=400)
+
+            verification_code = VerificationCode.objects.get(
+                user_id=user_id,
+                code=code,
+                is_used=False
+            )
+
             if verification_code.is_expired():
-                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({"error": "Code expired"}, status=401)
+                return JsonResponse({"error": "Code expired"}, status=401)
+
             verification_code.is_used = True
             verification_code.save()
 
@@ -121,24 +131,42 @@ def verify_code(request, user_id):
                 "redirect_url": "/home/"
             })
 
+            cookie_params = {
+                'httponly': True,
+                'secure': True,
+                'samesite': 'Strict'
+            }
+            
             response.set_cookie(
                 key='access_token',
                 value=access_token,
-                httponly=True,
-                secure=True,  
-                samesite='Strict'  
+                **cookie_params
             )
+            
             response.set_cookie(
                 key='refresh_token',
                 value=refresh_token,
-                httponly=True,
-                secure=True,  
-                samesite='Strict'  
+                **cookie_params
             )
 
             return response
+
         except VerificationCode.DoesNotExist:
-            return JsonResponse({"error": "Invalid code"}, status=401)
+            return JsonResponse({"error": "Wrong authentication code"}, status=401)
+        
+        except ValidationError as e:
+            return JsonResponse({"error": "Wrong authentication code"}, status=401)
+        
+        except PermissionDenied as e:
+            return JsonResponse({"error": "Permission denied"}, status=403)
+        
+        except DatabaseError as e:
+            logger.error(f"Database error in verify_code: {str(e)}")
+            return JsonResponse({"error": "Internal server error"}, status=500)
+        
+        except Exception as e:
+            logger.error(f"Unexpected error in verify_code: {str(e)}")
+            return JsonResponse({"error": "Internal server error"}, status=500)
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return render(request, "verify_code.html")

@@ -9,7 +9,6 @@ function verifyCodeFormEvent() {
             return;
         }
         let verifyCodeUrl = `/verify_code/${user_id}/`;
-        // console.log(verifyCodeUrl)
         let response = await fetch(verifyCodeUrl, {
             method:"post",
             body:verifyCodeFormData,
@@ -18,11 +17,20 @@ function verifyCodeFormEvent() {
             }
         })
         let data = await response.json();
-        if (data.success) {
+        if ('success' in data) {
+            console.log('Success:', "Redirecting to home page");
             await updateAuthButtons();
             window.loadContent(data.redirect_url);
-        } else {
-            console.error("Error verifying code:", data.error);
+        } 
+        else
+        {
+            console.log('Error:', "Wrong code");
+            window.loadContent(verifyCodeUrl);
+            setTimeout(() => {
+                const errorDiv = document.getElementById("errorMessage");
+                errorDiv.textContent = data.error;
+                errorDiv.style.display = "block";
+            }, 100); 
         }
     })
 }
