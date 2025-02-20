@@ -1,58 +1,54 @@
-*{
-	margin: 0;
-	padding: 0;
+* {
+    margin: 0;
+    padding: 0;
+    font-family: 'PPNeueuMontreal', sans-serif;
+	font-weight: 300;
 }
 
-header{
-	background-color: #5D3136;
-	width: 100%;
-	padding: 15px 0px 15px 0px;
-	font-family: 'Bebas Neue', sans-serif;
+nav {
+    display: flex;
+    justify-content: space-between; /* Place le titre à gauche et les boutons à droite */
+    align-items: center; /* Centre verticalement les éléments */
+    padding: 10px 20px;
+    background-color: #F7F7F7;
+	border-bottom: solid 1px #000;
+
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 1000;
 }
 
-.second-layer-header{
-	background-color: #F9EBDE;
-	border-radius: 20px;
-	padding: 15px 20px 20px 20px;
-	width: 95%;
-	max-width: 100%;
-	margin-left: 15px;
-
+nav h1 {
+    margin: 0;
+	font-family: 'Bebas Neue';
+    font-size: 24px;
+    color: #000; /* Couleur du texte */
 }
 
-nav ul{
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: 80px;
-	width: 80%;
-	margin: 0 auto;
-	padding: 0;
+nav ul {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    align-items: center;
 }
 
-nav ul li{
-	list-style: none;
+nav ul li {
+    margin-left: 20px;
 }
 
-.nav-button{
-	background-color: #F9EBDE;
-	color: #5D3136;
-	border: solid 1px #E9D5D5;
-	border-radius: 20px;
-	padding: 8px 18px;
-	font-size: 12px;
-	transition: background-color 0.3s ease, border-color 0.3s ease;
+.nav-button {
+    background-color: transparent;
+    border: solid 1px transparent;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 15px 10px;
+    color: #000;
+	transition: border-color 0.3s ease;
 }
 
-.nav-button:hover {
-	color:#F9EBDE;
-	background-color: #5D3136;
-	border-color: #8B3A3A;
+.nav-button:hover{
+	border-color:#000;
 }
-
-.login{
-	position: relative;
-	overflow: hidden;
-	background-color: white;
-}
-

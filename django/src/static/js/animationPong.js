@@ -14,7 +14,7 @@ class PongAnimation {
             y: this.canvasHeight / 2,
             speedX: 3,
             speedY: 3,
-            color: '#5D3136'
+            color: '#000'
         };
 
         // Configuration des raquettes
@@ -22,7 +22,7 @@ class PongAnimation {
             width: 15,
             height: 80,
             speed: 4, // Vitesse réduite pour un mouvement plus fluide
-            color: '#5D3136'
+            color: '#000'
         };
 
         // Position des raquettes

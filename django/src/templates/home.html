@@ -2,89 +2,76 @@
 {% block content %}
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chivo:ital,wght@0,100..900;1,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/home.css' %}">
-<div class="background">
-    <div class="second-layer">
-        <div class="text-container">
-            <div class="text-section">
-                <p>The one and only</p>
-            </div>
-            <div class="text-section">
-                <p>Names:</p>
-            </div>
-        </div>
-        <div class="text-container">
-            <div class="text-transcendence">
-                <p>Transcendence</p>
-            </div>
-            <div class="name-section" id="carroussel">
-                <p class="name visible">Fbelotti</p>
-				<p class="name">Tgerardi</p>
-				<p class="name">Romlambe</p>
-            </div>
-        </div>
-        <div class="text-section transcendence">TRANSCENDENCE</div>
-	</div>
-</div>
-<div class="background2">
-	<div class="module">
-		<div class="module-title">
-			<h1>MODULES</h1>
+
+<body>
+	<div class="first-block">
+		<div class="title-transcendence">
+			<h1>TRANSCEN</h1>
+			<h1>DENCE.</h1>
 		</div>
-		<div class="module-text">
-			<p>Text1</p>
-			<p>Text1</p>
-			<p>Text1</p>
-			<p>Text1</p>
-			<p>Text1</p>
-			<p>Text1</p>
-			<p>Text1</p>
-			<p>Text1</p>
-			<p>Text1</p>
-			<p>Text1</p>
+		<div class="image-transcendence">
+			<div id="sphere-container"></div>
 		</div>
 	</div>
-	<div class="right-container"> <!-- Nouveau conteneur pour pong et language -->
-        <div class="pong">
-            <div class="pong-title">
-                <h1>PONG</h1>
-            </div>
-            <div class="pong-class">
-                <canvas class="pong-canvas" width="600" height="400"></canvas>
-            </div>
-        </div>
-        <div class="language">
-            <h1>Techno used</h1>
-			<div class="language-src">
-				<img src="{% static 'assets/html.svg' %}" alt="html">
-				<img src="{% static 'assets/css.svg' %}" alt="css">
-				<img src="{% static 'assets/javascript.svg' %}" alt="js">
-				<img src="{% static 'assets/python.svg' %}" alt="python">
-				<img src="{% static 'assets/django.svg' %}" alt="django">
+	<div class="containers">
+		<div class="left-container">
+			<div class="pong">
+				<div class="pong-title">
+					<h1>Pong Game</h1>
+				</div>
+				<div class="pong-class">
+					<canvas class="pong-canvas" width="600" height="400"></canvas>
+				</div>
+			</div>
+			<div class="language">
+				<h1>Techno used</h1>
+				<div class="language-src">
+					<img class="image" src="{% static 'assets/html.svg' %}" alt="html">
+					<img class="image" src="{% static 'assets/css.svg' %}" alt="css">
+					<img class="image" src="{% static 'assets/javascript.svg' %}" alt="js">
+					<img class="image" src="{% static 'assets/python.svg' %}" alt="python">
+					<img class="image" src="{% static 'assets/django.svg' %}" alt="django">
+				</div>
 			</div>
 		</div>
-    </div>
+		<div class="right-container">
+			<div class="module">
+				<div class="module-title">
+					<h1>Les Modules</h1>
+				</div>
+				<div class="module-text">
+					<p>Text1</p>
+					<p>Text1</p>
+					<p>Text1</p>
+					<p>Text1</p>
+					<p>Text1</p>
+					<p>Text1</p>
+					<p>Text1</p>
+					<p>Text1</p>
+					<p>Text1</p>
+					<p>Text1</p>
+				</div>
+			</div>
+	</div>
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> -->
+	<script src="{% static 'js/dynamic.js' %}"></script>
 	<script src="{% static 'js/animationPong.js' %}"></script>
-</div>
-<script>
-	const names = document.querySelectorAll('.name');
-	let currentIndex = 0;
-	const displayTime = 2000; // Temps d'affichage en millisecondes (2 secondes)
-	const fadeTime = 500; // Temps de transition en millisecondes (0.5 seconde)
+	<script src="{% static 'js/sphrere-animation.js' %}"></script>
+	<script>
+	document.addEventListener('DOMContentLoaded', function() {
+    const title = document.querySelector('.title-transcendence');
 
-	function showNextName() {
-	// Masquer le nom actuel
-	names[currentIndex].classList.remove('visible');
+    window.addEventListener('scroll', function() {
+        // Calcul du déplacement proportionnel au défilement
+        const moveAmount = Math.min(window.scrollY * 1.5, window.innerWidth); // Limite le déplacement
 
-	// Passer au nom suivant
-	currentIndex = (currentIndex + 1) % names.length;
-
-	// Afficher le nouveau nom
-	setTimeout(() => {
-		names[currentIndex].classList.add('visible');
-	}, fadeTime);
-	}
-
-	// Démarrer l'animation
-	setInterval(showNextName, displayTime + fadeTime);
-</script>
+        // Applique la transformation directement via style
+        title.style.transform = `translateX(-${moveAmount}px)`;
+        title.style.opacity = Math.max(1 - window.scrollY / 300, 0); // Fade out progressif
+    });
+});
+	</script>
+</body>
 {% endblock %}
+
+
