@@ -28,9 +28,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (scriptUrl.includes('leaderboard.js')) {
                                 loadLeaderboard();
                             }
-                            if (scriptUrl.includes('account.js')) {
-                                initAccountPage();
-                            }
                             if (scriptUrl.includes('register.js')) {
                                 registerFormEvent();
                             }
@@ -42,7 +39,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                             if (scriptUrl.includes('auth-header.js')) {
                                 updateAuthButtons();
-                            }                            
+                            }
+                            if (scriptUrl.includes('account.js')) {
+                                updateFormEvent();
+                            }                             
                         });
                     }
                     updateAuthButtons();

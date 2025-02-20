@@ -3,7 +3,7 @@ from django.views.generic import RedirectView
 from views import views
 from django.conf import settings
 from django.conf.urls.static import static
-from users.views import account, logout_view, leaderboard
+from users.views import logout_view, leaderboard
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/home/', permanent=True)),
@@ -21,8 +21,8 @@ urlpatterns = [
     path('login/', views.user_login, name='login'),
     path('verify_code/<int:user_id>/', views.verify_code, name='verify_code'),
     path('api/auth-status/', views.check_auth_status, name='auth_status'),
+    path('account/', views.account, name='account'),
 
-    path('account/', account, name='account'),
     path('leaderboard/', leaderboard, name='leaderboard'),
     path('logout/', logout_view, name='logout'),
     path('api/', include('users.urls')),

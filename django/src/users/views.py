@@ -225,40 +225,40 @@ class RefreshTokenView(APIView):
         except Exception as e:
             return Response({"error": "Refresh token invalide"}, status=status.HTTP_401_UNAUTHORIZED)
 
-@login_required
-def account(request):
-    if request.method == "POST":
-        user_form = UserUpdateForm(request.POST, request.FILES, instance=request.user)
-        password_form = CustomPasswordChangeForm(request.user, request.POST)
+# @login_required
+# def account(request):
+#     if request.method == "POST":
+#         user_form = UserUpdateForm(request.POST, request.FILES, instance=request.user)
+#         password_form = CustomPasswordChangeForm(request.user, request.POST)
 
-        if 'update_info' in request.POST:
-            if user_form.is_valid():
-                user_form.save()
-                messages.success(request, "Informations mises à jour !")
-                return redirect('account')
+#         if 'update_info' in request.POST:
+#             if user_form.is_valid():
+#                 user_form.save()
+#                 messages.success(request, "Informations mises à jour !")
+#                 return redirect('account')
 
-        elif 'change_password' in request.POST:
-            if password_form.is_valid():
-                password_form.save()
-                update_session_auth_hash(request, request.user)
-                messages.success(request, "Mot de passe mis à jour !")
-                return redirect('account')
+#         elif 'change_password' in request.POST:
+#             if password_form.is_valid():
+#                 password_form.save()
+#                 update_session_auth_hash(request, request.user)
+#                 messages.success(request, "Mot de passe mis à jour !")
+#                 return redirect('account')
 
-        elif 'delete_account' in request.POST:
-            request.user.delete()
-            response = redirect('home')
-            response.delete_cookie('access_token')
-            response.delete_cookie('refresh_token')
-            return response
+#         elif 'delete_account' in request.POST:
+#             request.user.delete()
+#             response = redirect('home')
+#             response.delete_cookie('access_token')
+#             response.delete_cookie('refresh_token')
+#             return response
 
-    else:
-        user_form = UserUpdateForm(instance=request.user)
-        password_form = CustomPasswordChangeForm(request.user)
+#     else:
+#         user_form = UserUpdateForm(instance=request.user)
+#         password_form = CustomPasswordChangeForm(request.user)
 
-    return render(request, 'account.html', {
-        'user_form': user_form,
-        'password_form': password_form
-    })
+#     return render(request, 'account.html', {
+#         'user_form': user_form,
+#         'password_form': password_form
+#     })
 
 def logout_view(request):
     response = redirect('home')

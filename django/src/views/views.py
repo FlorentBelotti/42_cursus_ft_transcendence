@@ -60,6 +60,43 @@ def define_render(request, additional_context=None):
     else:
         return render(request, 'base.html', context)
 
+@login_required
+def account(request):
+    if request.method == "POST":
+        try:
+            user_form = UserUpdateForm(request.POST, request.FILES, instance=request.user)
+            
+            if 'update_info' in request.POST:
+                if user_form.is_valid():
+                    user_form.save()
+                    return JsonResponse({
+                        "success": "User's details updated"
+                    }, status=200)
+                else:
+                    return JsonResponse({
+                        "error": "Validation failed",
+                        "errors": user_form.errors
+                    }, status=400)
+            
+            return JsonResponse({
+                "error": "Invalid action"
+            }, status=400)
+
+        except Exception as e:
+            return JsonResponse({
+                "error": "Server error",
+                "message": str(e)
+            }, status=500)
+
+    else:
+        user_form = UserUpdateForm(instance=request.user)
+        password_form = CustomPasswordChangeForm(request.user)
+
+    return define_render(request, {
+        'user_form': user_form,
+        'password_form': password_form
+    })
+
 def register(request):
     if request.method == "POST":
         form = RegisterForm(request.POST)
