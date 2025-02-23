@@ -77,7 +77,7 @@ def account(request):
                         "errors": user_form.errors
                     }, status=400)
 
-            if 'change_password' in request.POST:
+            elif 'change_password' in request.POST:
                 if password_form.is_valid():
                     password_form.save()
                     update_session_auth_hash(request, request.user)
@@ -96,6 +96,14 @@ def account(request):
                 response.delete_cookie('refresh_token')
                 response.delete_cookie('sessionid')
                 request.user.delete()
+                return response
+
+            elif 'disconnect' in request.POST:
+                response = JsonResponse({
+                    "success": "User disconnected",
+                }, status=200)
+                response.delete_cookie('access_token')
+                response.delete_cookie('refresh_token')
                 return response
 
             return JsonResponse({

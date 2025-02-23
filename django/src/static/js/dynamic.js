@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 passwordFormEvent();
                                 deleteFormEvent();
                                 updateAuthButtons();
+                                disconnectFormEvent();
                             }                             
                         });
                     }
