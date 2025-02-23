@@ -2,47 +2,55 @@ document.addEventListener('DOMContentLoaded', function () {
     let pongGame = null; // Variable pour stocker l'instance du jeu Pong
     let pongServerGame = null; // Variable pour stocker l'instance du jeu Pong Server
 
-    function loadContent(url, addToHistory = true) {
-        cleanupScriptsAndEvents();
+	function loadContent(url, addToHistory = true) {
+		if (window.sphereAnimation) {
+			window.sphereAnimation.cleanup();
+			window.sphereAnimation = null;
+		}
 
-        fetch(url, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('content').innerHTML = html;
+		cleanupScriptsAndEvents();
 
-                const scripts = document.querySelectorAll('#content script');
-                scripts.forEach(script => {
-                    const scriptUrl = script.src;
-                    if (scriptUrl) {
-                        loadScript(scriptUrl, function () {
-                            if (scriptUrl.includes('pong.js')) {
-                                initPong(); // Initialiser le jeu Pong
-                            }
-                            if (scriptUrl.includes('pongServer.js')) {
-                                initPongServer(); // Initialiser le jeu Pong Server
-                            }
-                            if (scriptUrl.includes('leaderboard.js')) {
-                                loadLeaderboard();
-                            }
-                            if (scriptUrl.includes('account.js')) {
-                                initAccountPage();
-                            }
-							if (scriptUrl.includes('animationPong.js')){
+		fetch(url, {
+			headers: {
+				'X-Requested-With': 'XMLHttpRequest'
+			}
+		})
+			.then(response => response.text())
+			.then(html => {
+				document.getElementById('content').innerHTML = html;
+
+				const scripts = document.querySelectorAll('#content script');
+				scripts.forEach(script => {
+					const scriptUrl = script.src;
+					if (scriptUrl) {
+						loadScript(scriptUrl, function () {
+							if (scriptUrl.includes('pong.js')) {
+								initPong();
+							}
+							if (scriptUrl.includes('pongServer.js')) {
+								initPongServer();
+							}
+							if (scriptUrl.includes('leaderboard.js')) {
+								loadLeaderboard();
+							}
+							if (scriptUrl.includes('account.js')) {
+								initAccountPage();
+							}
+							if (scriptUrl.includes('animationPong.js')) {
 								initPongAnimation();
 							}
-                        });
-                    }
-                });
+							if (scriptUrl.includes('sphere-animation.js')) {
+								initSphereAnimation();
+							}
+						});
+					}
+				});
 
-                if (addToHistory) {
-                    history.pushState({ url: url }, '', url);
-                }
-            });
-    }
+				if (addToHistory) {
+					history.pushState({ url: url }, '', url);
+				}
+			});
+	}
 
     function initPong() {
         if (window.pongGame) {
@@ -75,6 +83,15 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 
+	function initSphereAnimation() {
+		console.log('Initializing sphere animation...'); // Débogage
+		if (window.sphereAnimation) {
+			console.log('Cleaning up old animation...'); // Débogage
+			window.sphereAnimation.cleanup();
+		}
+		window.sphereAnimation = new SphereAnimation();
+	}
+
     function cleanupScriptsAndEvents() {
         // Supprimer tous les scripts dynamiques
         const dynamicScripts = document.querySelectorAll('script[data-dynamic]');
@@ -94,6 +111,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (window.pongServerGame && window.pongServerGame.isGameRunning) {
             window.pongServerGame.stopGame();
         }
+
+		if (window.sphereAnimation) {
+			window.sphereAnimation.cleanup();
+		}
     }
 
     // Function to load a script dynamically

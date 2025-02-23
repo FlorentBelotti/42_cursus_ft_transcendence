@@ -3,6 +3,7 @@ body {
     padding: 0;
     font-family: 'Bebas Neue', sans-serif;
     background-color: #F7F7F7;
+	overflow-x: hidden;
 }
 
 .first-block {
@@ -26,7 +27,8 @@ body {
 .image-transcendence {
     padding-top: 250px;
     padding-right: 40px;
-    animation: slideInFromLeft 1s ease-out forwards;
+    animation: slideInFromRight 1s ease-out forwards;
+	opacity: 0;
 }
 
 #sphere-container {
@@ -70,6 +72,17 @@ body {
 /* Différer l'animation du deuxième H1 */
 .title-transcendence h1:nth-child(2) {
     animation-delay: 0.2s;
+}
+
+@keyframes slideOutToRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
 }
 
 @keyframes slideOutToLeft {
@@ -155,3 +168,4 @@ body {
     font-size: 16px;
     color: #333;
 }
+

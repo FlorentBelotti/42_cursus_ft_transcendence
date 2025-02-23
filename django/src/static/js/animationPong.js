@@ -12,8 +12,8 @@ class PongAnimation {
             radius: 10,
             x: this.canvasWidth / 2,
             y: this.canvasHeight / 2,
-            speedX: 3,
-            speedY: 3,
+            speedX: 2,
+            speedY: 2,
             color: '#000'
         };
 
@@ -21,7 +21,7 @@ class PongAnimation {
         this.paddleConfig = {
             width: 15,
             height: 80,
-            speed: 4, // Vitesse réduite pour un mouvement plus fluide
+            speed: 3, // Vitesse réduite pour un mouvement plus fluide
             color: '#000'
         };
 
@@ -97,13 +97,12 @@ class PongAnimation {
 
     drawBall() {
         this.ctx.beginPath();
-        this.ctx.arc(
-            this.ballConfig.x,
-            this.ballConfig.y,
-            this.ballConfig.radius,
-            0,
-            Math.PI * 2
-        );
+		this.ctx.fillRect(
+			this.ballConfig.x,
+			this.ballConfig.y,
+			this.ballConfig.radius,
+			this.ballConfig.radius,
+		);
         this.ctx.fillStyle = this.ballConfig.color;
         this.ctx.fill();
         this.ctx.closePath();

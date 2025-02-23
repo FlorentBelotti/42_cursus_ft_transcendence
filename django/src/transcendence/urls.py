@@ -38,6 +38,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/send-verification-code/', SendVerificationCodeView.as_view(), name='send_verification_code'),
     path('api/verify-code/', VerifyCodeView.as_view(), name='verify_code'),
+    path('snake/', views.define_render, name='snake'),
 ]
 
 if settings.DEBUG:

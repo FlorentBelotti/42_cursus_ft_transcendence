@@ -52,3 +52,72 @@ nav ul li {
 .nav-button:hover{
 	border-color:#000;
 }
+
+.pong-button{
+	background-color: transparent;
+    border: solid 1px transparent;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 15px 10px;
+    color: #000;
+	transition: border-color 0.3s ease;
+}
+
+.pong-button:hover{
+	border-color:#000;
+}
+
+.modal {
+    display: none; /* Masqué par défaut */
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 400px; /* Largeur du modal */
+    height: 100%;
+    background-color: #F7F7F7; /* Fond semi-transparent */
+	border-left: solid 1px #000;
+    z-index: 1000; /* Au-dessus des autres éléments */
+    overflow-x: hidden;
+    transition: 0.5s; /* Animation d'ouverture */
+}
+
+/* Contenu du modal */
+.modal-content {
+    position: relative;
+    top: 20%;
+    padding: 20px;
+    color: #000;
+    text-align: center;
+}
+
+/* Boutons du modal */
+.modal-button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: #F7F7F7;
+    color: #000;
+    border: solid 1px #000;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.modal-button:hover {
+    background-color: red;
+}
+
+/* Bouton pour fermer le modal */
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+}
+
+.close-modal:hover {
+    color: #ccc;
+}

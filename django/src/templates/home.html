@@ -56,19 +56,21 @@
 	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> -->
 	<script src="{% static 'js/dynamic.js' %}"></script>
 	<script src="{% static 'js/animationPong.js' %}"></script>
-	<script src="{% static 'js/sphrere-animation.js' %}"></script>
+	<script src="{% static 'js/sphere-animation.js' %}"></script>
 	<script>
 	document.addEventListener('DOMContentLoaded', function() {
-    const title = document.querySelector('.title-transcendence');
+	const title = document.querySelector('.title-transcendence');
+	const sphere = document.querySelector('#sphere-container');
 
-    window.addEventListener('scroll', function() {
-        // Calcul du déplacement proportionnel au défilement
-        const moveAmount = Math.min(window.scrollY * 1.5, window.innerWidth); // Limite le déplacement
+	window.addEventListener('scroll', function() {
+		const moveAmount = Math.min(window.scrollY * 1.5, window.innerWidth);
 
-        // Applique la transformation directement via style
-        title.style.transform = `translateX(-${moveAmount}px)`;
-        title.style.opacity = Math.max(1 - window.scrollY / 300, 0); // Fade out progressif
-    });
+		title.style.transform = `translateX(-${moveAmount}px)`;
+		title.style.opacity = Math.max(1 - window.scrollY / 500, 0);
+
+		sphere.style.transform = `translateX(${moveAmount}px)`;
+		sphere.style.opacity = Math.max(1 - window.scrollY / 500, 0);
+	});
 });
 	</script>
 </body>
