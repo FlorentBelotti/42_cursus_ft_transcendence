@@ -91,6 +91,7 @@ function deleteFormEvent() {
             
             if ('success' in data) {
                 console.log('Success:', data.success);
+                await updateAuthButtons();
                 window.loadContent('/home/');
             } else if ('error' in data) {
                 console.log('Error:', data.error);
