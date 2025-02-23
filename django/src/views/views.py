@@ -65,19 +65,29 @@ def account(request):
     if request.method == "POST":
         try:
             user_form = UserUpdateForm(request.POST, request.FILES, instance=request.user)
-            
+            password_form = CustomPasswordChangeForm(request.user, request.POST)
+
             if 'update_info' in request.POST:
                 if user_form.is_valid():
                     user_form.save()
-                    return JsonResponse({
-                        "success": "User's details updated"
-                    }, status=200)
+                    return JsonResponse({ "success": "User's details updated"}, status=200)
                 else:
                     return JsonResponse({
-                        "error": "Validation failed",
+                        "error": "User's details validation failed",
                         "errors": user_form.errors
                     }, status=400)
-            
+
+            if 'change_password' in request.POST:
+                if password_form.is_valid():
+                    password_form.save()
+                    update_session_auth_hash(request, request.user)
+                    return JsonResponse({"success": "User's password updated"}, status=200)
+                else:
+                    return JsonResponse({
+                        "error": "Password validation failed",
+                        "errors": password_form.errors
+                    }, status=400)
+
             return JsonResponse({
                 "error": "Invalid action"
             }, status=400)

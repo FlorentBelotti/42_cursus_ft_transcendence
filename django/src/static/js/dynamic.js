@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                             if (scriptUrl.includes('account.js')) {
                                 updateFormEvent();
+                                passwordFormEvent();
                             }                             
                         });
                     }
