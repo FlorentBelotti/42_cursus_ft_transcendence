@@ -2,7 +2,6 @@ function updateFormEvent() {
     document.getElementById("updateForm").addEventListener("submit", async function (event) {
         event.preventDefault();
         let updateFormData = new FormData(event.target);
-        // Add the update_info field to FormData
         updateFormData.append('update_info', 'true');
         
         try {
@@ -67,7 +66,45 @@ function passwordFormEvent() {
     });
 }
 
+function deleteFormEvent() {
+    document.getElementById("deleteForm").addEventListener("submit", async function (event) {
+        event.preventDefault();
+        
+        if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+            return;
+        }
+        
+        let deleteFormData = new FormData(event.target);
+        deleteFormData.append('delete_account', 'true');
+        
+        try {
+            let response = await fetch('/account/', {
+                method: "post",
+                body: deleteFormData,
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            });
+            
+            let data = await response.json();
+            
+            if ('success' in data) {
+                console.log('Success:', data.success);
+                window.loadContent('/home/');
+            } else if ('error' in data) {
+                console.log('Error:', data.error);
+                alert('Failed to delete account: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            alert('An error occurred while trying to delete your account.');
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     updateFormEvent();
     passwordFormEvent();
+    deleteFormEvent();
 });

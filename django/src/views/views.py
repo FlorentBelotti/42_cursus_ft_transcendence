@@ -88,6 +88,16 @@ def account(request):
                         "errors": password_form.errors
                     }, status=400)
 
+            elif 'delete_account' in request.POST:
+                response = JsonResponse({
+                    "success": "Account deleted",
+                }, status=200)
+                response.delete_cookie('access_token')
+                response.delete_cookie('refresh_token')
+                response.delete_cookie('sessionid')
+                request.user.delete()
+                return response
+
             return JsonResponse({
                 "error": "Invalid action"
             }, status=400)

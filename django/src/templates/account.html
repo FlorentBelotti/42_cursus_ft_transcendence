@@ -27,29 +27,27 @@
         <form id="updateForm" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {{ user_form.as_p }}
-            <button type="submit" name="update_info" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer;">Mettre à jour</button>
+            <button type="submit" name="update_info" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer;">Update account</button>
         </form>
 
         <!-- Formulaire de changement de mot de passe -->
         <form id="passwordForm" method="post" style="margin-top: 20px;">
             {% csrf_token %}
             {{ password_form.as_p }}
-            <button type="submit" name="change_password" style="padding: 10px 20px; background-color: #ffc107; color: white; border: none; cursor: pointer;">Changer le mot de passe</button>
+            <button type="submit" name="change_password" style="padding: 10px 20px; background-color: #ffc107; color: white; border: none; cursor: pointer;">Change password</button>
         </form>
 
         <!-- Déconnexion -->
-        <!-- <form method="post" action="{% url 'logout' %}" style="margin-top: 20px;">
+        <!-- <form id="disconnectForm" method="post" action="{% url 'logout' %}" style="margin-top: 20px;">
             {% csrf_token %}
-            <button type="none" style="padding: 10px 20px; background-color: #6c757d; color: white; border: none; cursor: pointer;">
-                Déconnexion
-            </button>
+            <button type="submit" style="padding: 10px 20px; background-color: #6c757d; color: white; border: none; cursor: pointer;">Disconnect</button>
         </form> -->
 
         <!-- Suppression du compte -->
-        <!-- <form method="post" style="margin-top: 20px;">
+        <form id="deleteForm" method="post" style="margin-top: 20px;">
             {% csrf_token %}
-            <button type="none" name="delete_account" style="padding: 10px 20px; background-color: #dc3545; color: white; border: none; cursor: pointer;" onclick="return confirm('Êtes-vous sûr ?')">Supprimer le compte</button>
-        </form> -->
+            <button type="submit" name="delete_account" style="padding: 10px 20px; background-color: #dc3545; color: white; border: none; cursor: pointer;">Supprimer le compte</button>
+        </form>
 
         <script src="{% static 'js/account.js' %}"></script>
     </div>
