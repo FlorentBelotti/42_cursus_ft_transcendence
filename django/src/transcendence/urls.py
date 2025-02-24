@@ -9,12 +9,6 @@ urlpatterns = [
     path('', RedirectView.as_view(url='/home/', permanent=True)),
     path('header/', views.define_render, name='header'),
     path('home/', views.define_render, name='home'),
-    path('about/', views.define_render, name='about'),
-    path('pong/', views.define_render, name='pong'),
-    path('tournament/', views.define_render, name='tournament'),
-    path('match/', views.define_render, name='match'),
-    path('vsBot/', views.define_render, name='vsBot'),
-    path('pongserver/', views.define_render, name='pongServer'),
     path('authentication/', views.define_render, name='authentication'),
     path('register/', views.register, name='register'),
 
@@ -27,6 +21,11 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),
     path('api/', include('users.urls')),
     path('auth/', include('social_django.urls', namespace='social')),
+    path('snake/', views.define_render, name='snake'),
+	path('local/', views.define_render, name='local'),
+    path('vsBot/', views.define_render, name='vsBot'),
+    path('match/', views.define_render, name='match'),
+    path('tournament/', views.define_render, name='tournament'),
 ]
 
 if settings.DEBUG:

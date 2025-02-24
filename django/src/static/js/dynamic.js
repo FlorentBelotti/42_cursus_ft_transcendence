@@ -3,8 +3,13 @@ document.addEventListener('DOMContentLoaded', function () {
     let pongServerGame = null;
     updateAuthButtons();
 
-    window.loadContent = function(url, addToHistory = true) {
-        cleanupScriptsAndEvents();
+	window.loadContent = function(url, addToHistory = true) {
+		if (window.sphereAnimation) {
+			window.sphereAnimation.cleanup();
+			window.sphereAnimation = null;
+		}
+
+		cleanupScriptsAndEvents();
 
         fetch(url, {
             headers: {
@@ -46,17 +51,23 @@ document.addEventListener('DOMContentLoaded', function () {
                                 deleteFormEvent();
                                 updateAuthButtons();
                                 disconnectFormEvent();
-                            }                             
+                            }
+                            if (scriptUrl.includes('animationPong.js')) {
+								initPongAnimation();
+							}
+							if (scriptUrl.includes('sphere-animation.js')) {
+								initSphereAnimation();
+							}                             
                         });
                     }
                     updateAuthButtons();
                 });
 
-                if (addToHistory) {
-                    history.pushState({ url: url }, '', url);
-                }
-            });
-    }
+				if (addToHistory) {
+					history.pushState({ url: url }, '', url);
+				}
+			});
+	}
 
     function initPong() {
         if (window.pongGame) {
@@ -76,6 +87,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+	function  initPongAnimation(){
+		if (window.PongAnimation){
+			window.PongAnimation.stopAnimation();
+			window.PongAnimation = new PongAnimation();
+		}else{
+			window.PongAnimation = new PongAnimation();
+		}
+	}
+
+	function initSphereAnimation() {
+		console.log('Initializing sphere animation...'); // Débogage
+		if (window.sphereAnimation) {
+			console.log('Cleaning up old animation...'); // Débogage
+			window.sphereAnimation.cleanup();
+		}
+		window.sphereAnimation = new SphereAnimation();
+	}
+
     function cleanupScriptsAndEvents() {
         const dynamicScripts = document.querySelectorAll('script[data-dynamic]');
         dynamicScripts.forEach(script => {
@@ -91,6 +120,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (window.pongServerGame && window.pongServerGame.isGameRunning) {
             window.pongServerGame.stopGame();
         }
+
+		if (window.sphereAnimation) {
+			window.sphereAnimation.cleanup();
+		}
     }
 
     function loadScript(url, callback) {
@@ -107,9 +140,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         script.onload = function () {
             if (callback) callback();
-            // if (url.includes('pongServer.js')) {
-            //     initPongServer(); // Initialiser le jeu Pong Server
-            // }
         };
         document.head.appendChild(script);
     }

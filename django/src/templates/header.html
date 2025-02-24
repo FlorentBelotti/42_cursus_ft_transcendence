@@ -1,19 +1,73 @@
+{% load static %}
+{% block content %}
 <header>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chivo:ital,wght@0,100..900;1,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/header.css' %}">
     <nav>
+        <h1>TRANSCENDENCE</h1>
         <ul>
-            <li>
-                <button class="nav-button" data-url="{% url 'home' %}">Home</button>
-                <button class="nav-button" data-url="{% url 'about' %}">About Us</button>
-                <button class="nav-button" data-url="{% url 'pong' %}">Pong Game</button>
-                <button class="nav-button" data-url="{% url 'pongServer' %}">PongServer</button>
-                <button class="nav-button" data-url="{% url 'leaderboard' %}">Leaderboard</button>
-                <span id="auth-buttons"></span>
-            </li>
-            <style>
-                li{
-                    list-style: none;
-                }
-            </style>
+            <li><button class="nav-button" data-url="{% url 'home' %}">Home</button></li>
+            <li><button type="button" class="pong-button" id="pong-game-button">Pong Game</button></li>
+            <li><button class="nav-button" data-url="{% url 'snake' %}">Snake</button></li>
+            <li><button class="nav-button" data-url="{% url 'leaderboard' %}">Leaderboard</button></li>
+            <span id="auth-buttons"></span>
         </ul>
     </nav>
+
+    <div id="pong-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Game Mode</h2>
+            <button class="modal-button" data-url="{% url 'local' %}">Local</button>
+            <button class="modal-button" data-url="{% url 'vsBot' %}">IA</button>
+            <button class="modal-button" data-url="{% url 'match' %}">Match</button>
+            <button class="modal-button" data-url="{% url 'tournament' %}">Tournament</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Récupérer les éléments du modal
+            const pongModal = document.getElementById('pong-modal');
+            const pongGameButton = document.getElementById('pong-game-button');
+            const closeModalButton = document.querySelector('.close-modal');
+
+            // Ouvrir le modal lorsque le bouton "Pong Game" est cliqué
+            pongGameButton.addEventListener('click', function (event) {
+                event.preventDefault(); // Empêcher le comportement par défaut
+                pongModal.style.display = 'block'; // Afficher le modal
+            });
+
+            // Fermer le modal lorsque l'utilisateur clique sur le bouton de fermeture
+            closeModalButton.addEventListener('click', function () {
+                pongModal.style.display = 'none'; // Masquer le modal
+            });
+
+            // Fermer le modal si l'utilisateur clique en dehors du modal
+            window.addEventListener('click', function (event) {
+                if (event.target === pongModal) {
+                    pongModal.style.display = 'none'; // Masquer le modal
+                }
+            });
+
+            // Gérer les clics sur les boutons du modal
+            const modalButtons = document.querySelectorAll('.modal-button');
+            modalButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const url = button.getAttribute('data-url');
+                    if (url) {
+                        window.location.href = url; // Rediriger vers l'URL du bouton
+                    }
+                });
+            });
+        });
+    </script>
+
+    <style>
+        @font-face {
+            font-family: 'PPNeueMontreal';
+            src: url('{% static "fonts/PPNeueMontreal-Book.otf" %}') format('truetype');
+        }
+    </style>
 </header>
+{% endblock %}
