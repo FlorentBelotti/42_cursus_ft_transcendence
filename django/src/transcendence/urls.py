@@ -19,9 +19,6 @@ urlpatterns = [
     path('register/', views.define_render, name='register'),
     path('login/', views.define_render, name='login'),
     path('pong/', views.define_render, name='pong'),
-    path('tournament/', views.define_render, name='tournament'),
-    path('match/', views.define_render, name='match'),
-    path('vsBot/', views.define_render, name='vsBot'),
     path('leaderboard/', views.define_render, name='leaderboard'),
     path('pongserver/', views.define_render, name='pongServer'),
     path('authentication/', views.define_render, name='authentication'),
@@ -39,6 +36,12 @@ urlpatterns = [
     path('api/send-verification-code/', SendVerificationCodeView.as_view(), name='send_verification_code'),
     path('api/verify-code/', VerifyCodeView.as_view(), name='verify_code'),
     path('snake/', views.define_render, name='snake'),
+
+	path('local/', views.define_render, name='local'),
+    path('vsBot/', views.define_render, name='vsBot'),
+    path('match/', views.define_render, name='match'),
+    path('tournament/', views.define_render, name='tournament'),
+
 ]
 
 if settings.DEBUG:
