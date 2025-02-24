@@ -11,10 +11,19 @@ function registerFormEvent() {
             }
         })
         let data = await response.json()
-        if (data.success) {
+        if ('success' in data) {
+            console.log('Success:', "User created");
             window.loadContent('/home/')
         }
-        // console.log(data)
+        else if ('error' in data) {
+            console.log('Error:', "Can't create user");
+            window.loadContent('/register/')
+            setTimeout(() => {
+                const errorDiv = document.getElementById("errorMessage");
+                errorDiv.textContent = data.error;
+                errorDiv.style.display = "block";
+            }, 100); 
+        }
     })
 }
 

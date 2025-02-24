@@ -1,11 +1,11 @@
 body {
 	margin: 0;
-	padding: 0;
+	padding: 150px;
 	font-family: 'Bebas Neue', sans-serif;
 	background-color: #F7F7F7;
 	overflow-x: hidden;
 }
 
-.background{
+/* .background{
     padding: 80px 40px 10px 40px;
-}
+} */

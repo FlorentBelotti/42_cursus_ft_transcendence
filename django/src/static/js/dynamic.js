@@ -57,7 +57,10 @@ document.addEventListener('DOMContentLoaded', function () {
 							}
 							if (scriptUrl.includes('sphere-animation.js')) {
 								initSphereAnimation();
-							}                             
+							}
+                            if (scriptUrl.includes('leaderboard.js')) {
+								loadLeaderboardPage();
+							}                                    
                         });
                     }
                     updateAuthButtons();

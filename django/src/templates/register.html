@@ -9,6 +9,7 @@
 </head>
 <body>
     <h1>Inscription</h1>
+    <div id="errorMessage" style="color: red; display: none;"></div>
     <form id="registerForm">
         {% csrf_token %}
         {{ form.as_p }}

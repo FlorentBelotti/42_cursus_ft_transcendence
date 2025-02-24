@@ -91,116 +91,6 @@ def logout_action(request):
         return response
     return redirect('logout_page')
 
-# def register(request):
-#     if request.method == "POST":
-#         form = RegisterForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             return redirect("home")  # Redirige vers la page d'accueil
-#     else:
-#         form = RegisterForm()
-
-#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#         return render(request, "register.html", {"form": form})
-#     else:
-#         return render(request, 'base.html', {
-#             'content_template': 'register.html',
-#             'form': form  # On ajoute le formulaire dans le contexte
-#         })
-
-# def user_login(request):
-#     if request.method == "POST":
-#         form = AuthenticationForm(request, data=request.POST)
-#         if form.is_valid():
-#             username = form.cleaned_data.get('username')
-#             password = form.cleaned_data.get('password')
-#             user = authenticate(request, username=username, password=password)
-#             if user is not None:
-#                 # Génère un code de vérification
-#                 code = str(uuid.uuid4())
-#                 VerificationCode.objects.create(user=user, code=code)
-
-#                 # Envoie le code par email
-#                 send_mail(
-#                     'Votre code de vérification',
-#                     f'Votre code de vérification est : {code}',
-#                     settings.EMAIL_HOST_USER,
-#                     [user.email],
-#                     fail_silently=False,
-#                 )
-
-#                 # Redirige vers la page de vérification du code
-#                 return redirect("verify_code", user_id=user.id)
-#     else:
-#         form = AuthenticationForm()
-
-#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#         return render(request, "login.html", {"form": form})
-#     else:
-#         return render(request, 'base.html', {
-#             'content_template': 'login.html',
-#             'form': form
-#         })
-
-# def verify_code(request, user_id):
-#     if request.method == "POST":
-#         code = request.POST.get('code')
-#         try:
-#             verification_code = VerificationCode.objects.get(user_id=user_id, code=code, is_used=False)
-            
-#             if verification_code.is_expired():
-#                 error = "Le code a expiré."
-#                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#                     return render(request, "verify_code.html", {"error": error})
-#                 else:
-#                     return render(request, 'base.html', {
-#                         'content_template': 'verify_code.html',
-#                         'error': error
-#                     })
-            
-#             verification_code.is_used = True
-#             verification_code.save()
-
-#             # Génère un access token et un refresh token
-#             user = verification_code.user
-#             refresh = RefreshToken.for_user(user)
-#             access_token = str(refresh.access_token)
-#             refresh_token = str(refresh)
-
-#             # Stocke les tokens dans les cookies (ou renvoie-les en JSON)
-#             response = redirect("home")
-#             response.set_cookie(
-#                 key='access_token',
-#                 value=access_token,
-#                 httponly=True,
-#                 secure=True  # En production uniquement
-#             )
-#             response.set_cookie(
-#                 key='refresh_token',
-#                 value=refresh_token,
-#                 httponly=True,
-#                 secure=True  # En production uniquement
-#             )
-            
-#             return response
-            
-#         except VerificationCode.DoesNotExist:
-#             error = "Code invalide."
-#             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#                 return render(request, "verify_code.html", {"error": error})
-#             else:
-#                 return render(request, 'base.html', {
-#                     'content_template': 'verify_code.html',
-#                     'error': error
-#                 })
-
-#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#         return render(request, "verify_code.html")
-#     else:
-#         return render(request, 'base.html', {
-#             'content_template': 'verify_code.html'
-#         })
-
 class RefreshTokenView(APIView):
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token') or request.data.get('refresh_token')
@@ -225,51 +115,9 @@ class RefreshTokenView(APIView):
         except Exception as e:
             return Response({"error": "Refresh token invalide"}, status=status.HTTP_401_UNAUTHORIZED)
 
-# @login_required
-# def account(request):
-#     if request.method == "POST":
-#         user_form = UserUpdateForm(request.POST, request.FILES, instance=request.user)
-#         password_form = CustomPasswordChangeForm(request.user, request.POST)
-
-#         if 'update_info' in request.POST:
-#             if user_form.is_valid():
-#                 user_form.save()
-#                 messages.success(request, "Informations mises à jour !")
-#                 return redirect('account')
-
-#         elif 'change_password' in request.POST:
-#             if password_form.is_valid():
-#                 password_form.save()
-#                 update_session_auth_hash(request, request.user)
-#                 messages.success(request, "Mot de passe mis à jour !")
-#                 return redirect('account')
-
-#         elif 'delete_account' in request.POST:
-#             request.user.delete()
-#             response = redirect('home')
-#             response.delete_cookie('access_token')
-#             response.delete_cookie('refresh_token')
-#             return response
-
-#     else:
-#         user_form = UserUpdateForm(instance=request.user)
-#         password_form = CustomPasswordChangeForm(request.user)
-
-#     return render(request, 'account.html', {
-#         'user_form': user_form,
-#         'password_form': password_form
-#     })
-
 def logout_view(request):
     response = redirect('home')
     response.delete_cookie('access_token')
     response.delete_cookie('refresh_token')
     logout(request)
     return response
-
-def leaderboard(request):
-    users = customUser.objects.all().order_by('-elo')
-    paginator = Paginator(users, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    return render(request, 'leaderboard.html', {'page_obj': page_obj})

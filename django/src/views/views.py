@@ -60,6 +60,10 @@ def define_render(request, additional_context=None):
     else:
         return render(request, 'base.html', context)
 
+def leaderboard(request):
+    users = customUser.objects.all().order_by('-elo')
+    return define_render(request, {'users': users})
+
 @login_required
 def account(request):
     if request.method == "POST":
