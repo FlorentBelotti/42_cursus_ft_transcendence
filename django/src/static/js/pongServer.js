@@ -7,6 +7,10 @@ class PongServerGame {
 		this.isGameRunning = false;
 		this.isPageUnloading = false;
 		this.reconnectTimeout = null;
+		this.playerInfo = {
+			player1: { username: "", elo: 0 },
+			player2: { username: "", elo: 0}
+		};
 		this.init();
 	}
 
@@ -30,11 +34,15 @@ class PongServerGame {
 	}
 
 	connectWebSocket() {
-		this.socket = new WebSocket('ws://localhost:8000/ws/match/');
-
+		this.socket = new WebSocket('ws://localhost:8000/ws/match/', [], {
+		    credentials: 'include'
+		});
 		this.socket.onopen = () => {
 			console.log('WebSocket connection established.');
-			this.socket.send(JSON.stringify({ type: 'matchmaking' }));
+			this.socket.send(JSON.stringify({ 
+				type: 'matchmaking',
+				user: currentUser
+			}));
 		};
 
 		this.socket.onmessage = (event) => {
@@ -68,6 +76,10 @@ class PongServerGame {
 		} else if (gameState.waiting) {
 			console.log('Waiting for an opponent...');
 		} else if (gameState.pads && gameState.ball) {
+			if (gameState.player_info) {
+				this.playerInfo.player1 = gameState.player_info.player1;
+				this.playerInfo.player2 = gameState.player_info.player2;
+			}
 			this.draw(gameState);
 		}
 	}
@@ -109,6 +121,22 @@ class PongServerGame {
 		this.ctx.textAlign = 'center';
 		this.ctx.fillText(gameState.score.player1, this.canvas.width / 4, 50);
 		this.ctx.fillText(gameState.score.player2, (3 * this.canvas.width) / 4, 50);
+		
+    	// Draw player 1 info
+    	this.ctx.textAlign = 'left';
+    	this.ctx.fillText(
+    	    `${this.playerInfo.player1.username} (${this.playerInfo.player1.elo})`, 
+    	    10, 
+    	    25
+    	);
+
+    	// Draw player 2 info
+    	this.ctx.textAlign = 'right';
+    	this.ctx.fillText(
+    	    `${this.playerInfo.player2.username} (${this.playerInfo.player2.elo})`, 
+    	    this.canvas.width - 10, 
+    	    25
+    	);
 	}
 
 	sendInput(input) {

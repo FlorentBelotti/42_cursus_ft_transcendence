@@ -1,4 +1,5 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth.decorators import login_required
 import json
 import asyncio
 import math
@@ -22,8 +23,9 @@ class PongConsumer(AsyncWebsocketConsumer):
         self.player_number = None  # Identifiant du joueur (1 ou 2)
 
     async def connect(self):
+
         await self.accept()
-        
+
         if len(self.clients) == 0:
             # Premier joueur se connecte
             self.player_number = 1
@@ -40,6 +42,10 @@ class PongConsumer(AsyncWebsocketConsumer):
                 "inputs": {"player1": 0, "player2": 0},
                 "waiting": True,
                 "game_over": False,
+                "player_info": {
+                    "player1": {"username": "test", "elo": 0},
+                    "player2": {"username": "test2", "elo": 0}  # Default values for opponent
+                }
             }
             await self.send(text_data=json.dumps({
                 "waiting": True,
@@ -49,6 +55,10 @@ class PongConsumer(AsyncWebsocketConsumer):
             # Deuxième joueur se connecte
             self.player_number = 2
             PongConsumer.shared_game_state["waiting"] = False
+            PongConsumer.shared_game_state["player_info"]["player2"] = {
+                "username": "test2",
+                "elo": 500
+            }
             asyncio.create_task(self.update_game_state())
         
         self.clients.append(self)
@@ -77,6 +87,15 @@ class PongConsumer(AsyncWebsocketConsumer):
         if "input" in data:
             player_key = f"player{self.player_number}"
             PongConsumer.shared_game_state["inputs"][player_key] = data["input"]
+        elif data['type'] == 'matchmaking':
+            username = data['user']['username']
+            elo = data['user']['elo']
+            if self.player_number == 1:
+                PongConsumer.shared_game_state['player_info']['player1']['username'] = username
+                PongConsumer.shared_game_state['player_info']['player1']['elo'] = elo
+            elif self.player_number == 2:
+                PongConsumer.shared_game_state['player_info']['player2']['username'] = username
+                PongConsumer.shared_game_state['player_info']['player2']['elo'] = elo
 
     async def update_game_state(self):
         while len(self.clients) == 2 and not PongConsumer.shared_game_state.get("game_over", False):
@@ -165,13 +184,13 @@ class PongConsumer(AsyncWebsocketConsumer):
             self.reset_ball("player2")
             PongConsumer.shared_game_state["score"]["player2"] += 1
             if PongConsumer.shared_game_state["score"]["player2"] >= 3:
-                await self.end_game("player2")
+                await self.end_game(PongConsumer.shared_game_state['player_info']['player2']['username'])
                 PongConsumer.shared_game_state["game_over"] = True
         elif PongConsumer.shared_game_state["ball"]["x"] >= canvas_width:
             self.reset_ball("player1")
             PongConsumer.shared_game_state["score"]["player1"] += 1
             if PongConsumer.shared_game_state["score"]["player1"] >= 3:
-                await self.end_game("player1")
+                await self.end_game(PongConsumer.shared_game_state['player_info']['player1']['username'])
                 PongConsumer.shared_game_state["game_over"] = True
 
     def reset_ball(self, scorer):

@@ -14,6 +14,12 @@
 	<div class="button-match">
 		<button id="matchmaking">Lancer la recherche</button>
 	</div>
+    <script>
+        const currentUser = {
+            username: "{{ current_user.username }}",
+            elo: {{ current_user.elo }}
+        };
+    </script>
 	<script src="{% static 'js/pongServer.js' %}"></script>
 </body>
 </html>
