@@ -1,0 +1,32 @@
+body{
+    padding: 80px 40px 10px 40px;
+}
+
+.pong-div{
+	padding-top: 100px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+}
+
+canvas{
+	border: solid 1px #000;
+}
+
+.button-match{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 40px;
+}
+
+button{
+    padding: 10px;
+    background-color: #f7f7f7;
+    border: solid 1px #000;
+}
+
+button:hover{
+    background-color: #fff;
+}

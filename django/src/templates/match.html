@@ -5,24 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pongserver</title>
     {% load static %}
-	<link rel="stylesheet" href="{% static 'css/local.css'%}">
+	<link rel="stylesheet" href="{% static 'css/match.css'%}">
 </head>
 <body>
-<div>
-	<canvas class="pong" id="pongServer" width="800" height="550"></canvas>
-
-	<style>
-		canvas {
-			background-color: grey;
-		}
-
-		li {
-			list-style: none;
-		}
-	</style>
-
-	<button id="matchmaking">Lancer la recherche</button>
+	<div class="pong-div">
+		<canvas class="pong" id="pongServer" width="800" height="550"></canvas>
+	</div>
+	<div class="button-match">
+		<button id="matchmaking">Lancer la recherche</button>
+	</div>
 	<script src="{% static 'js/pongServer.js' %}"></script>
-</div>
 </body>
 </html>

@@ -74,7 +74,7 @@ class PongServerGame {
 
 	displayMessage(message) {
 		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-		this.ctx.fillStyle = 'white';
+		this.ctx.fillStyle = 'black';
 		this.ctx.font = '30px Arial';
 		this.ctx.textAlign = 'center';
 		this.ctx.fillText(message, this.canvas.width / 2, this.canvas.height / 2);
@@ -94,7 +94,7 @@ class PongServerGame {
 		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
 		// Dessiner les raquettes
-		this.ctx.fillStyle = 'white';
+		this.ctx.qwerty123Style = 'black';
 		this.ctx.fillRect(gameState.pads.player1.x, gameState.pads.player1.y, 20, 90);
 		this.ctx.fillRect(gameState.pads.player2.x, gameState.pads.player2.y, 20, 90);
 
@@ -104,7 +104,7 @@ class PongServerGame {
 		this.ctx.fill();
 
 		// Afficher les scores
-		this.ctx.fillStyle = 'white';
+		this.ctx.fillStyle = 'black';
 		this.ctx.font = '30px Arial';
 		this.ctx.textAlign = 'center';
 		this.ctx.fillText(gameState.score.player1, this.canvas.width / 4, 50);
