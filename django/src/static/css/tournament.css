@@ -1,0 +1,15 @@
+body{
+    padding: 80px 40px 10px 40px;
+}
+
+.tournament-container{
+	padding-top: 100px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+}
+
+canvas{
+	border: solid 1px #000;
+}

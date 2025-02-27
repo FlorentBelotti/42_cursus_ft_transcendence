@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="tournament-container">
+    <canvas id="tournamentCanvas" width="800" height="550"></canvas>
+    <div id="tournamentInfo" class="tournament-info"></div>
+</div>
+
+<script>
+    const currentUser = {
+        username: "{{ request.user.username }}",
+        elo: {{ request.user.elo }}
+    };
+</script>
+<script src="{% static 'js/tournamentClient.js' %}"></script>
+{% endblock %}

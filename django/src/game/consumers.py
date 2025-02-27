@@ -15,6 +15,128 @@ pad_speed = 7
 ball_radius = 7
 ball_speed = 3
 
+from channels.generic.websocket import AsyncWebsocketConsumer
+import json
+import asyncio
+from channels.db import database_sync_to_async
+
+class TournamentConsumer(AsyncWebsocketConsumer):
+    # Class variables to track all tournaments
+    tournaments = {}  # tournament_id -> list of players
+    next_tournament_id = 1
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tournament_id = None
+        self.player_position = None  # Position in the tournament (1-4)
+    
+    async def connect(self):
+        self.user = self.scope["user"]
+        
+        if not self.user.is_authenticated:
+            await self.close()
+            return
+            
+        await self.accept()
+        
+        # Join or create a tournament
+        await self.join_tournament()
+    
+    async def join_tournament(self):
+        # Find an available tournament or create a new one
+        available_tournament = None
+        for tournament_id, players in TournamentConsumer.tournaments.items():
+            if len(players) < 4:  # Tournament not full
+                available_tournament = tournament_id
+                break
+        
+        # If no available tournament, create a new one
+        if not available_tournament:
+            available_tournament = TournamentConsumer.next_tournament_id
+            TournamentConsumer.tournaments[available_tournament] = []
+            TournamentConsumer.next_tournament_id += 1
+        
+        # Add player to tournament
+        self.tournament_id = available_tournament
+        self.player_position = len(TournamentConsumer.tournaments[available_tournament]) + 1
+        TournamentConsumer.tournaments[available_tournament].append(self)
+        
+        # Send initial state to the new player
+        await self.send_tournament_state()
+        
+        # Notify all players in the tournament about the new player
+        await self.broadcast_tournament_state()
+    
+    async def send_tournament_state(self):
+        players_info = []
+        for i, player in enumerate(TournamentConsumer.tournaments[self.tournament_id]):
+            players_info.append({
+                "username": player.user.username,
+                "elo": player.user.elo,
+                "position": i + 1
+            })
+            
+        await self.send(text_data=json.dumps({
+            "type": "tournament_state",
+            "tournament_id": self.tournament_id,
+            "player_count": len(TournamentConsumer.tournaments[self.tournament_id]),
+            "your_position": self.player_position,
+            "players": players_info,
+            "waiting": True,
+            "message": f"En attente de joueurs ({len(players_info)}/4)..."
+        }))
+    
+    async def broadcast_tournament_state(self):
+        tournament_players = TournamentConsumer.tournaments[self.tournament_id]
+        players_info = []
+        
+        for i, player in enumerate(tournament_players):
+            players_info.append({
+                "username": player.user.username,
+                "elo": player.user.elo,
+                "position": i + 1
+            })
+        
+        message = {
+            "type": "tournament_state",
+            "tournament_id": self.tournament_id,
+            "player_count": len(tournament_players),
+            "players": players_info,
+            "waiting": True,
+            "message": f"En attente de joueurs ({len(players_info)}/4)..."
+        }
+        
+        for player in tournament_players:
+            message_copy = message.copy()
+            message_copy["your_position"] = player.player_position
+            await player.send(text_data=json.dumps(message_copy))
+            
+        # Check if we have enough players to start
+        if len(tournament_players) == 4:
+            # Will implement tournament start later
+            pass
+
+    async def disconnect(self, close_code):
+        if self.tournament_id is not None and self.tournament_id in TournamentConsumer.tournaments:
+            tournament_id = self.tournament_id  # Store this before modifications
+            tournament_players = TournamentConsumer.tournaments[tournament_id]
+
+            if self in tournament_players:
+                # Remove the player
+                tournament_players.remove(self)
+
+                # If tournament is empty, remove it
+                if not tournament_players:
+                    del TournamentConsumer.tournaments[tournament_id]
+                else:
+                    # Update positions for remaining players
+                    for i, player in enumerate(tournament_players):
+                        player.player_position = i + 1
+
+                    # Have one of the remaining players broadcast the updated state
+                    if tournament_players:
+                        await tournament_players[0].broadcast_tournament_state()
+                        
 class PongConsumer(AsyncWebsocketConsumer):
 
     clients = []
