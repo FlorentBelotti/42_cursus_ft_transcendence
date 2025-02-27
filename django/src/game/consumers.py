@@ -24,6 +24,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
     # Class variables to track all tournaments
     tournaments = {}  # tournament_id -> list of players
     next_tournament_id = 1
+    tournament_rankings = {}
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -349,33 +350,44 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         elif match_id == "third_place":
             await self.handle_third_place_winner(tournament_id, winner_username)
 
+    # Replace handle_third_place_winner and handle_tournament_winner with:
     async def handle_third_place_winner(self, tournament_id, winner_username):
         """Handle the third-place winner"""
         tournament_players = TournamentConsumer.tournaments[tournament_id]
 
-        # Find the winner object
+        # Initialize rankings dictionary if needed
+        if tournament_id not in TournamentConsumer.tournament_rankings:
+            TournamentConsumer.tournament_rankings[tournament_id] = {}
+
+        # Find the winner and loser objects
         winner = next((player for player in tournament_players if player.user.username == winner_username), None)
 
         if not winner:
             return
 
-        # Announce third-place winner to all players
+        # Find the loser of the third-place match
+        loser = None
         for player in tournament_players:
-            await player.send(text_data=json.dumps({
-                "type": "third_place_result",
-                "third_place": winner_username,
-                "message": f"🥉 {winner_username} a terminé 3ème du tournoi! 🥉"
-            }))
-
-        # Check if finals are already complete (no match_id for any player)
-        finals_complete = True
-        for player in tournament_players:
-            if hasattr(player, 'match_id') and player.match_id == "final":
-                finals_complete = False
+            # If player was in the third-place match but isn't the winner
+            if (player.user.username != winner_username and
+                player in [TournamentConsumer.semifinal_losers.get("semifinal1"),
+                          TournamentConsumer.semifinal_losers.get("semifinal2")]):
+                loser = player
                 break
             
-        # If finals are complete, we can now safely clean up the tournament
+        # Set rankings
+        TournamentConsumer.tournament_rankings[tournament_id][3] = winner.user.username
+        if loser:
+            TournamentConsumer.tournament_rankings[tournament_id][4] = loser.user.username
+
+        # Update and broadcast rankings to all players
+        await self.broadcast_tournament_rankings(tournament_id)
+
+        # Check if finals are complete too
+        finals_complete = 1 in TournamentConsumer.tournament_rankings.get(tournament_id, {})
         if finals_complete:
+            # If both finals and third-place match are done, clean up
+            await self.update_all_elo_ratings(tournament_id)
             self._cleanup_tournament(tournament_id)
 
     async def setup_third_place_match(self, tournament_id):
@@ -423,7 +435,11 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         """Handle the tournament champion"""
         tournament_players = TournamentConsumer.tournaments[tournament_id]
 
-        # Find the winner object
+        # Initialize rankings dictionary if needed
+        if tournament_id not in TournamentConsumer.tournament_rankings:
+            TournamentConsumer.tournament_rankings[tournament_id] = {}
+
+        # Find the winner and runner-up
         winner = next((player for player in tournament_players if player.user.username == winner_username), None)
 
         if not winner:
@@ -434,65 +450,64 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         finalist2 = TournamentConsumer.semifinal_winners["semifinal2"]
         runner_up = finalist2 if finalist1.user.username == winner_username else finalist1
 
-        # Update ELO ratings - tournament winner gets bonus points
-        await self.update_tournament_elo(winner, runner_up, tournament_players)
+        # Set rankings
+        TournamentConsumer.tournament_rankings[tournament_id][1] = winner.user.username
+        TournamentConsumer.tournament_rankings[tournament_id][2] = runner_up.user.username
 
-        # Announce tournament champion to all players
-        for player in tournament_players:
-            await player.send(text_data=json.dumps({
-                "type": "tournament_result",
-                "champion": winner.user.username,
-                "runner_up": runner_up.user.username,
-                "message": f"🏆 {winner.user.username} est le champion du tournoi! 🏆"
-            }))
+        # Update and broadcast rankings to all players
+        await self.broadcast_tournament_rankings(tournament_id)
 
-        # Check if third-place match is still running
-        third_place_running = False
-        third_place_match_id = "third_place"
-
-        if hasattr(TournamentConsumer, 'match_states') and third_place_match_id in TournamentConsumer.match_states:
-            # Don't clean up until third-place match finishes
-            for player in tournament_players:
-                if hasattr(player, 'match_id') and player.match_id == third_place_match_id:
-                    third_place_running = True
-                    break
-                
-        # Clean up only if third-place match is not running
-        if not third_place_running:
+        # Check if third-place match is complete too
+        third_place_complete = 3 in TournamentConsumer.tournament_rankings.get(tournament_id, {})
+        if third_place_complete:
+            # If both finals and third-place match are done, clean up
+            await self.update_all_elo_ratings(tournament_id)
             self._cleanup_tournament(tournament_id)
 
+    async def update_all_elo_ratings(self, tournament_id):
+        """Update ELO for all participants when tournament is complete"""
+        tournament_players = TournamentConsumer.tournaments[tournament_id]
+        rankings = TournamentConsumer.tournament_rankings.get(tournament_id, {})
+        
+        if len(rankings) < 3:  # Need at least top 3 for proper ELO updates
+            return
+            
+        # Find players by username
+        champion = next((p for p in tournament_players if p.user.username == rankings.get(1)), None)
+        runner_up = next((p for p in tournament_players if p.user.username == rankings.get(2)), None)
+        third_place = next((p for p in tournament_players if p.user.username == rankings.get(3)), None)
+        fourth_place = next((p for p in tournament_players if p.user.username == rankings.get(4, "")), None)
+        
+        if not (champion and runner_up and third_place):
+            return
+        
+        # Calculate and update ELO ratings
+        await self.update_tournament_elo(champion, runner_up, third_place, fourth_place)
+
     @database_sync_to_async
-    def update_tournament_elo(self, winner, runner_up, all_players):
+    def update_tournament_elo(self, champion, runner_up, third_place, fourth_place=None):
         """Update ELO ratings for all tournament participants"""
         K = 32  # Standard K-factor
-
-        # Champion gets a big boost (tournament winner bonus)
-        winner_expected = 1 / (1 + 10 ** ((runner_up.user.elo - winner.user.elo) / 400))
-        winner_change = int(K * (1 - winner_expected)) + 15  # Extra 15 points for tournament win
-
-        # Runner-up gets a small consolation boost for making finals
-        runner_up_expected = 1 / (1 + 10 ** ((winner.user.elo - runner_up.user.elo) / 400))
-        runner_up_change = int(K * (0 - runner_up_expected)) + 5  # Small bonus for reaching finals
-
-        # Update winner and runner-up ELO
-        winner.user.elo += winner_change
-        runner_up.user.elo += runner_up_change
-
-        # Update semifinalists (who didn't make finals)
-        semifinalists = [p for p in all_players 
-                       if p != winner and p != runner_up]
-
-        for player in semifinalists:
-            # Smaller ELO penalty for semifinalists
-            expected = 1 / (1 + 10 ** ((winner.user.elo - player.user.elo) / 400))
-            change = int(K * (0 - expected) * 0.6)  # Only 60% of normal ELO loss
-            player.user.elo += change
-
-        # Save all changes to database
-        winner.user.save()
+        
+        # Champion gets a big boost
+        champion.user.elo += int(K * 0.7) + 15  # Base points + tournament win bonus
+        
+        # Runner-up gets a small boost
+        runner_up.user.elo += int(K * 0.3) + 5  # Base points + finals bonus
+        
+        # Third place gets neutral adjustment
+        third_place.user.elo += int(K * 0.1)  # Small bonus for third place
+        
+        # Fourth place gets small penalty
+        if fourth_place:
+            fourth_place.user.elo -= int(K * 0.2)  # Small penalty
+        
+        # Save all changes
+        champion.user.save()
         runner_up.user.save()
-        for player in semifinalists:
-            player.user.save()
+        third_place.user.save()
+        if fourth_place:
+            fourth_place.user.save()
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -510,17 +525,41 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         """Clean up tournament state"""
         if tournament_id in TournamentConsumer.tournaments:
             del TournamentConsumer.tournaments[tournament_id]
-            
+
         # Reset semifinal winners/losers
         if hasattr(TournamentConsumer, 'semifinal_winners'):
             TournamentConsumer.semifinal_winners = {}
-            
+
         if hasattr(TournamentConsumer, 'semifinal_losers'):
             TournamentConsumer.semifinal_losers = {}
-            
+
         # Clear match states
         if hasattr(TournamentConsumer, 'match_states'):
             TournamentConsumer.match_states = {}
+
+    async def broadcast_tournament_rankings(self, tournament_id):
+        """Send current tournament rankings to all players"""
+        tournament_players = TournamentConsumer.tournaments[tournament_id]
+        rankings = TournamentConsumer.tournament_rankings.get(tournament_id, {})
+        
+        # Convert to list for easier display
+        ranking_list = []
+        for position in range(1, 5):
+            if position in rankings:
+                ranking_list.append({
+                    "position": position,
+                    "username": rankings[position],
+                    "medal": "🥇" if position == 1 else "🥈" if position == 2 else "🥉" if position == 3 else ""
+                })
+        
+        # Send to all players
+        for player in tournament_players:
+            await player.send(text_data=json.dumps({
+                "type": "tournament_rankings",
+                "rankings": ranking_list,
+                "complete": len(rankings) >= 4,
+                "message": "Classement du tournoi"
+            }))
 
     async def disconnect(self, close_code):
         if self.tournament_id is not None and self.tournament_id in TournamentConsumer.tournaments:

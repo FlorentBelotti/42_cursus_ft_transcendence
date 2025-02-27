@@ -57,7 +57,7 @@ class TournamentClient {
         
         // Don't interrupt an ongoing match with other messages
         if (this.isInMatch) {
-            // ONLY process match-related messages for THIS specific match
+            // Only process match-related messages for THIS specific match
             if (data.type === 'match_update' && 
                 this.gameState && 
                 data.game_state && 
@@ -96,12 +96,10 @@ class TournamentClient {
             this.displayMatchResult(data);
         } else if (data.type === 'finals_starting') {
             this.displayFinalsAnnouncement(data);
-        } else if (data.type === 'tournament_result') {
-            this.displayTournamentResult(data);
         } else if (data.type === 'third_place_starting') {
             this.displayThirdPlaceAnnouncement(data);
-        } else if (data.type === 'third_place_result') {
-            this.displayThirdPlaceResult(data);
+        } else if (data.type === 'tournament_rankings') {
+            this.displayTournamentRankings(data);
         }
     }
     
@@ -287,6 +285,111 @@ class TournamentClient {
         this.ctx.font = '20px Arial';
         this.ctx.fillText("Préparation de la finale...", 
                         this.canvas.width / 2, this.canvas.height / 2 + 50);
+    }
+
+    displayTournamentRankings(data) {
+        this.clearCanvas();
+        
+        // Draw podium background
+        this.ctx.fillStyle = '#f5f5f5';
+        this.ctx.fillRect(100, 200, 600, 250);
+        
+        // Draw title
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = '36px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('Classement du Tournoi', this.canvas.width / 2, 100);
+        
+        // Draw trophy for complete tournaments
+        if (data.complete) {
+            this.ctx.fillStyle = 'gold';
+            this.drawTrophy(this.canvas.width / 2, 150, 60);
+        }
+        
+        // Draw podium levels
+        const podiumHeights = {
+            1: 180,  // 1st place (highest)
+            2: 140,  // 2nd place
+            3: 100,  // 3rd place
+            4: 0     // 4th place (no podium)
+        };
+        
+        const podiumPositions = {
+            1: {x: this.canvas.width / 2, y: 400},      // Center (gold)
+            2: {x: this.canvas.width / 2 - 150, y: 400}, // Left (silver)
+            3: {x: this.canvas.width / 2 + 150, y: 400}, // Right (bronze)
+            4: {x: this.canvas.width / 2, y: 480}        // Below (no podium)
+        };
+        
+        const podiumColors = {
+            1: '#FFD700', // Gold
+            2: '#C0C0C0', // Silver
+            3: '#CD7F32', // Bronze
+            4: '#FFFFFF'  // White (no podium)
+        };
+        
+        // Draw podiums
+        for (let i = 1; i <= 3; i++) {
+            const pos = podiumPositions[i];
+            const height = podiumHeights[i];
+            
+            // Draw podium block
+            this.ctx.fillStyle = podiumColors[i];
+            this.ctx.fillRect(pos.x - 60, pos.y - height, 120, height);
+            
+            // Draw position number
+            this.ctx.fillStyle = 'black';
+            this.ctx.font = '40px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(i, pos.x, pos.y - height + 40);
+        }
+        
+        // Draw player names on podiums
+        for (const rank of data.rankings) {
+            const pos = podiumPositions[rank.position];
+            const height = podiumHeights[rank.position];
+            
+            this.ctx.fillStyle = 'black';
+            this.ctx.font = '20px Arial';
+            this.ctx.textAlign = 'center';
+            
+            if (rank.position <= 3) {
+                // Draw name on podium
+                this.ctx.fillText(
+                    `${rank.medal} ${rank.username}`, 
+                    pos.x, 
+                    pos.y - height + 70
+                );
+            } else {
+                // Draw 4th place below podiums
+                this.ctx.fillText(
+                    `4ème place: ${rank.username}`,
+                    pos.x,
+                    pos.y
+                );
+            }
+        }
+        
+        // Draw message for incomplete tournaments
+        if (!data.complete) {
+            this.ctx.fillStyle = 'black';
+            this.ctx.font = '20px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(
+                "Matches en cours... Classement partiel",
+                this.canvas.width / 2,
+                500
+            );
+        } else {
+            this.ctx.fillStyle = 'black';
+            this.ctx.font = '20px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(
+                "Tournoi terminé! Les ELO ont été mis à jour.",
+                this.canvas.width / 2,
+                500
+            );
+        }
     }
 
     displayTournamentResult(data) {
