@@ -367,6 +367,17 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 "message": f"🥉 {winner_username} a terminé 3ème du tournoi! 🥉"
             }))
 
+        # Check if finals are already complete (no match_id for any player)
+        finals_complete = True
+        for player in tournament_players:
+            if hasattr(player, 'match_id') and player.match_id == "final":
+                finals_complete = False
+                break
+            
+        # If finals are complete, we can now safely clean up the tournament
+        if finals_complete:
+            self._cleanup_tournament(tournament_id)
+
     async def setup_third_place_match(self, tournament_id):
         """Set up the third-place match"""
         loser1 = TournamentConsumer.semifinal_losers["semifinal1"]
@@ -435,20 +446,20 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 "message": f"🏆 {winner.user.username} est le champion du tournoi! 🏆"
             }))
 
-        # Clean up ALL tournament state - complete cleanup
-        if tournament_id in TournamentConsumer.tournaments:
-            del TournamentConsumer.tournaments[tournament_id]
+        # Check if third-place match is still running
+        third_place_running = False
+        third_place_match_id = "third_place"
 
-        # Reset semifinal winners/losers
-        if hasattr(TournamentConsumer, 'semifinal_winners'):
-            TournamentConsumer.semifinal_winners = {}
-
-        if hasattr(TournamentConsumer, 'semifinal_losers'):
-            TournamentConsumer.semifinal_losers = {}
-
-        # Clear match states
-        if hasattr(TournamentConsumer, 'match_states'):
-            TournamentConsumer.match_states = {}
+        if hasattr(TournamentConsumer, 'match_states') and third_place_match_id in TournamentConsumer.match_states:
+            # Don't clean up until third-place match finishes
+            for player in tournament_players:
+                if hasattr(player, 'match_id') and player.match_id == third_place_match_id:
+                    third_place_running = True
+                    break
+                
+        # Clean up only if third-place match is not running
+        if not third_place_running:
+            self._cleanup_tournament(tournament_id)
 
     @database_sync_to_async
     def update_tournament_elo(self, winner, runner_up, all_players):
@@ -493,7 +504,24 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 if match_state:
                     player_key = f'player{self.player_number}'
                     match_state['inputs'][player_key] = data['input']
-    
+
+    # Add this helper method for cleanup
+    def _cleanup_tournament(self, tournament_id):
+        """Clean up tournament state"""
+        if tournament_id in TournamentConsumer.tournaments:
+            del TournamentConsumer.tournaments[tournament_id]
+            
+        # Reset semifinal winners/losers
+        if hasattr(TournamentConsumer, 'semifinal_winners'):
+            TournamentConsumer.semifinal_winners = {}
+            
+        if hasattr(TournamentConsumer, 'semifinal_losers'):
+            TournamentConsumer.semifinal_losers = {}
+            
+        # Clear match states
+        if hasattr(TournamentConsumer, 'match_states'):
+            TournamentConsumer.match_states = {}
+
     async def disconnect(self, close_code):
         if self.tournament_id is not None and self.tournament_id in TournamentConsumer.tournaments:
             tournament_id = self.tournament_id  # Store this before modifications
