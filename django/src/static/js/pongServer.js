@@ -34,9 +34,11 @@ class PongServerGame {
 	}
 
 	connectWebSocket() {
-		this.socket = new WebSocket('ws://localhost:8000/ws/match/', [], {
-		    credentials: 'include'
-		});
+		const token = document.cookie
+        .split('; ')
+        .find(cookie => cookie.startsWith('access_token='))
+        ?.split('=')[1];
+		this.socket = new WebSocket(`ws://localhost:8000/ws/match/?token=${token}`);
 		this.socket.onopen = () => {
 			console.log('WebSocket connection established.');
 			this.socket.send(JSON.stringify({ 

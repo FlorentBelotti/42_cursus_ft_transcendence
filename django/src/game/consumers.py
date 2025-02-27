@@ -23,50 +23,58 @@ class PongConsumer(AsyncWebsocketConsumer):
         self.player_number = None  # Identifiant du joueur (1 ou 2)
 
     async def connect(self):
+        self.user = self.scope["user"]
 
-        await self.accept()
+        # Check if user is authenticated
+        if self.user.is_authenticated:
+            # User is authenticated, you can access and modify user data
+            await self.accept()
 
-        if len(self.clients) == 0:
-            # Premier joueur se connecte
-            self.player_number = 1
-            PongConsumer.shared_game_state = {
-                "ball": {"x": canvas_width / 2 - ball_radius / 2, "y": canvas_height / 2 - ball_radius / 2},
-                "pads": {
-                    "player1": {"x": 10, "y": (canvas_height - pad_height) / 2},
-                    "player2": {"x": canvas_width - pad_width - 10, "y": (canvas_height - pad_height) / 2},
-                },
-                "score": {"player1": 0, "player2": 0},
-                "directionBall": {"x": 1 if random() < 0.5 else -1, "y": 1 if random() < 0.5 else -1},
-                "ballTouched": False,
-                "count": 0,
-                "inputs": {"player1": 0, "player2": 0},
-                "waiting": True,
-                "game_over": False,
-                "player_info": {
-                    "player1": {"username": "test", "elo": 0},
-                    "player2": {"username": "test2", "elo": 0}  # Default values for opponent
+            # Example of retrieving user data
+            username = self.user.username
+            elo = self.user.elo
+
+            if len(self.clients) == 0:
+                # Premier joueur se connecte
+                self.player_number = 1
+                PongConsumer.shared_game_state = {
+                    "ball": {"x": canvas_width / 2 - ball_radius / 2, "y": canvas_height / 2 - ball_radius / 2},
+                    "pads": {
+                        "player1": {"x": 10, "y": (canvas_height - pad_height) / 2},
+                        "player2": {"x": canvas_width - pad_width - 10, "y": (canvas_height - pad_height) / 2},
+                    },
+                    "score": {"player1": 0, "player2": 0},
+                    "directionBall": {"x": 1 if random() < 0.5 else -1, "y": 1 if random() < 0.5 else -1},
+                    "ballTouched": False,
+                    "count": 0,
+                    "inputs": {"player1": 0, "player2": 0},
+                    "waiting": True,
+                    "game_over": False,
+                    "player_info": {
+                        "player1": {"username": username, "elo": elo},
+                        "player2": {"username": "test2", "elo": 0}  # Default values for opponent
+                    }
                 }
-            }
-            await self.send(text_data=json.dumps({
-                "waiting": True,
-                "message": "Vous êtes en attente d'un adversaire..."
-            }))
-        elif len(self.clients) == 1:
-            # Deuxième joueur se connecte
-            self.player_number = 2
-            PongConsumer.shared_game_state["waiting"] = False
-            PongConsumer.shared_game_state["player_info"]["player2"] = {
-                "username": "test2",
-                "elo": 500
-            }
-            asyncio.create_task(self.update_game_state())
-        
-        self.clients.append(self)
-        
-        if len(self.clients) == 2:
-            # Envoyer l'état initial aux deux joueurs
-            for client in self.clients:
-                await client.send(text_data=json.dumps(PongConsumer.shared_game_state))
+                await self.send(text_data=json.dumps({
+                    "waiting": True,
+                    "message": "Vous êtes en attente d'un adversaire..."
+                }))
+            elif len(self.clients) == 1:
+                # Deuxième joueur se connecte
+                self.player_number = 2
+                PongConsumer.shared_game_state["waiting"] = False
+                PongConsumer.shared_game_state["player_info"]["player2"] = {
+                    "username": username,
+                    "elo": elo
+                }
+                asyncio.create_task(self.update_game_state())
+
+            self.clients.append(self)
+
+            if len(self.clients) == 2:
+                # Envoyer l'état initial aux deux joueurs
+                for client in self.clients:
+                    await client.send(text_data=json.dumps(PongConsumer.shared_game_state))
 
 
     async def disconnect(self, close_code):
@@ -87,15 +95,15 @@ class PongConsumer(AsyncWebsocketConsumer):
         if "input" in data:
             player_key = f"player{self.player_number}"
             PongConsumer.shared_game_state["inputs"][player_key] = data["input"]
-        elif data['type'] == 'matchmaking':
-            username = data['user']['username']
-            elo = data['user']['elo']
-            if self.player_number == 1:
-                PongConsumer.shared_game_state['player_info']['player1']['username'] = username
-                PongConsumer.shared_game_state['player_info']['player1']['elo'] = elo
-            elif self.player_number == 2:
-                PongConsumer.shared_game_state['player_info']['player2']['username'] = username
-                PongConsumer.shared_game_state['player_info']['player2']['elo'] = elo
+        # elif data['type'] == 'matchmaking':
+        #     username = data['user']['username']
+        #     elo = data['user']['elo']
+        #     if self.player_number == 1:
+        #         PongConsumer.shared_game_state['player_info']['player1']['username'] = username
+        #         PongConsumer.shared_game_state['player_info']['player1']['elo'] = elo
+        #     elif self.player_number == 2:
+        #         PongConsumer.shared_game_state['player_info']['player2']['username'] = username
+        #         PongConsumer.shared_game_state['player_info']['player2']['elo'] = elo
 
     async def update_game_state(self):
         while len(self.clients) == 2 and not PongConsumer.shared_game_state.get("game_over", False):
