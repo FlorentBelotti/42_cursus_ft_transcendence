@@ -20,77 +20,178 @@ class PongConsumer(AsyncWebsocketConsumer):
     clients = []
     shared_game_state = None  # État partagé entre les instances
 
+    waiting_players = []  # List of (consumer, timestamp, elo) tuples
+    matchmaking_lock = asyncio.Lock() 
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.player_number = None  # Identifiant du joueur (1 ou 2)
+        self.match_task = None
 
     async def connect(self):
         self.user = self.scope["user"]
 
-        # Check if user is authenticated
-        if self.user.is_authenticated:
-            # User is authenticated, you can access and modify user data
-            await self.accept()
+        if not self.user.is_authenticated:
+            await self.close()
+            return
+            
+        await self.accept()
+        
+        # Join matchmaking system instead of directly creating a game
+        await self.join_matchmaking()
 
-            # Example of retrieving user data
-            username = self.user.username
-            elo = self.user.elo
-
-            if len(self.clients) == 0:
-                # Premier joueur se connecte
-                self.player_number = 1
-                PongConsumer.shared_game_state = {
-                    "ball": {"x": canvas_width / 2 - ball_radius / 2, "y": canvas_height / 2 - ball_radius / 2},
-                    "pads": {
-                        "player1": {"x": 10, "y": (canvas_height - pad_height) / 2},
-                        "player2": {"x": canvas_width - pad_width - 10, "y": (canvas_height - pad_height) / 2},
-                    },
-                    "score": {"player1": 0, "player2": 0},
-                    "directionBall": {"x": 1 if random() < 0.5 else -1, "y": 1 if random() < 0.5 else -1},
-                    "ballTouched": False,
-                    "count": 0,
-                    "inputs": {"player1": 0, "player2": 0},
-                    "waiting": True,
-                    "game_over": False,
-                    "player_info": {
-                        "player1": {"username": username, "elo": elo},
-                        "player2": {"username": "test2", "elo": 0}  # Default values for opponent
-                    }
+    async def join_matchmaking(self):
+        async with PongConsumer.matchmaking_lock:
+            # Tell the player they're in matchmaking
+            await self.send(text_data=json.dumps({
+                "waiting": True,
+                "message": "Recherche d'un adversaire...",
+                "matchmaking_status": {
+                    "queue_position": len(PongConsumer.waiting_players) + 1,
+                    "your_elo": self.user.elo
                 }
-                await self.send(text_data=json.dumps({
-                    "waiting": True,
-                    "message": "Vous êtes en attente d'un adversaire..."
-                }))
-            elif len(self.clients) == 1:
-                # Deuxième joueur se connecte
-                self.player_number = 2
-                PongConsumer.shared_game_state["waiting"] = False
-                PongConsumer.shared_game_state["player_info"]["player2"] = {
-                    "username": username,
-                    "elo": elo
-                }
-                asyncio.create_task(self.update_game_state())
+            }))
+            
+            # Try to find a match immediately
+            match_found = await self.find_match()
+            
+            if not match_found:
+                # If no match found, add to waiting queue with current timestamp
+                PongConsumer.waiting_players.append((self, asyncio.get_event_loop().time(), self.user.elo))
+                
+                # Start periodic match checking
+                self.match_task = asyncio.create_task(self.periodic_match_check())
 
-            self.clients.append(self)
+    async def find_match(self):
+        if not PongConsumer.waiting_players:
+            return False
+        
+        my_elo = self.user.elo
+        best_match = None
+        min_elo_diff = float('inf')
+        
+        # Find closest ELO match
+        for i, (player, timestamp, elo) in enumerate(PongConsumer.waiting_players):
+            # Skip self if somehow in list
+            if player == self:
+                continue
+                
+            # Calculate ELO difference
+            elo_diff = abs(my_elo - elo)
+            
+            # Factor in wait time (longer waits = more lenient matching)
+            wait_time = asyncio.get_event_loop().time() - timestamp
+            adjusted_diff = elo_diff / (1 + 0.1 * wait_time)  # Reduce difference based on wait time
+            
+            if adjusted_diff < min_elo_diff:
+                min_elo_diff = adjusted_diff
+                best_match = (i, player)
+        
+        # Match if ELO difference is small enough or player has been waiting too long
+        if best_match and (min_elo_diff < 18 or 
+                          asyncio.get_event_loop().time() - PongConsumer.waiting_players[best_match[0]][1] > 30):
+            matched_idx, matched_player = best_match
+            del PongConsumer.waiting_players[matched_idx]
+            
+            # Create game between these two players
+            await self.create_game(matched_player)
+            return True
+        
+        return False
 
-            if len(self.clients) == 2:
-                # Envoyer l'état initial aux deux joueurs
-                for client in self.clients:
-                    await client.send(text_data=json.dumps(PongConsumer.shared_game_state))
+    async def periodic_match_check(self):
+        while True:
+            await asyncio.sleep(5)  # Check every 5 seconds
+            
+            # If no longer in waiting list, stop checking
+            if not any(player == self for player, _, _ in PongConsumer.waiting_players):
+                break
+                
+            async with PongConsumer.matchmaking_lock:
+                # Update status message with time in queue
+                for i, (player, timestamp, _) in enumerate(PongConsumer.waiting_players):
+                    if player == self:
+                        wait_time = int(asyncio.get_event_loop().time() - timestamp)
+                        await self.send(text_data=json.dumps({
+                            "waiting": True,
+                            "message": f"Recherche d'un adversaire... ({wait_time}s)",
+                            "matchmaking_status": {
+                                "queue_position": i + 1,
+                                "wait_time": wait_time,
+                                "your_elo": self.user.elo
+                            }
+                        }))
+                        break
+                
+                # Try to find a match again with possibly expanded criteria
+                match_found = await self.find_match()
+                if match_found:
+                    break
+
+    async def create_game(self, other_player):
+        # Set player numbers
+        self.player_number = 1
+        other_player.player_number = 2
+        
+        # Initialize game state (similar to your existing code)
+        PongConsumer.shared_game_state = {
+            "ball": {"x": canvas_width / 2 - ball_radius / 2, "y": canvas_height / 2 - ball_radius / 2},
+            "pads": {
+                "player1": {"x": 10, "y": (canvas_height - pad_height) / 2},
+                "player2": {"x": canvas_width - pad_width - 10, "y": (canvas_height - pad_height) / 2},
+            },
+            "score": {"player1": 0, "player2": 0},
+            "directionBall": {"x": 1 if random() < 0.5 else -1, "y": 1 if random() < 0.5 else -1},
+            "ballTouched": False,
+            "count": 0,
+            "inputs": {"player1": 0, "player2": 0},
+            "waiting": False,
+            "game_over": False,
+            "player_info": {
+                "player1": {"username": self.user.username, "elo": self.user.elo},
+                "player2": {"username": other_player.user.username, "elo": other_player.user.elo}
+            }
+        }
+        
+        # Add both players to clients list
+        PongConsumer.clients = [self, other_player]
+        
+        # Stop the periodic match checking tasks
+        if self.match_task:
+            self.match_task.cancel()
+        if other_player.match_task:
+            other_player.match_task.cancel()
+        
+        # Send game state to both players
+        for client in PongConsumer.clients:
+            await client.send(text_data=json.dumps(PongConsumer.shared_game_state))
+            
+        # Start game loop
+        asyncio.create_task(self.update_game_state())
 
 
     async def disconnect(self, close_code):
-        if self in self.clients:
-            self.clients.remove(self)
-            if len(self.clients) == 1:
-                remaining_client = self.clients[0]
-                await remaining_client.send(text_data=json.dumps({
-                    "type": "player_left",
-                    "message": "Votre adversaire a quitté la partie."
-                }))
-                await self.reset_game_state()
-                await remaining_client.close()  # Fermer la connexion du client restant
-                self.clients.clear()  # Vider la liste des clients
+        if self.match_task:
+            self.match_task.cancel()
+            
+        # Remove from waiting list if present
+        async with PongConsumer.matchmaking_lock:
+            PongConsumer.waiting_players = [(p, ts, elo) for p, ts, elo in PongConsumer.waiting_players if p != self]
+        
+        # Handle in-game disconnect (keep your existing code)
+        if self in PongConsumer.clients:
+        
+            if self in self.clients:
+                self.clients.remove(self)
+                if len(self.clients) == 1:
+                    remaining_client = self.clients[0]
+                    await remaining_client.send(text_data=json.dumps({
+                        "type": "player_left",
+                        "message": "Votre adversaire a quitté la partie."
+                    }))
+                    await self.reset_game_state()
+                    await remaining_client.close()  # Fermer la connexion du client restant
+                    self.clients.clear()  # Vider la liste des clients
 
     async def receive(self, text_data):
         data = json.loads(text_data)

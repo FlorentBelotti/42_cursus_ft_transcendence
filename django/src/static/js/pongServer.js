@@ -77,6 +77,7 @@ class PongServerGame {
 			this.stopGame();
 		} else if (gameState.waiting) {
 			console.log('Waiting for an opponent...');
+			this.displayMatchmakingStatus(gameState);
 		} else if (gameState.pads && gameState.ball) {
 			if (gameState.player_info) {
 				this.playerInfo.player1 = gameState.player_info.player1;
@@ -84,6 +85,35 @@ class PongServerGame {
 			}
 			this.draw(gameState);
 		}
+	}
+
+	displayMatchmakingStatus(gameState) {
+		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		
+		// Display main waiting message
+		this.ctx.fillStyle = 'black';
+		this.ctx.font = '30px Arial';
+		this.ctx.textAlign = 'center';
+		this.ctx.fillText(gameState.message, this.canvas.width / 2, this.canvas.height / 2 - 40);
+		
+		// Display matchmaking info if available
+		if (gameState.matchmaking_status) {
+			const status = gameState.matchmaking_status;
+			this.ctx.font = '20px Arial';
+			this.ctx.fillText(`Votre ELO: ${status.your_elo}`, this.canvas.width / 2, this.canvas.height / 2 + 10);
+			
+			if (status.wait_time) {
+				this.ctx.fillText(`Temps d'attente: ${status.wait_time} secondes`, this.canvas.width / 2, this.canvas.height / 2 + 40);
+			}
+			
+			this.ctx.fillText(`Position dans la file: ${status.queue_position}`, this.canvas.width / 2, this.canvas.height / 2 + 70);
+		}
+		
+		// Add a visual indicator that matchmaking is active
+		const now = Date.now();
+		const dotCount = Math.floor((now % 3000) / 1000) + 1;
+		const dots = '.'.repeat(dotCount);
+		this.ctx.fillText(`Recherche${dots}`, this.canvas.width / 2, this.canvas.height / 2 + 120);
 	}
 
 	displayMessage(message) {
