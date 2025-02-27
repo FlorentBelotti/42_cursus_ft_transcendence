@@ -1,9 +1,11 @@
+from __future__ import division
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.decorators import login_required
 import json
 import asyncio
 import math
 from random import random
+from channels.db import database_sync_to_async
 
 canvas_width = 800
 canvas_height = 550
@@ -211,6 +213,16 @@ class PongConsumer(AsyncWebsocketConsumer):
         PongConsumer.shared_game_state["ballTouched"] = False
 
     async def end_game(self, winner):
+
+        if len(self.clients) == 2:
+            # Find winner and loser users
+            winner_client = next((client for client in self.clients if client.user.username == winner), None)
+            loser_client = next((client for client in self.clients if client.user.username != winner), None)
+
+            if winner_client and loser_client and winner_client.user.is_authenticated and loser_client.user.is_authenticated:
+                # Update ELOs in database
+                await self.update_user_elo(winner_client.user, loser_client.user)
+
         for client in self.clients:
             await client.send(text_data=json.dumps({
                 "type": "game_over",
@@ -221,3 +233,27 @@ class PongConsumer(AsyncWebsocketConsumer):
         for client in self.clients:
             await client.close()
         self.clients.clear()
+
+    def expected(self, A, B):
+        return 1 / (1 + 10 ** ((B - A) / 400))
+
+    @database_sync_to_async
+    def update_user_elo(self, winner, looser, K=20):
+
+        winner_elo = winner.elo
+        looser_elo = looser.elo
+
+        expected_winner = self.expected(winner_elo, looser_elo)
+        expected_looser = self.expected(looser_elo, winner_elo)
+
+        winner_new_elo = winner_elo + K * (1 - expected_winner)
+        looser_new_elo = looser_elo + K * (0 - expected_looser)
+
+        winner_new_elo = round(winner_new_elo)
+        looser_new_elo = round(looser_new_elo)
+
+        winner.elo = winner_new_elo
+        looser.elo = looser_new_elo
+
+        winner.save()
+        looser.save()
