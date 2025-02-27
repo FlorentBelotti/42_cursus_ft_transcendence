@@ -10,12 +10,19 @@ class TournamentClient {
             { x: 650, y: 400 }   // Position 4 (bottom-right)
         ];
         this.players = [];
+        this.isInMatch = false;
+        this.gameState = null;
+        this.playerNumber = null;
+        this.matchId = null;
+        this.keysPressed = {};
+        this.animationFrameId = null;
         this.init();
     }
 
     init() {
         console.log('Initializing Tournament Client');
         this.connectWebSocket();
+        this.addEventListeners();
     }
 
     connectWebSocket() {
@@ -37,6 +44,7 @@ class TournamentClient {
 
         this.socket.onclose = () => {
             console.log('Tournament WebSocket connection closed.');
+            this.stopGame();
         };
 
         this.socket.onerror = (error) => {
@@ -47,15 +55,63 @@ class TournamentClient {
     handleMessage(data) {
         console.log('Received tournament state:', data);
         
+        // Don't interrupt an ongoing match with other messages
+        if (this.isInMatch) {
+            // ONLY process match-related messages for THIS specific match
+            if (data.type === 'match_update' && 
+                this.gameState && 
+                data.game_state && 
+                data.game_state.match_id === this.matchId) {
+                
+                this.gameState = data.game_state;
+                this.renderGame(this.gameState);
+            }
+            else if (data.type === 'match_result' && data.match_id === this.matchId) {
+                // Only handle match result if it's for our current match
+                this.isInMatch = false;  // End match mode
+                this.matchId = null;     // Clear match ID
+                this.clearCanvas();      // Completely clear the canvas
+                this.displayMatchResult(data);
+            }
+            // Strictly ignore ALL other messages while in a match
+            return;
+        }
+        
+        // Normal message handling when not in a match (ALWAYS clear canvas first)
+        this.clearCanvas();
+        
         if (data.type === 'tournament_state') {
             this.players = data.players;
             this.renderLobby(data);
+        } else if (data.type === 'tournament_starting') {
+            this.displayMessage(data.message);
+        } else if (data.type === 'match_created') {
+            this.isInMatch = true;
+            this.matchId = data.match_id;
+            this.playerNumber = data.player_number;
+            this.opponent = data.opponent;
+            this.gameState = data.game_state;
+            this.renderGame(this.gameState);
+        } else if (data.type === 'match_result') {
+            this.displayMatchResult(data);
+        } else if (data.type === 'finals_starting') {
+            this.displayFinalsAnnouncement(data);
+        } else if (data.type === 'tournament_result') {
+            this.displayTournamentResult(data);
+        } else if (data.type === 'third_place_starting') {
+            this.displayThirdPlaceAnnouncement(data);
+        } else if (data.type === 'third_place_result') {
+            this.displayThirdPlaceResult(data);
         }
+    }
+    
+    // Add a helper method to ensure canvas is fully cleared
+    clearCanvas() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     renderLobby(data) {
-        // Clear the canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.clearCanvas();
         
         // Draw center waiting message
         this.ctx.fillStyle = 'black';
@@ -99,6 +155,235 @@ class TournamentClient {
         this.ctx.font = '20px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.fillText('En attente...', x, y);
+    }
+
+    displayThirdPlaceAnnouncement(data) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = '24px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2 - 30);
+        
+        this.ctx.font = '20px Arial';
+        this.ctx.fillText(`${data.contestants.player1} vs ${data.contestants.player2}`, 
+                        this.canvas.width / 2, this.canvas.height / 2 + 10);
+    }
+    
+    displayThirdPlaceResult(data) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = '24px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2);
+        
+        this.ctx.font = '20px Arial';
+        this.ctx.fillText("En attente de la finale...", 
+                        this.canvas.width / 2, this.canvas.height / 2 + 40);
+    }
+
+    displayMessage(message) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = '30px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(message, this.canvas.width / 2, this.canvas.height / 2);
+    }
+
+    renderGame(gameState) {
+        if (!gameState || !this.isInMatch) return;
+    
+        this.clearCanvas();
+        
+        // Clear the canvas with gray background
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw pads (both black like in pongServer)
+        this.ctx.fillStyle = 'black';  // Both pads black
+        this.ctx.fillRect(
+            gameState.pads.player1.x, 
+            gameState.pads.player1.y, 
+            20, 90
+        );
+        this.ctx.fillRect(
+            gameState.pads.player2.x, 
+            gameState.pads.player2.y, 
+            20, 90
+        );
+        
+        // Draw ball as rectangle instead of circle
+        this.ctx.beginPath();
+        this.ctx.fillRect(
+            gameState.ball.x, 
+            gameState.ball.y, 
+            15, 15
+        );
+        this.ctx.fill();
+        
+        // Draw scores
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = '30px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(gameState.score.player1, this.canvas.width / 4, 50);
+        this.ctx.fillText(gameState.score.player2, 3 * this.canvas.width / 4, 50);
+        
+        // Draw player info in the same format as pongServer
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText(
+            `${gameState.player_info.player1.username} (${gameState.player_info.player1.elo})`, 
+            10, 
+            25
+        );
+    
+        this.ctx.textAlign = 'right';
+        this.ctx.fillText(
+            `${gameState.player_info.player2.username} (${gameState.player_info.player2.elo})`, 
+            this.canvas.width - 10, 
+            25
+        );
+    }
+
+    displayMatchResult(data) {
+        this.clearCanvas();
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw result message
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = '30px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2);
+        
+        // Draw next match info
+        this.ctx.font = '20px Arial';
+        this.ctx.fillText("Attendez la prochaine phase du tournoi...", 
+                        this.canvas.width / 2, this.canvas.height / 2 + 50);
+    }
+
+    displayFinalsAnnouncement(data) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw finals announcement
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = '30px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2 - 50);
+        
+        // Draw VS text
+        this.ctx.font = '40px Arial';
+        this.ctx.fillText('VS', this.canvas.width / 2, this.canvas.height / 2);
+        
+        // Draw player 1 info (left)
+        this.ctx.font = '24px Arial';
+        this.ctx.textAlign = 'right';
+        this.ctx.fillText(data.finalists.player1, this.canvas.width / 2 - 30, this.canvas.height / 2);
+        
+        // Draw player 2 info (right)
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText(data.finalists.player2, this.canvas.width / 2 + 30, this.canvas.height / 2);
+        
+        // Draw preparing message
+        this.ctx.textAlign = 'center';
+        this.ctx.font = '20px Arial';
+        this.ctx.fillText("Préparation de la finale...", 
+                        this.canvas.width / 2, this.canvas.height / 2 + 50);
+    }
+
+    displayTournamentResult(data) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw trophy
+        this.ctx.fillStyle = 'gold';
+        this.drawTrophy(this.canvas.width / 2, 150, 80);
+        
+        // Draw champion message
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = '36px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2);
+        
+        // Draw champion name
+        this.ctx.font = '30px Arial';
+        this.ctx.fillText(data.champion, this.canvas.width / 2, this.canvas.height / 2 + 50);
+        
+        // Draw runner-up info
+        this.ctx.font = '20px Arial';
+        this.ctx.fillText(`Finaliste: ${data.runner_up}`, 
+                        this.canvas.width / 2, this.canvas.height / 2 + 100);
+        
+        // Draw tournament end message
+        this.ctx.font = '18px Arial';
+        this.ctx.fillText("Tournoi terminé! Les ELO ont été mis à jour.", 
+                        this.canvas.width / 2, this.canvas.height / 2 + 150);
+    }
+    
+    drawTrophy(x, y, size) {
+        const cup_width = size * 0.6;
+        const stem_width = size * 0.2;
+        const base_width = size * 0.8;
+        
+        // Cup
+        this.ctx.beginPath();
+        this.ctx.moveTo(x - cup_width/2, y);
+        this.ctx.lineTo(x + cup_width/2, y);
+        this.ctx.quadraticCurveTo(x + cup_width/2 + size*0.2, y + size*0.4, x + cup_width/2, y + size*0.5);
+        this.ctx.lineTo(x - cup_width/2, y + size*0.5);
+        this.ctx.quadraticCurveTo(x - cup_width/2 - size*0.2, y + size*0.4, x - cup_width/2, y);
+        this.ctx.fill();
+        
+        // Stem
+        this.ctx.fillRect(x - stem_width/2, y + size*0.5, stem_width, size*0.3);
+        
+        // Base
+        this.ctx.beginPath();
+        this.ctx.ellipse(x, y + size*0.8, base_width/2, size*0.1, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+    }
+
+    addEventListeners() {
+        document.addEventListener('keydown', (e) => {
+            if (!this.isInMatch) return;
+            
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.keysPressed[e.key] = true;
+                this.sendInput();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (!this.isInMatch) return;
+            
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.keysPressed[e.key] = false;
+                this.sendInput();
+            }
+        });
+    }
+
+    sendInput() {
+        if (!this.socket || !this.isInMatch) return;
+
+        let input = 0;
+        if (this.keysPressed['ArrowUp']) input = -1;
+        if (this.keysPressed['ArrowDown']) input = 1;
+        
+        this.socket.send(JSON.stringify({
+            type: 'player_input',
+            input: input
+        }));
+    }
+    
+    stopGame() {
+        this.isInMatch = false;
+        this.matchId = null;
+        this.gameState = null;
+        this.clearCanvas();
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
     }
 }
 

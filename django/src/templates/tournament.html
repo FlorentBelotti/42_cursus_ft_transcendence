@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-<div class="tournament-container">
-    <canvas id="tournamentCanvas" width="800" height="550"></canvas>
-    <div id="tournamentInfo" class="tournament-info"></div>
+<div class="pong-div">
+    <canvas class="pong" id="tournamentCanvas" width="800" height="550"></canvas>
 </div>
+<div id="tournamentInfo" class="tournament-info"></div>
 
 <script>
     const currentUser = {
@@ -13,4 +13,5 @@
     };
 </script>
 <script src="{% static 'js/tournamentClient.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/match.css' %}">
 {% endblock %}

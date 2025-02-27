@@ -60,7 +60,10 @@ document.addEventListener('DOMContentLoaded', function () {
 							}
                             if (scriptUrl.includes('leaderboard.js')) {
 								loadLeaderboardPage();
-							}                                    
+							}
+                            // if (scriptUrl.includes('tournamentClient.js')) {
+							// 	loadLeaderboardPage();
+							// }                                            
                         });
                     }
                     updateAuthButtons();

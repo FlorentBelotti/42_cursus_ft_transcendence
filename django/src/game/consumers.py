@@ -113,18 +113,396 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             
         # Check if we have enough players to start
         if len(tournament_players) == 4:
-            # Will implement tournament start later
-            pass
+            await self.start_tournament()
 
+    async def start_tournament(self):
+        tournament_players = TournamentConsumer.tournaments[self.tournament_id]
+        
+        # Send tournament start notification to all players
+        for player in tournament_players:
+            await player.send(text_data=json.dumps({
+                "type": "tournament_starting",
+                "message": "Le tournoi commence! Préparation des demi-finales..."
+            }))
+        
+        # Set up the two semi-final matches
+        await self.setup_semifinals()
+
+    async def setup_semifinals(self):
+        tournament_players = TournamentConsumer.tournaments[self.tournament_id]
+        
+        # Match 1: Player 1 vs Player 2
+        # Match 2: Player 3 vs Player 4
+        match1_players = tournament_players[0:2]
+        match2_players = tournament_players[2:4]
+        
+        # Create semifinal matches
+        await self.create_match(match1_players, "semifinal1")
+        await self.create_match(match2_players, "semifinal2")
+
+    async def create_match(self, players, match_id):
+        # Similar to PongConsumer's create_game but for tournament matches
+        player1, player2 = players
+        
+        # Set up game state for this match
+        game_state = {
+            "ball": {"x": canvas_width / 2 - ball_radius / 2, "y": canvas_height / 2 - ball_radius / 2},
+            "pads": {
+                "player1": {"x": 10, "y": (canvas_height - pad_height) / 2},
+                "player2": {"x": canvas_width - pad_width - 10, "y": (canvas_height - pad_height) / 2},
+            },
+            "score": {"player1": 0, "player2": 0},
+            "directionBall": {"x": 1 if random() < 0.5 else -1, "y": 1 if random() < 0.5 else -1},
+            "ballTouched": False,
+            "count": 0,
+            "inputs": {"player1": 0, "player2": 0},
+            "match_id": match_id,
+            "tournament_id": self.tournament_id,
+            "player_info": {
+                "player1": {"username": player1.user.username, "elo": player1.user.elo},
+                "player2": {"username": player2.user.username, "elo": player2.user.elo}
+            }
+        }
+        
+        # Store the match state somewhere accessible
+        if not hasattr(TournamentConsumer, 'match_states'):
+            TournamentConsumer.match_states = {}
+        TournamentConsumer.match_states[match_id] = game_state
+        
+        # Notify players about their match
+        for i, player in enumerate(players):
+            player.match_id = match_id
+            player.player_number = i + 1
+            await player.send(text_data=json.dumps({
+                "type": "match_created",
+                "match_id": match_id,
+                "player_number": player.player_number,
+                "opponent": players[1-i].user.username,
+                "game_state": game_state
+            }))
+        
+        # Start the game loop for this match
+        asyncio.create_task(self.update_match_state(match_id, players))
+    
+    async def update_match_state(self, match_id, players):
+        """Game loop for a tournament match"""
+        game_state = TournamentConsumer.match_states[match_id]
+
+        # Game loop runs until someone wins or all players disconnect
+        while True:
+            # Sleep to control game speed
+            await asyncio.sleep(0.02)  # 50 FPS
+
+            # Check if players are still connected
+            if not all(hasattr(player, 'match_id') and player.match_id == match_id for player in players):
+                # Handle disconnection - the player who stayed gets the win
+                for player in players:
+                    if hasattr(player, 'match_id') and player.match_id == match_id:
+                        await self.handle_match_result(match_id, player.user.username)
+                        return
+                # If no players left, just end the match
+                return
+
+            # Update pad positions based on inputs
+            for i, player_key in enumerate(["player1", "player2"]):
+                player_input = game_state["inputs"].get(player_key, 0)
+
+                # Move the pad
+                if player_input < 0:  # Up
+                    game_state["pads"][player_key]["y"] = max(0, game_state["pads"][player_key]["y"] - pad_speed)
+                elif player_input > 0:  # Down
+                    game_state["pads"][player_key]["y"] = min(canvas_height - pad_height, game_state["pads"][player_key]["y"] + pad_speed)
+
+            # Update ball position
+            ball_x = game_state["ball"]["x"] + game_state["directionBall"]["x"] * ball_speed
+            ball_y = game_state["ball"]["y"] + game_state["directionBall"]["y"] * ball_speed
+
+            # Ball collision with walls (top/bottom)
+            if ball_y <= 0 or ball_y >= canvas_height - ball_radius:
+                game_state["directionBall"]["y"] *= -1
+                ball_y = max(0, min(ball_y, canvas_height - ball_radius))
+
+            # Ball collision with pads
+            # Left pad (player1)
+            if (ball_x <= game_state["pads"]["player1"]["x"] + pad_width and
+                ball_x >= game_state["pads"]["player1"]["x"] and
+                ball_y >= game_state["pads"]["player1"]["y"] - ball_radius and
+                ball_y <= game_state["pads"]["player1"]["y"] + pad_height):
+                game_state["directionBall"]["x"] *= -1
+                ball_x = game_state["pads"]["player1"]["x"] + pad_width + 1
+
+            # Right pad (player2)
+            if (ball_x + ball_radius >= game_state["pads"]["player2"]["x"] and
+                ball_x + ball_radius <= game_state["pads"]["player2"]["x"] + pad_width and
+                ball_y >= game_state["pads"]["player2"]["y"] - ball_radius and
+                ball_y <= game_state["pads"]["player2"]["y"] + pad_height):
+                game_state["directionBall"]["x"] *= -1
+                ball_x = game_state["pads"]["player2"]["x"] - ball_radius - 1
+
+            # Update ball position
+            game_state["ball"]["x"] = ball_x
+            game_state["ball"]["y"] = ball_y
+
+            # Check for goals
+            if ball_x <= 0:  # Player 2 scores
+                game_state["score"]["player2"] += 1
+                await self.reset_ball(game_state)
+            elif ball_x >= canvas_width - ball_radius:  # Player 1 scores
+                game_state["score"]["player1"] += 1
+                await self.reset_ball(game_state)
+
+            # Check for match winner (first to 3 points)
+            if game_state["score"]["player1"] >= 3:
+                # Pass match_id and tournament_id explicitly
+                tournament_id = game_state["tournament_id"]
+                await self.handle_match_result(match_id, tournament_id, game_state["player_info"]["player1"]["username"])
+                return
+            elif game_state["score"]["player2"] >= 3:
+                tournament_id = game_state["tournament_id"]
+                await self.handle_match_result(match_id, tournament_id, game_state["player_info"]["player2"]["username"])
+                return
+
+            # Send updated state to all players
+            for player in players:
+                if not player.match_id == match_id:
+                    continue
+                await player.send(text_data=json.dumps({
+                    "type": "match_update",
+                    "game_state": game_state
+                }))
+
+    async def reset_ball(self, game_state):
+        """Reset the ball after a goal"""
+        game_state["ball"]["x"] = canvas_width / 2 - ball_radius / 2
+        game_state["ball"]["y"] = canvas_height / 2 - ball_radius / 2
+        game_state["directionBall"]["x"] = 1 if random() < 0.5 else -1
+        game_state["directionBall"]["y"] = 1 if random() < 0.5 else -1
+
+    async def handle_match_result(self, match_id, tournament_id, winner_username):
+        """Handle the result of a match"""
+        # Store winners for finals
+        if not hasattr(TournamentConsumer, 'semifinal_winners'):
+            TournamentConsumer.semifinal_winners = {}
+
+        if not hasattr(TournamentConsumer, 'semifinal_losers'):
+            TournamentConsumer.semifinal_losers = {}
+
+        # Find the winner object from the tournament players
+        tournament_players = TournamentConsumer.tournaments[tournament_id]
+        winner = next((player for player in tournament_players if player.user.username == winner_username), None)
+
+        if not winner:
+            return
+
+        # Find and store the loser for this match
+        loser = next((player for player in tournament_players 
+                    if hasattr(player, 'match_id') and player.match_id == match_id 
+                    and player.user.username != winner_username), None)
+
+        # Store winner and loser
+        TournamentConsumer.semifinal_winners[match_id] = winner
+        if match_id.startswith("semifinal") and loser:
+            TournamentConsumer.semifinal_losers[match_id] = loser
+
+        # Notify ONLY the participants of this match about the result
+        # and spectators (players not in any match)
+        match_participants = [winner, loser]
+        for player in tournament_players:
+            # Send to players in this match or not in any match
+            if (player in match_participants or 
+                not hasattr(player, 'match_id') or 
+                not player.match_id):
+
+                await player.send(text_data=json.dumps({
+                    "type": "match_result",
+                    "match_id": match_id,
+                    "winner": winner_username,
+                    "message": f"{winner_username} a remporté le match!"
+                }))
+
+        # Clear the match_id for these players
+        for player in match_participants:
+            if player:
+                player.match_id = None
+
+        # Check if both semifinals are complete
+        if (len(TournamentConsumer.semifinal_winners) == 2 and 
+            "semifinal1" in TournamentConsumer.semifinal_winners and
+            "semifinal2" in TournamentConsumer.semifinal_winners):
+
+            # Only start the next phase when all matches are complete
+            # Check if all players are not in matches
+            if not any(hasattr(p, 'match_id') and p.match_id for p in tournament_players):
+                if (len(TournamentConsumer.semifinal_losers) == 2 and
+                    "semifinal1" in TournamentConsumer.semifinal_losers and
+                    "semifinal2" in TournamentConsumer.semifinal_losers):
+                    # Set up the third-place match
+                    await self.setup_third_place_match(tournament_id)
+
+                # Set up the final
+                await self.setup_finals(tournament_id)
+
+        # For final match
+        elif match_id == "final":
+            await self.handle_tournament_winner(tournament_id, winner_username)
+        # For third-place match
+        elif match_id == "third_place":
+            await self.handle_third_place_winner(tournament_id, winner_username)
+
+    async def handle_third_place_winner(self, tournament_id, winner_username):
+        """Handle the third-place winner"""
+        tournament_players = TournamentConsumer.tournaments[tournament_id]
+
+        # Find the winner object
+        winner = next((player for player in tournament_players if player.user.username == winner_username), None)
+
+        if not winner:
+            return
+
+        # Announce third-place winner to all players
+        for player in tournament_players:
+            await player.send(text_data=json.dumps({
+                "type": "third_place_result",
+                "third_place": winner_username,
+                "message": f"🥉 {winner_username} a terminé 3ème du tournoi! 🥉"
+            }))
+
+    async def setup_third_place_match(self, tournament_id):
+        """Set up the third-place match"""
+        loser1 = TournamentConsumer.semifinal_losers["semifinal1"]
+        loser2 = TournamentConsumer.semifinal_losers["semifinal2"]
+
+        # Notify all players about the third-place match
+        tournament_players = TournamentConsumer.tournaments[tournament_id]  # Use passed tournament_id
+        for player in tournament_players:
+            await player.send(text_data=json.dumps({
+                "type": "third_place_starting",
+                "message": f"Match pour la 3ème place: {loser1.user.username} vs {loser2.user.username}",
+                "contestants": {
+                    "player1": loser1.user.username,
+                    "player2": loser2.user.username
+                }
+            }))
+
+        # Create third-place match
+        await self.create_match([loser1, loser2], "third_place")
+
+    async def setup_finals(self, tournament_id):
+        """Set up the final match"""
+        # Get the two winners
+        winner1 = TournamentConsumer.semifinal_winners["semifinal1"]
+        winner2 = TournamentConsumer.semifinal_winners["semifinal2"]
+
+        # Notify all players in the tournament about the finals
+        tournament_players = TournamentConsumer.tournaments[tournament_id]  # Use passed tournament_id
+        for player in tournament_players:
+            await player.send(text_data=json.dumps({
+                "type": "finals_starting",
+                "message": f"Finale: {winner1.user.username} vs {winner2.user.username}",
+                "finalists": {
+                    "player1": winner1.user.username,
+                    "player2": winner2.user.username
+                }
+            }))
+
+        # Create final match
+        await self.create_match([winner1, winner2], "final")
+
+    async def handle_tournament_winner(self, tournament_id, winner_username):
+        """Handle the tournament champion"""
+        tournament_players = TournamentConsumer.tournaments[tournament_id]
+
+        # Find the winner object
+        winner = next((player for player in tournament_players if player.user.username == winner_username), None)
+
+        if not winner:
+            return
+
+        # Find the runner-up (the other finalist)
+        finalist1 = TournamentConsumer.semifinal_winners["semifinal1"]
+        finalist2 = TournamentConsumer.semifinal_winners["semifinal2"]
+        runner_up = finalist2 if finalist1.user.username == winner_username else finalist1
+
+        # Update ELO ratings - tournament winner gets bonus points
+        await self.update_tournament_elo(winner, runner_up, tournament_players)
+
+        # Announce tournament champion to all players
+        for player in tournament_players:
+            await player.send(text_data=json.dumps({
+                "type": "tournament_result",
+                "champion": winner.user.username,
+                "runner_up": runner_up.user.username,
+                "message": f"🏆 {winner.user.username} est le champion du tournoi! 🏆"
+            }))
+
+        # Clean up ALL tournament state - complete cleanup
+        if tournament_id in TournamentConsumer.tournaments:
+            del TournamentConsumer.tournaments[tournament_id]
+
+        # Reset semifinal winners/losers
+        if hasattr(TournamentConsumer, 'semifinal_winners'):
+            TournamentConsumer.semifinal_winners = {}
+
+        if hasattr(TournamentConsumer, 'semifinal_losers'):
+            TournamentConsumer.semifinal_losers = {}
+
+        # Clear match states
+        if hasattr(TournamentConsumer, 'match_states'):
+            TournamentConsumer.match_states = {}
+
+    @database_sync_to_async
+    def update_tournament_elo(self, winner, runner_up, all_players):
+        """Update ELO ratings for all tournament participants"""
+        K = 32  # Standard K-factor
+
+        # Champion gets a big boost (tournament winner bonus)
+        winner_expected = 1 / (1 + 10 ** ((runner_up.user.elo - winner.user.elo) / 400))
+        winner_change = int(K * (1 - winner_expected)) + 15  # Extra 15 points for tournament win
+
+        # Runner-up gets a small consolation boost for making finals
+        runner_up_expected = 1 / (1 + 10 ** ((winner.user.elo - runner_up.user.elo) / 400))
+        runner_up_change = int(K * (0 - runner_up_expected)) + 5  # Small bonus for reaching finals
+
+        # Update winner and runner-up ELO
+        winner.user.elo += winner_change
+        runner_up.user.elo += runner_up_change
+
+        # Update semifinalists (who didn't make finals)
+        semifinalists = [p for p in all_players 
+                       if p != winner and p != runner_up]
+
+        for player in semifinalists:
+            # Smaller ELO penalty for semifinalists
+            expected = 1 / (1 + 10 ** ((winner.user.elo - player.user.elo) / 400))
+            change = int(K * (0 - expected) * 0.6)  # Only 60% of normal ELO loss
+            player.user.elo += change
+
+        # Save all changes to database
+        winner.user.save()
+        runner_up.user.save()
+        for player in semifinalists:
+            player.user.save()
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        
+        if data['type'] == 'player_input':
+            # Handle player inputs for active matches
+            if hasattr(self, 'match_id') and self.match_id:
+                match_state = TournamentConsumer.match_states.get(self.match_id)
+                if match_state:
+                    player_key = f'player{self.player_number}'
+                    match_state['inputs'][player_key] = data['input']
+    
     async def disconnect(self, close_code):
         if self.tournament_id is not None and self.tournament_id in TournamentConsumer.tournaments:
             tournament_id = self.tournament_id  # Store this before modifications
             tournament_players = TournamentConsumer.tournaments[tournament_id]
-
+            
             if self in tournament_players:
                 # Remove the player
                 tournament_players.remove(self)
-
+                
                 # If tournament is empty, remove it
                 if not tournament_players:
                     del TournamentConsumer.tournaments[tournament_id]
@@ -132,7 +510,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     # Update positions for remaining players
                     for i, player in enumerate(tournament_players):
                         player.player_position = i + 1
-
+                    
                     # Have one of the remaining players broadcast the updated state
                     if tournament_players:
                         await tournament_players[0].broadcast_tournament_state()
@@ -151,6 +529,10 @@ class PongConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.user = self.scope["user"]
+        self.tournament_id = None
+        self.player_position = None
+        self.match_id = None
+        self.player_number = None
         if not self.user.is_authenticated:
             await self.close()
             return
