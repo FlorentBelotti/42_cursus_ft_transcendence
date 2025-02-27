@@ -51,14 +51,9 @@ def define_render(request, additional_context=None):
     }
 
     if additional_context:
-            context.update(additional_context)
-            if "user_id" in additional_context:
-                request.path += f'{additional_context["user_id"]}/'
-
-    if request.user.is_authenticated:
-        context.update({
-            'current_user': request.user,
-        })
+        context.update(additional_context)
+        if "user_id" in additional_context:
+            request.path += '2/'
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return render(request, template_name, context)
