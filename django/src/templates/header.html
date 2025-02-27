@@ -27,42 +27,32 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Récupérer les éléments du modal
             const pongModal = document.getElementById('pong-modal');
             const pongGameButton = document.getElementById('pong-game-button');
             const closeModalButton = document.querySelector('.close-modal');
-
-            // Ouvrir le modal lorsque le bouton "Pong Game" est cliqué
             pongGameButton.addEventListener('click', function (event) {
-                event.preventDefault(); // Empêcher le comportement par défaut
-                pongModal.style.display = 'block'; // Afficher le modal
+                event.preventDefault();
+                pongModal.style.display = 'block';
             });
-
-            // Fermer le modal lorsque l'utilisateur clique sur le bouton de fermeture
             closeModalButton.addEventListener('click', function () {
-                pongModal.style.display = 'none'; // Masquer le modal
+                pongModal.style.display = 'none';
             });
-
-            // Fermer le modal si l'utilisateur clique en dehors du modal
             window.addEventListener('click', function (event) {
                 if (event.target === pongModal) {
-                    pongModal.style.display = 'none'; // Masquer le modal
+                    pongModal.style.display = 'none';
                 }
             });
-
-            // Gérer les clics sur les boutons du modal
             const modalButtons = document.querySelectorAll('.modal-button');
             modalButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     const url = button.getAttribute('data-url');
                     if (url) {
-                        window.location.href = url; // Rediriger vers l'URL du bouton
+                        window.location.href = url;
                     }
                 });
             });
         });
     </script>
-
     <style>
         @font-face {
             font-family: 'PPNeueMontreal';
