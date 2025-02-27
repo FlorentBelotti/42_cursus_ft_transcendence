@@ -17,6 +17,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.urls import reverse
+from django.template.loader import render_to_string
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import AuthenticationFailed
@@ -152,12 +153,16 @@ def user_login(request):
                 code = str(uuid.uuid4())
                 VerificationCode.objects.create(user=user, code=code)
 
+                html_message = render_to_string('verification_email.html', {'verification_code': code})
+                plain_message = f'Votre code de vérification est : {code}'
+
                 send_mail(
                     'Votre code de vérification',
-                    f'Votre code de vérification est : {code}',
+                    plain_message,
                     settings.EMAIL_HOST_USER,
                     [user.email],
                     fail_silently=False,
+                    html_message=html_message,
                 )
                 return JsonResponse({
                     "success": "User logged in",

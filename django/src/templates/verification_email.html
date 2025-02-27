@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verification Code</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 100%;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            max-width: 600px;
+            border-radius: 8px;
+        }
+        .banner {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .content {
+            padding: 20px;
+            text-align: center;
+        }
+        .verification-code {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            border: 2px dashed #333;
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="banner">
+            <h1>Code de vérification</h1>
+        </div>
+        <div class="content">
+            <p>Votre code de vérification est :</p>
+            <div class="verification-code">{{ verification_code }}</div>
+        </div>
+    </div>
+</body>
+</html>
