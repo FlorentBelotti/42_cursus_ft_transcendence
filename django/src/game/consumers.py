@@ -6,6 +6,7 @@ import asyncio
 import math
 from random import random
 from channels.db import database_sync_to_async
+from datetime import datetime
 
 canvas_width = 800
 canvas_height = 550
@@ -488,25 +489,103 @@ class TournamentConsumer(AsyncWebsocketConsumer):
     def update_tournament_elo(self, champion, runner_up, third_place, fourth_place=None):
         """Update ELO ratings for all tournament participants"""
         K = 32  # Standard K-factor
+        now = str(datetime.now())
         
         # Champion gets a big boost
         champion.user.elo += int(K * 0.7) + 15  # Base points + tournament win bonus
-        champion.user.wins += 2  # Increment wins
+        champion.user.wins += 2  # Increment wins (semifinal + final)
         
         # Runner-up gets a small boost
         runner_up.user.elo += int(K * 0.3) + 5  # Base points + finals bonus
-        runner_up.user.losses += 1  # Increment losses
-        runner_up.user.wins += 1  # Increment wins
-
+        runner_up.user.wins += 1  # Won semifinal
+        runner_up.user.losses += 1  # Lost final
+        
         # Third place gets neutral adjustment
         third_place.user.elo += int(K * 0.1)  # Small bonus for third place
-        runner_up.user.wins += 1  # Increment wins
-        runner_up.user.losses += 1  # Increment losses
-
+        third_place.user.wins += 1  # Won third-place match
+        third_place.user.losses += 1  # Lost semifinal
+        
         # Fourth place gets small penalty
         if fourth_place:
             fourth_place.user.elo -= int(K * 0.2)  # Small penalty
-            fourth_place.user.losses += 2  # Increment losses
+            fourth_place.user.losses += 2  # Lost semifinal and third-place match
+        
+        # Record tournament match history
+        # 1. Final match
+        champion.user.history.append({
+            'opponent_id': runner_up.user.id,
+            'opponent_username': runner_up.user.username,
+            'result': 'win',
+            'timestamp': now,
+            'match_type': 'tournament_final'
+        })
+        
+        runner_up.user.history.append({
+            'opponent_id': champion.user.id,
+            'opponent_username': champion.user.username,
+            'result': 'loose',
+            'timestamp': now,
+            'match_type': 'tournament_final'
+        })
+        
+        # 2. Third-place match
+        third_place.user.history.append({
+            'opponent_id': fourth_place.user.id,
+            'opponent_username': fourth_place.user.username,
+            'result': 'win',
+            'timestamp': now,
+            'match_type': 'tournament_third_place'
+        })
+        
+        fourth_place.user.history.append({
+            'opponent_id': third_place.user.id,
+            'opponent_username': third_place.user.username,
+            'result': 'loose',
+            'timestamp': now,
+            'match_type': 'tournament_third_place'
+        })
+        
+        # 3. Semifinal matches - use actual semifinal pairings from tournament state
+        semifinal1_winner = TournamentConsumer.semifinal_winners.get('semifinal1')
+        semifinal1_loser = TournamentConsumer.semifinal_losers.get('semifinal1')
+        semifinal2_winner = TournamentConsumer.semifinal_winners.get('semifinal2')
+        semifinal2_loser = TournamentConsumer.semifinal_losers.get('semifinal2')
+        
+        # Record semifinal 1 history
+        if semifinal1_winner and semifinal1_loser:
+            semifinal1_winner.user.history.append({
+                'opponent_id': semifinal1_loser.user.id,
+                'opponent_username': semifinal1_loser.user.username,
+                'result': 'win',
+                'timestamp': now,
+                'match_type': 'tournament_semifinal'
+            })
+            
+            semifinal1_loser.user.history.append({
+                'opponent_id': semifinal1_winner.user.id,
+                'opponent_username': semifinal1_winner.user.username,
+                'result': 'loose',
+                'timestamp': now,
+                'match_type': 'tournament_semifinal'
+            })
+        
+        # Record semifinal 2 history
+        if semifinal2_winner and semifinal2_loser:
+            semifinal2_winner.user.history.append({
+                'opponent_id': semifinal2_loser.user.id,
+                'opponent_username': semifinal2_loser.user.username,
+                'result': 'win',
+                'timestamp': now,
+                'match_type': 'tournament_semifinal'
+            })
+            
+            semifinal2_loser.user.history.append({
+                'opponent_id': semifinal2_winner.user.id,
+                'opponent_username': semifinal2_winner.user.username,
+                'result': 'loose',
+                'timestamp': now,
+                'match_type': 'tournament_semifinal'
+            })
         
         # Save all changes
         champion.user.save()
@@ -907,6 +986,20 @@ class PongConsumer(AsyncWebsocketConsumer):
         looser.elo = looser_new_elo
         winner.wins += 1
         looser.losses += 1
+
+        winner.history.append({
+            'opponent_id': looser.id,
+            'opponent_username': looser.username,
+            'result': 'win',
+            'timestamp': str(datetime.now())
+        })
+
+        looser.history.append({
+            'opponent_id': winner.id,
+            'opponent_username': winner.username,
+            'result': 'loose',
+            'timestamp': str(datetime.now())
+        })
 
         winner.save()
         looser.save()

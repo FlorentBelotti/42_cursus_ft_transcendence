@@ -12,6 +12,7 @@ class customUser(AbstractUser):
     losses = models.IntegerField(default=0)
     friends = models.ManyToManyField("self", blank=True)
     nickname = models.CharField(max_length=30, blank=True, null=True)
+    history = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return self.username

@@ -14,7 +14,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
 from django.urls import reverse
 from django.template.loader import render_to_string
@@ -63,8 +63,35 @@ def define_render(request, additional_context=None):
         return render(request, 'base.html', context)
 
 def leaderboard(request):
-    users = customUser.objects.all().order_by('-elo')
-    return define_render(request, {'users': users})
+    User = get_user_model()
+    users = User.objects.all().order_by('-elo')
+    
+    # Get the current user's history if they're logged in
+    user_history = []
+    if request.user.is_authenticated:
+        user_history = request.user.history if hasattr(request.user, 'history') else []
+        
+        # Sort history by timestamp (newest first)
+        if user_history:
+            user_history = sorted(user_history, key=lambda x: x.get('timestamp', ''), reverse=True)
+            
+            # Add opponent profile picture URLs
+            enhanced_history = []
+            for match in user_history:
+                match_copy = match.copy()  # Create a copy to avoid modifying original data
+                try:
+                    opponent = User.objects.get(username=match['opponent_username'])
+                    if opponent.profile_picture:
+                        match_copy['opponent_picture_url'] = opponent.profile_picture.url
+                except User.DoesNotExist:
+                    pass
+                enhanced_history.append(match_copy)
+            
+            user_history = enhanced_history
+    return define_render(request, {
+        'users': users,
+        'user_history': user_history
+    })
 
 @login_required
 def account(request):
