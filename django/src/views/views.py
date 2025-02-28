@@ -40,7 +40,8 @@ def check_auth_status(request):
         'urls': {
             'account': reverse('account'),
             'register': reverse('register'),
-            'login': reverse('login')
+            'login': reverse('login'),
+            'friends': reverse('friends'),
         }
     })
 

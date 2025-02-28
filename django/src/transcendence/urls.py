@@ -16,6 +16,7 @@ urlpatterns = [
     path('verify_code/<int:user_id>/', views.verify_code, name='verify_code'),
     path('api/auth-status/', views.check_auth_status, name='auth_status'),
     path('account/', views.account, name='account'),
+    path('friends/', views.friends_view, name='friends'),
 
     path('leaderboard/', views.leaderboard, name='leaderboard'),
     path('logout/', logout_view, name='logout'),
@@ -26,7 +27,6 @@ urlpatterns = [
     path('vsBot/', views.define_render, name='vsBot'),
     path('match/', views.define_render, name='match'),
     path('tournament/', views.define_render, name='tournament'),
-    path('friends/', views.friends_view, name='friends'),
 ]
 
 if settings.DEBUG:

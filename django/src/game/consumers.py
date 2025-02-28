@@ -491,16 +491,22 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         
         # Champion gets a big boost
         champion.user.elo += int(K * 0.7) + 15  # Base points + tournament win bonus
+        champion.user.wins += 2  # Increment wins
         
         # Runner-up gets a small boost
         runner_up.user.elo += int(K * 0.3) + 5  # Base points + finals bonus
-        
+        runner_up.user.losses += 1  # Increment losses
+        runner_up.user.wins += 1  # Increment wins
+
         # Third place gets neutral adjustment
         third_place.user.elo += int(K * 0.1)  # Small bonus for third place
-        
+        runner_up.user.wins += 1  # Increment wins
+        runner_up.user.losses += 1  # Increment losses
+
         # Fourth place gets small penalty
         if fourth_place:
             fourth_place.user.elo -= int(K * 0.2)  # Small penalty
+            fourth_place.user.losses += 2  # Increment losses
         
         # Save all changes
         champion.user.save()
@@ -899,6 +905,8 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         winner.elo = winner_new_elo
         looser.elo = looser_new_elo
+        winner.wins += 1
+        looser.losses += 1
 
         winner.save()
         looser.save()

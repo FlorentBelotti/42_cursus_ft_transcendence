@@ -11,6 +11,7 @@ async function updateAuthButtons() {
         
         if (data.is_authenticated) {
             authButtonsContainer.innerHTML = `
+                <button class="nav-button" data-url="${data.urls.friends}">Friends</button>
                 <button class="nav-button" data-url="${data.urls.account}">Account</button>
             `;
         } else {
