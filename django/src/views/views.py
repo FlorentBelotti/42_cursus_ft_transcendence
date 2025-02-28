@@ -42,6 +42,7 @@ def check_auth_status(request):
             'register': reverse('register'),
             'login': reverse('login'),
             'friends': reverse('friends'),
+            'leaderboard': reverse('leaderboard'),
         }
     })
 
