@@ -7,9 +7,8 @@
         <h1>TRANSCENDENCE</h1>
         <ul>
             <li><button class="nav-button" data-url="{% url 'home' %}">Home</button></li>
-            <li><button type="button" class="pong-button" id="pong-game-button">Pong</button></li>
-            <li><button class="nav-button" data-url="{% url 'snake' %}">Snake</button></li>
-            <!-- <li><button class="nav-button" data-url="{% url 'leaderboard' %}">Stats</button></li> -->
+            <!-- Game buttons moved to auth-header.js -->
+            <span id="game-buttons"></span>
             <span id="auth-buttons"></span>
         </ul>
     </nav>
@@ -28,12 +27,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const pongModal = document.getElementById('pong-modal');
-            const pongGameButton = document.getElementById('pong-game-button');
             const closeModalButton = document.querySelector('.close-modal');
-            pongGameButton.addEventListener('click', function (event) {
-                event.preventDefault();
-                pongModal.style.display = 'block';
-            });
+            
+            // Pong button setup moved to updateAuthButtons
+            
             closeModalButton.addEventListener('click', function () {
                 pongModal.style.display = 'none';
             });
@@ -54,14 +51,14 @@
         });
     </script>
 
-	<script type="importmap">
-		{
-			"imports": {
-				"three": "https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js",
-				"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/"
-			}
-		}
-	</script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/"
+            }
+        }
+    </script>
 
     <style>
         @font-face {
