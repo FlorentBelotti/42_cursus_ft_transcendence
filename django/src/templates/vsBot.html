@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong</title>
+    {% load static %}
+	<link rel="stylesheet" href="{% static 'css/local.css'%}">
+</head>
+<body>
+	<div class="pong-div">
+		{% load static %}
+		<canvas class="pong" id="pong" width="800" height="550"></canvas>
+	</div>
+	<script src="{% static 'js/vsBot.js' %}"></script>
+	<script>
+		document.addEventListener('DOMContentLoaded', (event) => {
+			initPong();
+		});
+	</script>
+</body>
