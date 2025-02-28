@@ -26,7 +26,9 @@ urlpatterns = [
     path('vsBot/', views.define_render, name='vsBot'),
     path('match/', views.define_render, name='match'),
     path('tournament/', views.define_render, name='tournament'),
+    path('friends/', views.friends_view, name='friends'),
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

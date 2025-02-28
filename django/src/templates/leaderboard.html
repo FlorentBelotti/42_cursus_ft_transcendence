@@ -19,9 +19,9 @@
                     <td class="px-4 py-3 text-left">{{ forloop.counter }}</td>
                     <td class="px-4 py-3 text-left flex items-center">
                         {% if user.profile_picture %}
-                            <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="w-8 h-8 rounded-full mr-3">
+                            <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="profile-picture mr-3">
                         {% else %}
-                            <div class="w-8 h-8 rounded-full bg-gray-300 mr-3 flex items-center justify-center">
+                            <div class="profile-picture bg-gray-300 mr-3 flex items-center justify-center">
                                 <span>{{ user.username|first|upper }}</span>
                             </div>
                         {% endif %}
