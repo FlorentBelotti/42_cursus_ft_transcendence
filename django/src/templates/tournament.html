@@ -1,6 +1,13 @@
-{% extends 'base.html' %}
-{% load static %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/match.css' %}">
+</head>
+<body>
 <div class="pong-div">
     <canvas class="pong" id="tournamentCanvas" width="800" height="550"></canvas>
 </div>
@@ -13,5 +20,5 @@
     };
 </script>
 <script src="{% static 'js/tournamentClient.js' %}"></script>
-<link rel="stylesheet" href="{% static 'css/match.css' %}">
-{% endblock %}
+</body>
+</html>
