@@ -248,3 +248,20 @@ def verify_code(request, user_id):
         return render(request, 'base.html', {
             'content_template': 'verify_code.html'
         })
+    
+@login_required
+def friends_view(request):
+    if request.method == "POST":
+        username = request.POST.get('username')
+        try:
+            friend = customUser.objects.get(username=username)
+            if friend != request.user:
+                request.user.friends.add(friend)
+                messages.success(request, f'{username} a été ajouté à votre liste d\'amis.')
+            else:
+                messages.error(request, 'Vous ne pouvez pas vous ajouter vous-même.')
+        except customUser.DoesNotExist:
+            messages.error(request, 'Utilisateur non trouvé.')
+
+    friends = request.user.friends.all()
+    return define_render(request, {'friends': friends})

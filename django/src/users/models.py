@@ -8,6 +8,10 @@ from django.db import models
 class customUser(AbstractUser):
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True, default='profile_pictures/arcane_from_arcane.png')
     elo = models.IntegerField(default=1000)
+    wins = models.IntegerField(default=0)
+    losses = models.IntegerField(default=0)
+    friends = models.ManyToManyField("self", blank=True)
+    nickname = models.CharField(max_length=30, blank=True, null=True)
 
     def __str__(self):
         return self.username

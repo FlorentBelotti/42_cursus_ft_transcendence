@@ -39,7 +39,9 @@ def create_user(request):
             email=serializer.validated_data['email'],
             password=serializer.validated_data['password'],
             elo=1000,
-            profile_picture='profile_pictures/arcane_from_arcane.png'
+            profile_picture='profile_pictures/arcane_from_arcane.png',
+            wins=0,
+            losses=0
         )
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

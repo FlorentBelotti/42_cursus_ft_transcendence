@@ -26,6 +26,7 @@ urlpatterns = [
     path('vsBot/', views.define_render, name='vsBot'),
     path('match/', views.define_render, name='match'),
     path('tournament/', views.define_render, name='tournament'),
+    path('friends/', views.friends_view, name='friends'),
 ]
 
 if settings.DEBUG:
