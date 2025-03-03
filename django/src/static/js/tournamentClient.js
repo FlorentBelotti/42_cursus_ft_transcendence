@@ -21,9 +21,45 @@ class TournamentClient {
 
     init() {
         console.log('Initializing Tournament Client');
-        this.connectWebSocket();
-        this.addEventListeners();
+        // Display welcome message on canvas
+        this.displayWelcomeScreen();
+        
+        // Add button event listener
+        const createTournamentBtn = document.getElementById('createTournamentBtn');
+        if (createTournamentBtn) {
+            createTournamentBtn.addEventListener('click', () => {
+                // Disable the button to prevent multiple clicks
+                createTournamentBtn.disabled = true;
+                createTournamentBtn.textContent = 'Joining Tournament...';
+                
+                // Now connect to WebSocket and join tournament
+                this.connectWebSocket();
+            });
+        }
     }
+
+    displayWelcomeScreen() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = '#f0f0f0';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.ctx.fillStyle = '#333';
+        this.ctx.font = '32px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('Pong Tournament', this.canvas.width / 2, 150);
+        
+        this.ctx.font = '20px Arial';
+        this.ctx.fillText('Click "Create Tournament" to begin', this.canvas.width / 2, 220);
+        
+        this.ctx.font = '16px Arial';
+        this.ctx.fillText('You will be matched with other players', this.canvas.width / 2, 270);
+        this.ctx.fillText('for a 4-player tournament', this.canvas.width / 2, 300);
+        
+        // Display user info
+        const displayName = currentUser.nickname || currentUser.username;
+        this.ctx.fillText(`Player: ${displayName} (ELO: ${currentUser.elo})`, this.canvas.width / 2, 350);
+    }
+
 
     connectWebSocket() {
         const token = document.cookie
