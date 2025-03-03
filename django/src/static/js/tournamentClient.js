@@ -246,50 +246,54 @@ class TournamentClient {
         );
     }
 
+    // In the displayMatchResult method
     displayMatchResult(data) {
         this.clearCanvas();
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw result message
+
+        // Draw result message - use winner_display if available, otherwise winner
         this.ctx.fillStyle = 'black';
         this.ctx.font = '30px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2);
-        
+
         // Draw next match info
         this.ctx.font = '20px Arial';
         this.ctx.fillText("Attendez la prochaine phase du tournoi...", 
                         this.canvas.width / 2, this.canvas.height / 2 + 50);
     }
 
+    // In the displayFinalsAnnouncement method
     displayFinalsAnnouncement(data) {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
+
         // Draw finals announcement
         this.ctx.fillStyle = 'black';
         this.ctx.font = '30px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2 - 50);
-        
+
         // Draw VS text
         this.ctx.font = '40px Arial';
         this.ctx.fillText('VS', this.canvas.width / 2, this.canvas.height / 2);
-        
-        // Draw player 1 info (left)
+
+        // Draw player 1 info (left) - Use display name if available
         this.ctx.font = '24px Arial';
         this.ctx.textAlign = 'right';
-        this.ctx.fillText(data.finalists.player1, this.canvas.width / 2 - 30, this.canvas.height / 2);
-        
-        // Draw player 2 info (right)
+        this.ctx.fillText(data.finalists.player1_display || data.finalists.player1, this.canvas.width / 2 - 30, this.canvas.height / 2);
+
+        // Draw player 2 info (right) - Use display name if available
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(data.finalists.player2, this.canvas.width / 2 + 30, this.canvas.height / 2);
-        
+        this.ctx.fillText(data.finalists.player2_display || data.finalists.player2, this.canvas.width / 2 + 30, this.canvas.height / 2);
+
         // Draw preparing message
         this.ctx.textAlign = 'center';
         this.ctx.font = '20px Arial';
         this.ctx.fillText("Préparation de la finale...", 
                         this.canvas.width / 2, this.canvas.height / 2 + 50);
     }
+
+// In the displayTournamentRankings method
 
     displayTournamentRankings(data) {
         this.clearCanvas();
@@ -357,17 +361,20 @@ class TournamentClient {
             this.ctx.font = '20px Arial';
             this.ctx.textAlign = 'center';
             
+            // Use nickname if available
+            const displayName = rank.nickname || rank.username;
+            
             if (rank.position <= 3) {
                 // Draw name on podium
                 this.ctx.fillText(
-                    `${rank.medal} ${rank.username}`, 
+                    `${rank.medal} ${displayName}`, 
                     pos.x, 
                     pos.y - height + 70
                 );
             } else {
                 // Draw 4th place below podiums
                 this.ctx.fillText(
-                    `4ème place: ${rank.username}`,
+                    `4ème place: ${displayName}`,
                     pos.x,
                     pos.y
                 );

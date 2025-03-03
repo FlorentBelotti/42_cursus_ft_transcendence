@@ -306,6 +306,9 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         if not winner:
             return
 
+        # Get winner's display name (nickname if available)
+        winner_display = winner.user.nickname if hasattr(winner.user, 'nickname') and winner.user.nickname else winner.user.username
+
         # Find and store the loser for this match
         loser = next((player for player in tournament_players 
                     if hasattr(player, 'match_id') and player.match_id == match_id 
@@ -329,7 +332,8 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     "type": "match_result",
                     "match_id": match_id,
                     "winner": winner_username,
-                    "message": f"{winner_username} a remporté le match!"
+                    "winner_display": winner_display,
+                    "message": f"{winner_display} a remporté le match!"
                 }))
 
         # Clear the match_id for these players
@@ -401,45 +405,66 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             await self.update_all_elo_ratings(tournament_id)
             self._cleanup_tournament(tournament_id)
 
+# Update the third place match setup to actually create the match
+
     async def setup_third_place_match(self, tournament_id):
         """Set up the third-place match"""
         loser1 = TournamentConsumer.semifinal_losers["semifinal1"]
         loser2 = TournamentConsumer.semifinal_losers["semifinal2"]
 
+        # Get display names for both players
+        loser1_display = loser1.user.nickname if hasattr(loser1.user, 'nickname') and loser1.user.nickname else loser1.user.username
+        loser2_display = loser2.user.nickname if hasattr(loser2.user, 'nickname') and loser2.user.nickname else loser2.user.username
+
         # Notify all players about the third-place match
-        tournament_players = TournamentConsumer.tournaments[tournament_id]  # Use passed tournament_id
+        tournament_players = TournamentConsumer.tournaments[tournament_id]
         for player in tournament_players:
             await player.send(text_data=json.dumps({
                 "type": "third_place_starting",
-                "message": f"Match pour la 3ème place: {loser1.user.username} vs {loser2.user.username}",
+                "message": f"Match pour la 3ème place: {loser1_display} vs {loser2_display}",
                 "contestants": {
                     "player1": loser1.user.username,
-                    "player2": loser2.user.username
+                    "player1_display": loser1_display,
+                    "player2": loser2.user.username,
+                    "player2_display": loser2_display
                 }
             }))
 
-        # Create third-place match
+        # Add small delay for UI transition  
+        await asyncio.sleep(3)
+
+        # Actually create the third place match
         await self.create_match([loser1, loser2], "third_place")
 
+    # In setup_finals
     async def setup_finals(self, tournament_id):
         """Set up the final match"""
         # Get the two winners
         winner1 = TournamentConsumer.semifinal_winners["semifinal1"]
         winner2 = TournamentConsumer.semifinal_winners["semifinal2"]
 
+        # Get display names for both finalists
+        winner1_display = winner1.user.nickname if hasattr(winner1.user, 'nickname') and winner1.user.nickname else winner1.user.username
+        winner2_display = winner2.user.nickname if hasattr(winner2.user, 'nickname') and winner2.user.nickname else winner2.user.username
+
         # Notify all players in the tournament about the finals
-        tournament_players = TournamentConsumer.tournaments[tournament_id]  # Use passed tournament_id
+        tournament_players = TournamentConsumer.tournaments[tournament_id]
         for player in tournament_players:
             await player.send(text_data=json.dumps({
                 "type": "finals_starting",
-                "message": f"Finale: {winner1.user.username} vs {winner2.user.username}",
+                "message": f"Finale: {winner1_display} vs {winner2_display}",
                 "finalists": {
                     "player1": winner1.user.username,
-                    "player2": winner2.user.username
+                    "player1_display": winner1_display,
+                    "player2": winner2.user.username,
+                    "player2_display": winner2_display
                 }
             }))
 
-        # Create final match
+        # Add small delay for UI transition
+        await asyncio.sleep(3)
+
+        # Actually create the final match
         await self.create_match([winner1, winner2], "final")
 
     async def handle_tournament_winner(self, tournament_id, winner_username):
@@ -641,9 +666,18 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         ranking_list = []
         for position in range(1, 5):
             if position in rankings:
+                # Find the actual user to get their nickname
+                username = rankings[position]
+                player = next((p for p in tournament_players if p.user.username == username), None)
+                
+                nickname = None
+                if player and hasattr(player.user, 'nickname') and player.user.nickname:
+                    nickname = player.user.nickname
+                    
                 ranking_list.append({
                     "position": position,
-                    "username": rankings[position],
+                    "username": username,
+                    "nickname": nickname,
                     "medal": "🥇" if position == 1 else "🥈" if position == 2 else "🥉" if position == 3 else ""
                 })
         
@@ -655,7 +689,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 "complete": len(rankings) >= 4,
                 "message": "Classement du tournoi"
             }))
-
+    
     async def disconnect(self, close_code):
         if self.tournament_id is not None and self.tournament_id in TournamentConsumer.tournaments:
             tournament_id = self.tournament_id  # Store this before modifications
