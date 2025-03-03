@@ -74,6 +74,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         for i, player in enumerate(TournamentConsumer.tournaments[self.tournament_id]):
             players_info.append({
                 "username": player.user.username,
+                "nickname": player.user.nickname if hasattr(player.user, 'nickname') and player.user.nickname else None,
                 "elo": player.user.elo,
                 "position": i + 1
             })
@@ -95,6 +96,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         for i, player in enumerate(tournament_players):
             players_info.append({
                 "username": player.user.username,
+                "nickname": player.user.nickname if hasattr(player.user, 'nickname') and player.user.nickname else None,
                 "elo": player.user.elo,
                 "position": i + 1
             })
@@ -161,8 +163,16 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             "match_id": match_id,
             "tournament_id": self.tournament_id,
             "player_info": {
-                "player1": {"username": player1.user.username, "elo": player1.user.elo},
-                "player2": {"username": player2.user.username, "elo": player2.user.elo}
+                "player1": {
+                    "username": player1.user.username, 
+                    "nickname": player1.user.nickname if hasattr(player1.user, 'nickname') and player1.user.nickname else None,
+                    "elo": player1.user.elo
+                },
+                "player2": {
+                    "username": player2.user.username, 
+                    "nickname": player2.user.nickname if hasattr(player2.user, 'nickname') and player2.user.nickname else None,
+                    "elo": player2.user.elo
+                }
             }
         }
         

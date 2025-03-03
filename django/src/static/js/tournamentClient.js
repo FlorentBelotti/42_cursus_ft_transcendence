@@ -139,7 +139,8 @@ class TournamentClient {
         this.ctx.fillStyle = 'white';
         this.ctx.font = '20px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(player.username, x, y - 15);
+        const displayName = player.nickname ? player.nickname : player.username;
+        this.ctx.fillText(displayName, x, y - 15);
         this.ctx.fillText(`ELO: ${player.elo}`, x, y + 15);
     }
 
@@ -194,11 +195,8 @@ class TournamentClient {
     
         this.clearCanvas();
         
-        // Clear the canvas with gray background
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw pads (both black like in pongServer)
-        this.ctx.fillStyle = 'black';  // Both pads black
+        // Draw pads
+        this.ctx.fillStyle = 'black';
         this.ctx.fillRect(
             gameState.pads.player1.x, 
             gameState.pads.player1.y, 
@@ -210,7 +208,7 @@ class TournamentClient {
             20, 90
         );
         
-        // Draw ball as rectangle instead of circle
+        // Draw ball
         this.ctx.beginPath();
         this.ctx.fillRect(
             gameState.ball.x, 
@@ -226,17 +224,23 @@ class TournamentClient {
         this.ctx.fillText(gameState.score.player1, this.canvas.width / 4, 50);
         this.ctx.fillText(gameState.score.player2, 3 * this.canvas.width / 4, 50);
         
-        // Draw player info in the same format as pongServer
+        // Draw player info with nickname support
+        const player1 = gameState.player_info?.player1 || gameState.player1;
+        const player2 = gameState.player_info?.player2 || gameState.player2;
+        
+        const player1Display = player1.nickname || player1.username;
+        const player2Display = player2.nickname || player2.username;
+        
         this.ctx.textAlign = 'left';
         this.ctx.fillText(
-            `${gameState.player_info.player1.username} (${gameState.player_info.player1.elo})`, 
+            `${player1Display} (${player1.elo})`, 
             10, 
             25
         );
     
         this.ctx.textAlign = 'right';
         this.ctx.fillText(
-            `${gameState.player_info.player2.username} (${gameState.player_info.player2.elo})`, 
+            `${player2Display} (${player2.elo})`, 
             this.canvas.width - 10, 
             25
         );

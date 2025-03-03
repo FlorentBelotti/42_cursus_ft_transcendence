@@ -16,6 +16,7 @@
 <script>
     const currentUser = {
         username: "{{ request.user.username }}",
+        nickname: "{{ request.user.nickname|default:'' }}",
         elo: {{ request.user.elo }}
     };
 </script>
