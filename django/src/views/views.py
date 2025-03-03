@@ -32,7 +32,7 @@ from users.models import customUser
 from users.serializers import UserSerializer, UserDataSerializer
 from users.forms import RegisterForm
 from users.models import customUser
-from users.forms import UserUpdateForm, CustomPasswordChangeForm
+from users.forms import UserUpdateForm, CustomPasswordChangeForm, NicknameUpdateForm
 
 def check_auth_status(request):
     return JsonResponse({
@@ -101,6 +101,7 @@ def account(request):
         try:
             user_form = UserUpdateForm(request.POST, request.FILES, instance=request.user)
             password_form = CustomPasswordChangeForm(request.user, request.POST)
+            nickname_form = NicknameUpdateForm(request.POST, instance=request.user)
 
             if 'update_info' in request.POST:
                 if user_form.is_valid():
@@ -133,6 +134,16 @@ def account(request):
                 request.user.delete()
                 return response
 
+            elif 'update_nickname' in request.POST:
+                if nickname_form.is_valid():
+                    nickname_form.save()
+                    return JsonResponse({"success": "Nickname updated"}, status=200)
+                else:
+                    return JsonResponse({
+                        "error": "Nickname validation failed",
+                        "errors": nickname_form.errors
+                    }, status=400)
+
             elif 'disconnect' in request.POST:
                 response = JsonResponse({
                     "success": "User disconnected",
@@ -153,11 +164,13 @@ def account(request):
 
     else:
         user_form = UserUpdateForm(instance=request.user)
+        nickname_form = NicknameUpdateForm(instance=request.user)
         password_form = CustomPasswordChangeForm(request.user)
 
     return define_render(request, {
         'user_form': user_form,
-        'password_form': password_form
+        'password_form': password_form,
+        'nickname_form': nickname_form
     })
 
 def register(request):

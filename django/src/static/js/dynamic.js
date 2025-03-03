@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
 								deleteFormEvent();
 								updateAuthButtons();
 								disconnectFormEvent();
+    							nicknameFormEvent();
 							}
 							if (scriptUrl.includes('animationPong.js')) {
 								initPongAnimation();

@@ -40,10 +40,10 @@ AUTH_USER_MODEL = 'users.customUser'
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Durée de validité courte
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),   # Durée de validité longue
-    'ROTATE_REFRESH_TOKENS': True,  # Génère un nouveau refresh token à chaque rafraîchissement
-    'BLACKLIST_AFTER_ROTATION': True,  # Ajoute l'ancien refresh token à une liste noire
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7), 
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
 }

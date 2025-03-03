@@ -22,3 +22,11 @@ class UserUpdateForm(UserChangeForm):
 class CustomPasswordChangeForm(PasswordChangeForm):
     class Meta:
         model = customUser
+
+class NicknameUpdateForm(forms.ModelForm):
+    class Meta:
+        model = customUser
+        fields = ['nickname']
+        widgets = {
+            'nickname': forms.TextInput(attrs={'class': 'form-control'}),
+        }

@@ -142,9 +142,44 @@ function disconnectFormEvent() {
     });
 }
 
+function nicknameFormEvent() {
+    document.getElementById("nicknameForm").addEventListener("submit", async function (event) {
+        event.preventDefault();
+        let nicknameFormData = new FormData(event.target);
+        nicknameFormData.append('update_nickname', 'true');
+        
+        try {
+            let response = await fetch('/account/', {
+                method: "post",
+                body: nicknameFormData,
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            });
+            
+            let data = await response.json();
+            console.log('Response data:', data);
+            
+            if ('success' in data) {
+                console.log('Success:', data.success);
+                window.loadContent('/account/');
+            } else if ('error' in data) {
+                console.log('Error:', data.error);
+                if (data.errors) {
+                    console.log('Validation errors:', data.errors);
+                }
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     updateFormEvent();
     passwordFormEvent();
     deleteFormEvent();
     disconnectFormEvent();
+    nicknameFormEvent();
 });

@@ -19,6 +19,7 @@
                     <p>Aucune photo de profil.</p>
                 {% endif %}
                 <h5>{{ user.username }}</h5>
+                <p>Nickname: {{ user.nickname }}</p>
                 <p>Email: {{ user.email }}</p>
                 <p>Elo: {{ user.elo }}</p>
             </div>
@@ -29,6 +30,14 @@
             {% csrf_token %}
             {{ user_form.as_p }}
             <button type="submit" name="update_info" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer;">Update account</button>
+        </form>
+
+        <!-- Formulaire de modification de pseudo -->
+        <form id="nicknameForm" method="post" style="margin-top: 20px;">
+            {% csrf_token %}
+            <h3>Change Nickname</h3>
+            {{ nickname_form.as_p }}
+            <button type="submit" name="update_nickname" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer;">Update Nickname</button>
         </form>
 
         <!-- Formulaire de changement de mot de passe -->
