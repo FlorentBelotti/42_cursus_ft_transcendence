@@ -65,68 +65,55 @@ class TournamentClient {
     }
 
     connectWebSocket() {
-        this.socket = new WebSocket(`ws://${window.location.host}/ws/tournament/`);
+        // Get token from cookie
+        const token = document.cookie
+            .split('; ')
+            .find(cookie => cookie.startsWith('access_token='))
+            ?.split('=')[1];
+            
+        console.log("Token found:", token ? "Yes" : "No");
+            
+        // Include token in URL as query parameter
+        this.socket = new WebSocket(`ws://${window.location.host}/ws/tournament/?token=${token}`);
         
         this.socket.onopen = () => {
             console.log('Tournament WebSocket connection established.');
-            // Authenticate first
-            const token = this.getCookie('access_token');
-            if (token) {
-                this.socket.send(JSON.stringify({
-                    type: 'authenticate',
-                    token: token
-                }));
-            } else {
-                console.error('No access token found');
-                this.displayMessage('Authentication failed: No token found');
+            // Send create_tournament message ONCE
+            this.socket.send(JSON.stringify({
+                type: 'create_tournament'
+            }));
+            console.log('Sent create_tournament message');
+        };
+    
+        this.socket.onmessage = (event) => {
+            console.log('Received message:', event.data);
+            try {
+                const data = JSON.parse(event.data);
+                this.handleMessage(data);
+            } catch (e) {
+                console.error("Error parsing message:", e);
             }
         };
-
-        this.socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            this.handleMessage(data);
-        };
-
-        this.socket.onclose = () => {
-            console.log('Tournament WebSocket connection closed.');
+    
+        this.socket.onclose = (event) => {
+            console.log('Tournament WebSocket connection closed.', event.code, event.reason);
             this.stopGame();
+            
+            // Re-enable the button if connection is lost
+            const createTournamentBtn = document.getElementById('createTournamentBtn');
+            if (createTournamentBtn) {
+                createTournamentBtn.disabled = false;
+                createTournamentBtn.textContent = 'Create Tournament';
+            }
         };
-
+    
         this.socket.onerror = (error) => {
             console.error('Tournament WebSocket error:', error);
         };
     }
 
-    getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-        return null;
-    }
-
     handleMessage(data) {
-        console.log('Received data:', data);
-        
-        // Handle authentication response first
-        if (data.type === 'authenticated') {
-            console.log('Successfully authenticated');
-            this.authenticated = true;
-            
-            // Now create/join tournament
-            this.socket.send(JSON.stringify({
-                type: 'create_tournament'
-            }));
-            return;
-        } else if (data.type === 'error') {
-            console.error('Error:', data.message);
-            this.displayMessage(`Error: ${data.message}`);
-            return;
-        }
-        
-        // Don't process game messages until authenticated
-        if (!this.authenticated) {
-            return;
-        }
+        console.log('Processing data:', data);
         
         // Don't interrupt an ongoing match with other messages
         if (this.isInMatch) {
@@ -150,12 +137,22 @@ class TournamentClient {
             return;
         }
         
-        // Normal message handling when not in a match (ALWAYS clear canvas first)
+        // Normal message handling when not in a match
         this.clearCanvas();
         
         if (data.type === 'tournament_state') {
+            console.log('Rendering tournament lobby with', data.players.length, 'players');
             this.players = data.players;
             this.renderLobby(data);
+            
+            // Update tournament info div
+            const infoDiv = document.getElementById('tournamentInfo');
+            if (infoDiv) {
+                infoDiv.innerHTML = `<p>${data.message}</p>`;
+                if (data.waiting) {
+                    infoDiv.innerHTML += `<p>Your position: ${data.your_position}</p>`;
+                }
+            }
         } else if (data.type === 'tournament_starting') {
             this.displayMessage(data.message);
         } else if (data.type === 'match_created') {
@@ -178,42 +175,65 @@ class TournamentClient {
     
     // Add a helper method to ensure canvas is fully cleared
     clearCanvas() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        if (this.ctx && this.canvas) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        } else {
+            console.error('Cannot clear canvas - context or canvas missing');
+        }
     }
 
     renderLobby(data) {
+        console.log('Rendering lobby...');
+        
+        // Make sure canvas exists
+        if (!this.canvas) {
+            console.error('Canvas not found!');
+            this.canvas = document.getElementById('tournamentCanvas');
+            if (!this.canvas) {
+                console.error('Still can\'t find canvas!');
+                return;
+            }
+        }
+        
+        // Make sure context exists
+        if (!this.ctx) {
+            console.error('Canvas context not found!');
+            this.ctx = this.canvas.getContext('2d');
+            if (!this.ctx) {
+                console.error('Failed to get canvas context!');
+                return;
+            }
+        }
+        
         this.clearCanvas();
         
         // Draw title
         this.ctx.fillStyle = 'black';
-        this.ctx.font = '32px Arial';
+        this.ctx.font = '30px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('Tournament Lobby', this.canvas.width / 2, 60);
+        this.ctx.fillText('Tournament Lobby', this.canvas.width / 2, 50);
         
-        // Draw message
+        // Draw "Waiting for players" message
         this.ctx.font = '24px Arial';
-        this.ctx.fillText(data.message, this.canvas.width / 2, 100);
+        this.ctx.fillText(data.message, this.canvas.width / 2, 90);
         
-        // Draw player slots
+        // Draw bracket structure
+        this.ctx.strokeStyle = 'black';
+        this.ctx.lineWidth = 2;
+        
+        // Draw player positions or empty slots
         for (let i = 0; i < 4; i++) {
-            const pos = this.playerPositions[i];
+            const player = data.players.find(p => p.position === i + 1) || null;
+            const position = this.playerPositions[i];
             
-            if (i < data.players.length) {
-                // Draw player
-                this.drawPlayerCard(data.players[i], pos.x, pos.y);
+            if (player) {
+                this.drawPlayerCard(player, position.x, position.y);
             } else {
-                // Draw empty slot
-                this.drawEmptySlot(pos.x, pos.y);
+                this.drawEmptySlot(position.x, position.y);
             }
         }
         
-        // Highlight your position
-        if (data.your_position) {
-            const pos = this.playerPositions[data.your_position - 1];
-            this.ctx.strokeStyle = 'red';
-            this.ctx.lineWidth = 3;
-            this.ctx.strokeRect(pos.x - 75, pos.y - 45, 150, 90);
-        }
+        console.log('Lobby rendering complete');
     }
 
     drawPlayerCard(player, x, y) {

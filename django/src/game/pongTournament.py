@@ -48,15 +48,18 @@ class TournamentManager:
         Returns:
             tuple: (tournament_id, player_position)
         """
+        print(f"Tournament Manager: Adding player to tournament, user={getattr(player.user, 'username', 'unknown')}")
+        
         # Find an available tournament if none specified
         if tournament_id is None:
             for tid, tournament in self.tournaments.items():
                 if len(tournament["players"]) < 4 and "started" not in tournament:
                     tournament_id = tid
                     break
-            
+                
             # Create new tournament if none available
             if tournament_id is None:
+                print("Creating new tournament")
                 tournament_id = await self.create_tournament()
         
         # Add player to tournament
@@ -68,9 +71,12 @@ class TournamentManager:
         player.tournament_id = tournament_id
         player.player_position = player_position
         
+        print(f"Player added to tournament {tournament_id} at position {player_position}")
+        
         # Check if tournament can start
         if len(tournament["players"]) == 4:
             tournament["ready_to_start"] = True
+            print(f"Tournament {tournament_id} ready to start - 4 players joined")
         
         return tournament_id, player_position
     
