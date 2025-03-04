@@ -1,6 +1,6 @@
 from django.urls import re_path
-from .websockets.matchConsumer import MatchConsumer
-from .websockets.tournamentConsumer import TournamentConsumer
+from .websockets.pongMatchConsumer import MatchConsumer
+from .websockets.pongTournamentConsumer import TournamentConsumer
 
 websocket_urlpatterns = [
     re_path(r'ws/match/$', MatchConsumer.as_asgi()),

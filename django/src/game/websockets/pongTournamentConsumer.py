@@ -1,4 +1,4 @@
-from .baseConsumer import BaseGameConsumer
+from .pongBaseConsumer import BaseGameConsumer
 from ..pongTournament import TournamentManager
 from channels.db import database_sync_to_async
 import json

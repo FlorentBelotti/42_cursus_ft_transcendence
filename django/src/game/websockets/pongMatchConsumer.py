@@ -1,4 +1,4 @@
-from .baseConsumer import BaseGameConsumer
+from .pongBaseConsumer import BaseGameConsumer
 from ..pongLobby import LobbyManager
 from ..pongEngine import GameEngine
 from ..pongHelper import now_str

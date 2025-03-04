@@ -39,7 +39,7 @@ class TournamentClient {
             });
         }
     }
-    
+
     displayWelcomeScreen() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = '#f0f0f0';
@@ -181,6 +181,10 @@ class TournamentClient {
             this.playerNumber = data.player_number;
             this.opponent = data.opponent;
             this.gameState = data.game_state;
+            const infoDiv = document.getElementById('tournamentInfo');
+            if (infoDiv) {
+                infoDiv.innerHTML = '';
+            }        
             this.renderGame(this.gameState);
         } else if (data.type === 'match_result') {
             this.displayMatchResult(data);
