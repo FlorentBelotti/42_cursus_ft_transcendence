@@ -252,15 +252,6 @@ class PongServerGame {
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw midfield line
-        this.ctx.strokeStyle = 'black';
-        this.ctx.setLineDash([10, 10]);
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.canvas.width / 2, 0);
-        this.ctx.lineTo(this.canvas.width / 2, this.canvas.height);
-        this.ctx.stroke();
-        this.ctx.setLineDash([]);
-        
         // Draw paddles
         this.ctx.fillStyle = 'black';
         this.ctx.fillRect(
@@ -275,20 +266,19 @@ class PongServerGame {
         );
         
         // Draw ball
-        this.ctx.beginPath();
         this.ctx.fillRect(
             gameState.ball.x, 
             gameState.ball.y, 
             15, 15
         );
-        this.ctx.fill();
         
         // Draw scores
         this.ctx.fillStyle = 'black';
-        this.ctx.font = '48px Arial';
+        this.ctx.font = '30px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(gameState.score.player1, this.canvas.width / 4, 50);
-        this.ctx.fillText(gameState.score.player2, 3 * this.canvas.width / 4, 50);
+        this.ctx.fillText(gameState.score.player1, this.canvas.width / 2 - 30, 30);
+        this.ctx.fillText(":", this.canvas.width / 2, 30);
+        this.ctx.fillText(gameState.score.player2, this.canvas.width / 2 + 30, 30);
         
         // Draw player names with nicknames if available
         const player1Display = this.playerInfo.player1.nickname || this.playerInfo.player1.username;
@@ -300,18 +290,6 @@ class PongServerGame {
         
         this.ctx.textAlign = 'right';
         this.ctx.fillText(`${player2Display} (${this.playerInfo.player2.elo})`, this.canvas.width - 20, 20);
-        
-        // Highlight your paddle
-        if (this.playerNumber === 1 || this.playerNumber === 2) {
-            const playerKey = `player${this.playerNumber}`;
-            const pad = gameState.pads[playerKey];
-            
-            this.ctx.strokeStyle = 'blue';
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(
-                pad.x, pad.y, 20, 90
-            );
-        }
         
         // Request next animation frame
         requestAnimationFrame(() => {
