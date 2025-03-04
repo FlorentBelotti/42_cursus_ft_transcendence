@@ -113,8 +113,21 @@ class TournamentClient {
     }
 
     handleMessage(data) {
-        console.log('Processing data:', data);
-        
+        console.log('Processing data:', data.type);
+        if (data.type === 'tournament_rankings') {
+            console.log('Tournament rankings received:', data);
+            
+            // If tournament is complete, update UI accordingly
+            if (data.complete) {
+                this.isInMatch = false;  // Ensure we're not in match mode
+                this.matchId = null;     // Clear match ID
+            }
+            
+            // Display rankings (this should work regardless of if we're in a match)
+            this.clearCanvas();
+            this.displayTournamentRankings(data);
+            return;
+        }
         // Don't interrupt an ongoing match with other messages
         if (this.isInMatch) {
             // Only process match-related messages for THIS specific match
@@ -134,6 +147,13 @@ class TournamentClient {
                 this.displayMatchResult(data);
             }
             // Strictly ignore ALL other messages while in a match
+            return;
+        }
+        
+        // Always process tournament rankings even if they arrive while in other states
+        if (data.type === 'tournament_rankings') {
+            console.log('Received tournament rankings:', data);
+            this.displayTournamentRankings(data);
             return;
         }
         
@@ -168,8 +188,6 @@ class TournamentClient {
             this.displayFinalsAnnouncement(data);
         } else if (data.type === 'third_place_starting') {
             this.displayThirdPlaceAnnouncement(data);
-        } else if (data.type === 'tournament_rankings') {
-            this.displayTournamentRankings(data);
         }
     }
     
@@ -336,10 +354,18 @@ class TournamentClient {
         this.ctx.textAlign = 'center';
         this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2);
         
-        // Draw next match info
+        // Check if this is the final match or third-place match
+        const isFinalMatch = data.match_id === 'final' || data.match_id === 'third_place';
+        
+        // Draw different text based on match type
         this.ctx.font = '20px Arial';
-        this.ctx.fillText("Attendez la prochaine phase du tournoi...", 
-                    this.canvas.width / 2, this.canvas.height / 2 + 50);
+        if (isFinalMatch) {
+            this.ctx.fillText("Le classement final sera bientôt affiché...", 
+                        this.canvas.width / 2, this.canvas.height / 2 + 50);
+        } else {
+            this.ctx.fillText("Attendez la prochaine phase du tournoi...", 
+                        this.canvas.width / 2, this.canvas.height / 2 + 50);
+        }
     }
 
     displayMessage(message) {

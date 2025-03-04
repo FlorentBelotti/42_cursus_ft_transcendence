@@ -70,30 +70,68 @@ class TournamentConsumer(BaseGameConsumer):
         if hasattr(self, 'user'):
             await self.tournament_manager.handle_player_disconnect(self)
     
-    async def handle_message(self, data, message_type):
+    async def handle_match_result(self, match_id, tournament_id, winner_username, forfeit=False):
         """
-        Handle tournament-specific messages.
+        Handle the result of a match.
         """
-        if not hasattr(self, 'user'):
-            await self.send_error("You must authenticate first")
+        tournament = self.tournaments[tournament_id]
+        players = tournament["players"]
+    
+        # Find winner and loser
+        winner = next((player for player in players if player.user.username == winner_username), None)
+        if not winner:
             return
-            
-        if message_type == "create_tournament":
-            # Request to create or join a tournament (from button click)
-            await self.join_tournament()
-            
-        elif message_type == "leave_tournament":
-            # Leave tournament if not in a match
-            if hasattr(self, 'tournament_id') and not hasattr(self, 'match_id'):
-                await self.tournament_manager.handle_player_disconnect(self)
-                await self.send_message("tournament_left", {
-                    "message": "Vous avez quitté le tournoi"
-                })
+    
+        loser = next((player for player in players 
+                    if hasattr(player, 'match_id') and player.match_id == match_id 
+                    and player.user.username != winner_username), None)
+    
+        # Get display names
+        winner_display = get_display_name(winner.user)
+    
+        # Store result in tournament data
+        if match_id.startswith("semifinal"):
+            tournament["semifinal_winners"][match_id] = winner
+            if loser:
+                tournament["semifinal_losers"][match_id] = loser
+        elif match_id == "final":
+            # Handle the tournament winner
+            print(f"Final match complete - winner: {winner_username}")
+            await self.handle_tournament_winner(tournament_id, winner_username)
+        elif match_id == "third_place":
+            # Handle third place winner
+            print(f"Third place match complete - winner: {winner_username}")
+            await self.handle_third_place_winner(tournament_id, winner_username)
+    
+        # Notify participants and spectators
+        result_message = {
+            "type": "match_result",
+            "match_id": match_id,
+            "winner": winner_username,
+            "winner_display": winner_display,
+            "message": f"{winner_display} a remporté le match!" if not forfeit else f"{winner_display} gagne par forfait!"
+        }
+    
+        # Send to match participants and spectators
+        for player in players:
+            if player in [winner, loser] or not hasattr(player, 'match_id') or not player.match_id:
+                try:
+                    await player.send(text_data=json.dumps(result_message))
+                except Exception:
+                    pass
                 
-        elif message_type == "player_input":
-            # Handle player paddle movement in tournament match
-            input_value = data.get('input', 0)
-            await self.tournament_manager.handle_player_input(self, input_value)
+        # Clear match IDs
+        for player in [winner, loser]:
+            if player:
+                player.match_id = None
+                player.player_number = None
+    
+        # Check tournament progress
+        await self.check_tournament_progress(tournament_id)
+        
+        # If tournament is already complete, broadcast rankings again to ensure it's displayed
+        if tournament.get("complete", False):
+            await self.broadcast_tournament_rankings(tournament_id)
 
     @database_sync_to_async
     def get_user_from_token(self, token):

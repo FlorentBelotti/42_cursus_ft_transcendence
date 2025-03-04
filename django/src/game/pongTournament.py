@@ -32,6 +32,8 @@ class TournamentManager:
             "semifinal_losers": {},
             "rankings": {},
             "match_states": {},
+            "finals_created": False,  # Add this flag
+            "complete": False,        # Add this flag
             "created_at": now_str()
         }
         
@@ -236,7 +238,7 @@ class TournamentManager:
     async def handle_match_result(self, match_id, tournament_id, winner_username, forfeit=False):
         """
         Handle the result of a match.
-        
+
         Args:
             match_id: ID of the completed match
             tournament_id: ID of the tournament
@@ -245,25 +247,33 @@ class TournamentManager:
         """
         tournament = self.tournaments[tournament_id]
         players = tournament["players"]
-        
+
         # Find winner and loser
         winner = next((player for player in players if player.user.username == winner_username), None)
         if not winner:
             return
-            
+
         loser = next((player for player in players 
                     if hasattr(player, 'match_id') and player.match_id == match_id 
                     and player.user.username != winner_username), None)
-        
+
         # Get display names
         winner_display = get_display_name(winner.user)
-        
+
         # Store result in tournament data
         if match_id.startswith("semifinal"):
             tournament["semifinal_winners"][match_id] = winner
             if loser:
                 tournament["semifinal_losers"][match_id] = loser
-                
+        elif match_id == "final":
+            # Handle the tournament winner
+            print(f"Final match complete - winner: {winner_username}")
+            await self.handle_tournament_winner(tournament_id, winner_username)
+        elif match_id == "third_place":
+            # Handle third place winner
+            print(f"Third place match complete - winner: {winner_username}")
+            await self.handle_third_place_winner(tournament_id, winner_username)
+
         # Notify participants and spectators
         result_message = {
             "type": "match_result",
@@ -272,7 +282,7 @@ class TournamentManager:
             "winner_display": winner_display,
             "message": f"{winner_display} a remporté le match!" if not forfeit else f"{winner_display} gagne par forfait!"
         }
-        
+
         # Send to match participants and spectators
         for player in players:
             if player in [winner, loser] or not hasattr(player, 'match_id') or not player.match_id:
@@ -280,34 +290,57 @@ class TournamentManager:
                     await player.send(text_data=json.dumps(result_message))
                 except Exception:
                     pass
-        
+                
         # Clear match IDs
         for player in [winner, loser]:
             if player:
                 player.match_id = None
                 player.player_number = None
-        
+
         # Check tournament progress
         await self.check_tournament_progress(tournament_id)
-    
+
     async def check_tournament_progress(self, tournament_id):
         """
         Check tournament progress and advance to next stage if ready.
-        
-        Args:
-            tournament_id: ID of the tournament
         """
         tournament = self.tournaments[tournament_id]
-        
+    
         # Check if both semifinals are complete
         if (len(tournament["semifinal_winners"]) == 2 and 
             "semifinal1" in tournament["semifinal_winners"] and
             "semifinal2" in tournament["semifinal_winners"]):
-            
-            # Check if all players are not in matches
+    
+            # Check if all players are not in matches (waiting between rounds)
             players = tournament["players"]
             if not any(hasattr(p, 'match_id') and p.match_id for p in players):
+                # Skip if finals have already been set up
+                if tournament.get("finals_created", False):
+                    # Check if tournament is complete
+                    if tournament.get("complete", False):
+                        print(f"Tournament {tournament_id} is already marked as complete.")
+                        # Broadcast rankings again to ensure clients display final podium
+                        await self.broadcast_tournament_rankings(tournament_id)
+                        return
+    
+                    # Check if final and third-place match results are recorded
+                    if 1 in tournament.get("rankings", {}) or 3 in tournament.get("rankings", {}):
+                        # One of the finals or third-place match is done
+                        all_rankings_present = (1 in tournament.get("rankings", {}) and 
+                                               2 in tournament.get("rankings", {}) and
+                                               3 in tournament.get("rankings", {}) and 
+                                               4 in tournament.get("rankings", {}))
+    
+                        if all_rankings_present:
+                            print(f"Tournament {tournament_id} completing - all rankings present")
+                            tournament["complete"] = True
+                            # Ensure final rankings are broadcast again
+                            await self.broadcast_tournament_rankings(tournament_id)
+                            await self.update_all_elo_ratings(tournament_id)
+                    return
+    
                 # Set up third-place match and finals
+                tournament["finals_created"] = True  # Mark that finals have been created
                 await self.setup_third_place_match(tournament_id)
                 await self.setup_finals(tournament_id)
     
@@ -384,80 +417,85 @@ class TournamentManager:
     async def handle_tournament_winner(self, tournament_id, winner_username):
         """
         Handle the tournament champion.
-        
-        Args:
-            tournament_id: ID of the tournament
-            winner_username: Username of the tournament winner
         """
+        print(f"Handling tournament winner: {winner_username}")
         tournament = self.tournaments[tournament_id]
         players = tournament["players"]
-        
+
         # Find winner and runner-up
         winner = next((player for player in players if player.user.username == winner_username), None)
         if not winner:
             return
-            
+
         finalist1 = tournament["semifinal_winners"]["semifinal1"]
         finalist2 = tournament["semifinal_winners"]["semifinal2"]
         runner_up = finalist2 if finalist1.user.username == winner_username else finalist1
-        
+
         # Update rankings
         tournament["rankings"][1] = winner.user.username
         tournament["rankings"][2] = runner_up.user.username
-        
+
         # Broadcast rankings
         await self.broadcast_tournament_rankings(tournament_id)
-        
+
         # Check if third-place match is also complete
         if 3 in tournament["rankings"]:
+            print(f"Tournament {tournament_id}: Both final and third-place matches complete")
+            tournament["complete"] = True  # Explicitly mark as complete
             await self.update_all_elo_ratings(tournament_id)
             await self.cleanup_tournament(tournament_id)
+        else:
+            print(f"Tournament {tournament_id}: Final match complete, waiting for third-place match")
+
     
     async def handle_third_place_winner(self, tournament_id, winner_username):
         """
         Handle the third-place winner.
-        
-        Args:
-            tournament_id: ID of the tournament
-            winner_username: Username of the third-place winner
         """
+        print(f"Handling third place winner: {winner_username}")
         tournament = self.tournaments[tournament_id]
         players = tournament["players"]
-        
+
         # Find third-place winner and loser
         winner = next((player for player in players if player.user.username == winner_username), None)
         if not winner:
             return
-            
+
         # Find the loser (fourth place)
         loser = next((player for player in players 
                     if player in [tournament["semifinal_losers"].get("semifinal1"),
                                  tournament["semifinal_losers"].get("semifinal2")]
                     and player.user.username != winner_username), None)
-        
+
         # Update rankings
         tournament["rankings"][3] = winner_username
         if loser:
             tournament["rankings"][4] = loser.user.username
-        
+
         # Broadcast rankings
         await self.broadcast_tournament_rankings(tournament_id)
-        
+
         # Check if finals are also complete
         if 1 in tournament["rankings"]:
+            print(f"Tournament {tournament_id}: Both final and third-place matches complete")
+            tournament["complete"] = True  # Explicitly mark as complete
             await self.update_all_elo_ratings(tournament_id)
             await self.cleanup_tournament(tournament_id)
-    
+        else:
+            print(f"Tournament {tournament_id}: Third-place match complete, waiting for final match")
+
     async def broadcast_tournament_rankings(self, tournament_id):
         """
         Send current tournament rankings to all players.
-        
-        Args:
-            tournament_id: ID of the tournament
         """
         tournament = self.tournaments[tournament_id]
         players = tournament["players"]
         rankings = tournament["rankings"]
+        is_complete = tournament.get("complete", False)
+        
+        print(f"Broadcasting rankings for tournament {tournament_id}")
+        print(f"Current rankings: {rankings}")
+        print(f"Tournament complete: {is_complete}")
         
         # Convert rankings to list for the client
         ranking_list = []
@@ -483,11 +521,11 @@ class TournamentManager:
                 await player.send(text_data=json.dumps({
                     "type": "tournament_rankings",
                     "rankings": ranking_list,
-                    "complete": len(rankings) >= 4,
-                    "message": "Classement du tournoi"
+                    "complete": is_complete,
+                    "message": "Classement final du tournoi" if is_complete else "Classement du tournoi"
                 }))
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Error sending rankings to player: {str(e)}")
     
     @database_sync_to_async
     def update_elo_ratings_db(self, champion, runner_up, third_place, fourth_place):
