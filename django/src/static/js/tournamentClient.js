@@ -16,6 +16,7 @@ class TournamentClient {
         this.matchId = null;
         this.keysPressed = {};
         this.animationFrameId = null;
+        this.authenticated = false;
         this.init();
     }
 
@@ -23,6 +24,7 @@ class TournamentClient {
         console.log('Initializing Tournament Client');
         // Display welcome message on canvas
         this.displayWelcomeScreen();
+        this.addEventListeners();
         
         // Add button event listener
         const createTournamentBtn = document.getElementById('createTournamentBtn');
@@ -37,7 +39,7 @@ class TournamentClient {
             });
         }
     }
-
+    
     displayWelcomeScreen() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = '#f0f0f0';
@@ -56,21 +58,28 @@ class TournamentClient {
         this.ctx.fillText('for a 4-player tournament', this.canvas.width / 2, 300);
         
         // Display user info
-        const displayName = currentUser.nickname || currentUser.username;
-        this.ctx.fillText(`Player: ${displayName} (ELO: ${currentUser.elo})`, this.canvas.width / 2, 350);
+        if (typeof currentUser !== 'undefined') {
+            const displayName = currentUser.nickname || currentUser.username;
+            this.ctx.fillText(`Player: ${displayName} (ELO: ${currentUser.elo})`, this.canvas.width / 2, 350);
+        }
     }
 
-
     connectWebSocket() {
-        const token = document.cookie
-            .split('; ')
-            .find(cookie => cookie.startsWith('access_token='))
-            ?.split('=')[1];
-            
-        this.socket = new WebSocket(`ws://localhost:8000/ws/tournament/?token=${token}`);
+        this.socket = new WebSocket(`ws://${window.location.host}/ws/tournament/`);
         
         this.socket.onopen = () => {
             console.log('Tournament WebSocket connection established.');
+            // Authenticate first
+            const token = this.getCookie('access_token');
+            if (token) {
+                this.socket.send(JSON.stringify({
+                    type: 'authenticate',
+                    token: token
+                }));
+            } else {
+                console.error('No access token found');
+                this.displayMessage('Authentication failed: No token found');
+            }
         };
 
         this.socket.onmessage = (event) => {
@@ -88,13 +97,41 @@ class TournamentClient {
         };
     }
 
+    getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
     handleMessage(data) {
-        console.log('Received tournament state:', data);
+        console.log('Received data:', data);
+        
+        // Handle authentication response first
+        if (data.type === 'authenticated') {
+            console.log('Successfully authenticated');
+            this.authenticated = true;
+            
+            // Now create/join tournament
+            this.socket.send(JSON.stringify({
+                type: 'create_tournament'
+            }));
+            return;
+        } else if (data.type === 'error') {
+            console.error('Error:', data.message);
+            this.displayMessage(`Error: ${data.message}`);
+            return;
+        }
+        
+        // Don't process game messages until authenticated
+        if (!this.authenticated) {
+            return;
+        }
         
         // Don't interrupt an ongoing match with other messages
         if (this.isInMatch) {
             // Only process match-related messages for THIS specific match
-            if (data.type === 'match_update' && 
+            if (data.type === 'game_update' && 
                 this.gameState && 
                 data.game_state && 
                 data.game_state.match_id === this.matchId) {
@@ -147,88 +184,156 @@ class TournamentClient {
     renderLobby(data) {
         this.clearCanvas();
         
-        // Draw center waiting message
+        // Draw title
         this.ctx.fillStyle = 'black';
-        this.ctx.font = '30px Arial';
+        this.ctx.font = '32px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2);
+        this.ctx.fillText('Tournament Lobby', this.canvas.width / 2, 60);
         
-        // Draw player cards in the corners
-        this.players.forEach(player => {
-            const position = this.playerPositions[player.position - 1];
-            this.drawPlayerCard(player, position.x, position.y);
-        });
+        // Draw message
+        this.ctx.font = '24px Arial';
+        this.ctx.fillText(data.message, this.canvas.width / 2, 100);
         
-        // Draw empty slots
-        for (let i = this.players.length; i < 4; i++) {
-            const position = this.playerPositions[i];
-            this.drawEmptySlot(position.x, position.y);
+        // Draw player slots
+        for (let i = 0; i < 4; i++) {
+            const pos = this.playerPositions[i];
+            
+            if (i < data.players.length) {
+                // Draw player
+                this.drawPlayerCard(data.players[i], pos.x, pos.y);
+            } else {
+                // Draw empty slot
+                this.drawEmptySlot(pos.x, pos.y);
+            }
+        }
+        
+        // Highlight your position
+        if (data.your_position) {
+            const pos = this.playerPositions[data.your_position - 1];
+            this.ctx.strokeStyle = 'red';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeRect(pos.x - 75, pos.y - 45, 150, 90);
         }
     }
 
     drawPlayerCard(player, x, y) {
-        // Draw card background
-        this.ctx.fillStyle = '#4CAF50';  // Green background
-        this.ctx.fillRect(x - 100, y - 50, 200, 100);
+        // Draw player background
+        this.ctx.fillStyle = '#e0e0e0';
+        this.ctx.fillRect(x - 75, y - 45, 150, 90);
         
-        // Draw player info
-        this.ctx.fillStyle = 'white';
-        this.ctx.font = '20px Arial';
+        // Draw player name and ELO
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = '18px Arial';
         this.ctx.textAlign = 'center';
-        const displayName = player.nickname ? player.nickname : player.username;
-        this.ctx.fillText(displayName, x, y - 15);
-        this.ctx.fillText(`ELO: ${player.elo}`, x, y + 15);
+        
+        // Use nickname if available, otherwise username
+        const displayName = player.nickname || player.username;
+        this.ctx.fillText(displayName, x, y - 10);
+        
+        this.ctx.font = '16px Arial';
+        this.ctx.fillText(`ELO: ${player.elo}`, x, y + 20);
     }
 
     drawEmptySlot(x, y) {
         // Draw empty slot background
-        this.ctx.fillStyle = '#ddd';  // Light gray
-        this.ctx.fillRect(x - 100, y - 50, 200, 100);
+        this.ctx.fillStyle = '#f0f0f0';
+        this.ctx.strokeStyle = '#c0c0c0';
+        this.ctx.lineWidth = 1;
+        this.ctx.fillRect(x - 75, y - 45, 150, 90);
+        this.ctx.strokeRect(x - 75, y - 45, 150, 90);
         
         // Draw waiting text
-        this.ctx.fillStyle = '#666';
-        this.ctx.font = '20px Arial';
+        this.ctx.fillStyle = '#808080';
+        this.ctx.font = '18px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('En attente...', x, y);
+        this.ctx.fillText('Waiting...', x, y);
     }
 
+    displayFinalsAnnouncement(data) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw finals announcement
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = '30px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2 - 50);
+        
+        // Draw VS text
+        this.ctx.font = '40px Arial';
+        this.ctx.fillText('VS', this.canvas.width / 2, this.canvas.height / 2);
+        
+        // Draw player 1 info (left) - Use display name if available
+        this.ctx.font = '24px Arial';
+        this.ctx.textAlign = 'right';
+        this.ctx.fillText(data.finalists.player1_display || data.finalists.player1, this.canvas.width / 2 - 30, this.canvas.height / 2);
+        
+        // Draw player 2 info (right) - Use display name if available
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText(data.finalists.player2_display || data.finalists.player2, this.canvas.width / 2 + 30, this.canvas.height / 2);
+        
+        // Draw preparing message
+        this.ctx.textAlign = 'center';
+        this.ctx.font = '20px Arial';
+        this.ctx.fillText("Préparation de la finale...", 
+                    this.canvas.width / 2, this.canvas.height / 2 + 50);
+    }
+    
     displayThirdPlaceAnnouncement(data) {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
+        // Draw third-place announcement
         this.ctx.fillStyle = 'black';
-        this.ctx.font = '24px Arial';
+        this.ctx.font = '30px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2 - 30);
+        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2 - 50);
         
+        // Draw VS text
+        this.ctx.font = '40px Arial';
+        this.ctx.fillText('VS', this.canvas.width / 2, this.canvas.height / 2);
+        
+        // Draw player 1 info (left)
+        this.ctx.font = '24px Arial';
+        this.ctx.textAlign = 'right';
+        this.ctx.fillText(data.contestants.player1_display || data.contestants.player1, this.canvas.width / 2 - 30, this.canvas.height / 2);
+        
+        // Draw player 2 info (right)
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText(data.contestants.player2_display || data.contestants.player2, this.canvas.width / 2 + 30, this.canvas.height / 2);
+        
+        // Draw preparing message
+        this.ctx.textAlign = 'center';
         this.ctx.font = '20px Arial';
-        this.ctx.fillText(`${data.contestants.player1} vs ${data.contestants.player2}`, 
-                        this.canvas.width / 2, this.canvas.height / 2 + 10);
+        this.ctx.fillText("Préparation du match pour la 3ème place...", 
+                    this.canvas.width / 2, this.canvas.height / 2 + 50);
     }
     
-    displayThirdPlaceResult(data) {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    displayMatchResult(data) {
+        this.clearCanvas();
         
+        // Draw result message
         this.ctx.fillStyle = 'black';
-        this.ctx.font = '24px Arial';
+        this.ctx.font = '30px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2);
         
+        // Draw next match info
         this.ctx.font = '20px Arial';
-        this.ctx.fillText("En attente de la finale...", 
-                        this.canvas.width / 2, this.canvas.height / 2 + 40);
+        this.ctx.fillText("Attendez la prochaine phase du tournoi...", 
+                    this.canvas.width / 2, this.canvas.height / 2 + 50);
     }
 
     displayMessage(message) {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.clearCanvas();
+        
         this.ctx.fillStyle = 'black';
-        this.ctx.font = '30px Arial';
+        this.ctx.font = '24px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(message, this.canvas.width / 2, this.canvas.height / 2);
     }
 
     renderGame(gameState) {
         if (!gameState || !this.isInMatch) return;
-    
+
         this.clearCanvas();
         
         // Draw pads
@@ -261,8 +366,8 @@ class TournamentClient {
         this.ctx.fillText(gameState.score.player2, 3 * this.canvas.width / 4, 50);
         
         // Draw player info with nickname support
-        const player1 = gameState.player_info?.player1 || gameState.player1;
-        const player2 = gameState.player_info?.player2 || gameState.player2;
+        const player1 = gameState.player_info?.player1 || {};
+        const player2 = gameState.player_info?.player2 || {};
         
         const player1Display = player1.nickname || player1.username;
         const player2Display = player2.nickname || player2.username;
@@ -273,7 +378,7 @@ class TournamentClient {
             10, 
             25
         );
-    
+
         this.ctx.textAlign = 'right';
         this.ctx.fillText(
             `${player2Display} (${player2.elo})`, 
@@ -281,56 +386,7 @@ class TournamentClient {
             25
         );
     }
-
-    // In the displayMatchResult method
-    displayMatchResult(data) {
-        this.clearCanvas();
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Draw result message - use winner_display if available, otherwise winner
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '30px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2);
-
-        // Draw next match info
-        this.ctx.font = '20px Arial';
-        this.ctx.fillText("Attendez la prochaine phase du tournoi...", 
-                        this.canvas.width / 2, this.canvas.height / 2 + 50);
-    }
-
-    // In the displayFinalsAnnouncement method
-    displayFinalsAnnouncement(data) {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Draw finals announcement
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '30px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2 - 50);
-
-        // Draw VS text
-        this.ctx.font = '40px Arial';
-        this.ctx.fillText('VS', this.canvas.width / 2, this.canvas.height / 2);
-
-        // Draw player 1 info (left) - Use display name if available
-        this.ctx.font = '24px Arial';
-        this.ctx.textAlign = 'right';
-        this.ctx.fillText(data.finalists.player1_display || data.finalists.player1, this.canvas.width / 2 - 30, this.canvas.height / 2);
-
-        // Draw player 2 info (right) - Use display name if available
-        this.ctx.textAlign = 'left';
-        this.ctx.fillText(data.finalists.player2_display || data.finalists.player2, this.canvas.width / 2 + 30, this.canvas.height / 2);
-
-        // Draw preparing message
-        this.ctx.textAlign = 'center';
-        this.ctx.font = '20px Arial';
-        this.ctx.fillText("Préparation de la finale...", 
-                        this.canvas.width / 2, this.canvas.height / 2 + 50);
-    }
-
-// In the displayTournamentRankings method
-
+    
     displayTournamentRankings(data) {
         this.clearCanvas();
         
@@ -438,56 +494,24 @@ class TournamentClient {
             );
         }
     }
-
-    displayTournamentResult(data) {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw trophy
-        this.ctx.fillStyle = 'gold';
-        this.drawTrophy(this.canvas.width / 2, 150, 80);
-        
-        // Draw champion message
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '36px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2);
-        
-        // Draw champion name
-        this.ctx.font = '30px Arial';
-        this.ctx.fillText(data.champion, this.canvas.width / 2, this.canvas.height / 2 + 50);
-        
-        // Draw runner-up info
-        this.ctx.font = '20px Arial';
-        this.ctx.fillText(`Finaliste: ${data.runner_up}`, 
-                        this.canvas.width / 2, this.canvas.height / 2 + 100);
-        
-        // Draw tournament end message
-        this.ctx.font = '18px Arial';
-        this.ctx.fillText("Tournoi terminé! Les ELO ont été mis à jour.", 
-                        this.canvas.width / 2, this.canvas.height / 2 + 150);
-    }
     
     drawTrophy(x, y, size) {
-        const cup_width = size * 0.6;
-        const stem_width = size * 0.2;
-        const base_width = size * 0.8;
-        
-        // Cup
+        // Simple trophy drawing
+        this.ctx.fillRect(x - size/6, y - size/2, size/3, size);
         this.ctx.beginPath();
-        this.ctx.moveTo(x - cup_width/2, y);
-        this.ctx.lineTo(x + cup_width/2, y);
-        this.ctx.quadraticCurveTo(x + cup_width/2 + size*0.2, y + size*0.4, x + cup_width/2, y + size*0.5);
-        this.ctx.lineTo(x - cup_width/2, y + size*0.5);
-        this.ctx.quadraticCurveTo(x - cup_width/2 - size*0.2, y + size*0.4, x - cup_width/2, y);
+        this.ctx.arc(x, y - size/2, size/3, 0, Math.PI, false);
         this.ctx.fill();
-        
-        // Stem
-        this.ctx.fillRect(x - stem_width/2, y + size*0.5, stem_width, size*0.3);
-        
-        // Base
-        this.ctx.beginPath();
-        this.ctx.ellipse(x, y + size*0.8, base_width/2, size*0.1, 0, 0, Math.PI * 2);
-        this.ctx.fill();
+    }
+    
+    stopGame() {
+        this.isInMatch = false;
+        this.matchId = null;
+        this.gameState = null;
+        this.clearCanvas();
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
     }
 
     addEventListeners() {
@@ -524,20 +548,8 @@ class TournamentClient {
             input: input
         }));
     }
-    
-    stopGame() {
-        this.isInMatch = false;
-        this.matchId = null;
-        this.gameState = null;
-        this.clearCanvas();
-        if (this.animationFrameId) {
-            cancelAnimationFrame(this.animationFrameId);
-            this.animationFrameId = null;
-        }
-    }
 }
 
-// Initialize when page loads
 document.addEventListener('DOMContentLoaded', () => {
     const tournament = new TournamentClient();
 });
