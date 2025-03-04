@@ -16,12 +16,15 @@ import uuid
 from django.http import JsonResponse
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
-from .models import customUser
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 from .forms import UserUpdateForm, CustomPasswordChangeForm
 from django.core.paginator import Paginator
+from django.utils import timezone
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 def protected_view(request):
     if not request.user.is_authenticated:
@@ -124,3 +127,17 @@ def logout_view(request):
     response.delete_cookie('refresh_token')
     logout(request)
     return response
+
+@api_view(['GET'])
+def online_friends_view(request):
+    if request.user.is_authenticated:
+        all_friends = request.user.friends.all()
+        online_friends = [friend for friend in all_friends if friend.is_online()]
+    else:
+        online_friends = []
+
+    serializer = UserDataSerializer(online_friends, many=True)
+    return Response({
+        'online_friends': serializer.data,
+        'count': len(online_friends)
+    })
