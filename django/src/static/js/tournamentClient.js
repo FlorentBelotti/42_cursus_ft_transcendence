@@ -26,8 +26,16 @@ class TournamentClient {
         this.displayWelcomeScreen();
         this.addEventListeners();
         
-        // Add button event listener
+        // Add button event listeners
         const createTournamentBtn = document.getElementById('createTournamentBtn');
+        const inviteFriendsBtn = document.getElementById('inviteFriendsBtn');
+        
+        if (inviteFriendsBtn) {
+            inviteFriendsBtn.addEventListener('click', () => {
+                this.showInviteFriendsDialog();
+            });
+        }
+        
         if (createTournamentBtn) {
             createTournamentBtn.addEventListener('click', () => {
                 // Disable the button to prevent multiple clicks
@@ -38,6 +46,57 @@ class TournamentClient {
                 this.connectWebSocket();
             });
         }
+    }
+
+    showInviteFriendsDialog() {
+        // Check if there's an existing dialog element
+        let dialog = document.getElementById('friendsInviteDialog');
+
+        // If not, create one
+        if (!dialog) {
+            dialog = document.createElement('div');
+            dialog.id = 'friendsInviteDialog';
+            dialog.className = 'friends-invite-dialog';
+
+            // Add content to the dialog
+            dialog.innerHTML = `
+                <h3>Invite Friends to Tournament</h3>
+                <p>Select friends to invite:</p>
+                <div id="friendsList">
+                    Loading friends list...
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button id="cancelInviteBtn" style="margin-right: 10px;">Cancel</button>
+                    <button id="sendInvitesBtn">Send Invites</button>
+                </div>
+            `;
+
+            document.body.appendChild(dialog);
+
+            // Add event listeners for the dialog buttons
+            document.getElementById('cancelInviteBtn').addEventListener('click', () => {
+                dialog.remove();
+            });
+
+            document.getElementById('sendInvitesBtn').addEventListener('click', () => {
+                this.sendTournamentInvites();
+                dialog.remove();
+            });
+
+            // For now, just display a placeholder message
+            // You'll replace this with actual friend selection UI later
+            document.getElementById('friendsList').innerHTML = 
+                '<p>Friend selection functionality will be implemented here.</p>';
+        }
+    }
+    
+    sendTournamentInvites() {
+        // Placeholder function - you'll implement this with your friends system
+        console.log('Sending tournament invites to selected friends');
+        alert('Invites will be sent to your friends!');
+        
+        // This would connect to WebSocket and send appropriate messages
+        // to create a reserved tournament slot for friends
     }
 
     displayWelcomeScreen() {
