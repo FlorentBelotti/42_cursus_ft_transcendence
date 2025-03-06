@@ -13,6 +13,15 @@ class customUser(AbstractUser):
     friends = models.ManyToManyField("self", blank=True)
     nickname = models.CharField(max_length=30, blank=True, null=True)
     history = models.JSONField(default=list, blank=True)
+    last_seen = models.DateTimeField(default=timezone.now)
+
+    def update_last_seen(self):
+        self.last_seen = timezone.now()
+        self.save()
+
+    def is_online(self):
+        delta = timezone.now() - self.last_seen
+        return delta.total_seconds() < 120
 
     def __str__(self):
         return self.username

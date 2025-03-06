@@ -43,3 +43,18 @@ class JWTAuthenticationMiddleware:
                 return JsonResponse({"error": "Token invalide"}, status=401)
         
         return self.get_response(request)
+    
+from django.utils import timezone
+from django.contrib.auth import get_user_model
+
+class UpdateLastSeenMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.user.is_authenticated:
+            user = request.user
+            user.update_last_seen()
+
+        response = self.get_response(request)
+        return response
