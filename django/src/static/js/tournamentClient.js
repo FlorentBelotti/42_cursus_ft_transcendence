@@ -51,52 +51,179 @@ class TournamentClient {
     showInviteFriendsDialog() {
         // Check if there's an existing dialog element
         let dialog = document.getElementById('friendsInviteDialog');
-
+        
         // If not, create one
         if (!dialog) {
             dialog = document.createElement('div');
             dialog.id = 'friendsInviteDialog';
             dialog.className = 'friends-invite-dialog';
-
+            
             // Add content to the dialog
             dialog.innerHTML = `
-                <h3>Invite Friends to Tournament</h3>
-                <p>Select friends to invite:</p>
-                <div id="friendsList">
-                    Loading friends list...
+                <h3 style="margin-bottom: 15px; font-size: 18px; font-weight: bold;">Invite Friends to Tournament</h3>
+                <p style="margin-bottom: 10px;">Select friends to invite:</p>
+                <div id="friendsList" style="max-height: 300px; overflow-y: auto;">
+                    <p>Loading friends list...</p>
                 </div>
                 <div style="margin-top: 20px; text-align: right;">
-                    <button id="cancelInviteBtn" style="margin-right: 10px;">Cancel</button>
-                    <button id="sendInvitesBtn">Send Invites</button>
+                    <button id="cancelInviteBtn" style="margin-right: 10px; padding: 8px 12px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 4px;">Cancel</button>
+                    <button id="sendInvitesBtn" style="padding: 8px 12px; background: #2196F3; color: white; border: none; border-radius: 4px;">Send Invites</button>
                 </div>
             `;
-
+            
             document.body.appendChild(dialog);
-
+            
             // Add event listeners for the dialog buttons
             document.getElementById('cancelInviteBtn').addEventListener('click', () => {
                 dialog.remove();
             });
-
+            
             document.getElementById('sendInvitesBtn').addEventListener('click', () => {
                 this.sendTournamentInvites();
                 dialog.remove();
             });
-
-            // For now, just display a placeholder message
-            // You'll replace this with actual friend selection UI later
-            document.getElementById('friendsList').innerHTML = 
-                '<p>Friend selection functionality will be implemented here.</p>';
+            
+            // Fetch connected friends list
+            this.fetchConnectedFriends();
         }
     }
+
+    fetchConnectedFriends() {
+        const friendsList = document.getElementById('friendsList');
     
+        // Show loading indicator
+        friendsList.innerHTML = '<p>Loading friends list...</p>';
+    
+        // Fetch connected friends from your API
+        fetch('/api/online-friends/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'include' // Important: include cookies for authentication
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Friends data received:', data);
+            // Use the online_friends array from the response
+            this.displayFriendsList(data.online_friends || []);
+        })
+        .catch(error => {
+            console.error('Error fetching friends:', error);
+            friendsList.innerHTML = '<p>Error loading friends. Please try again.</p>';
+        });
+    }
+
+    // Add new method to display friends list
+    displayFriendsList(friendsData) {
+        const friendsList = document.getElementById('friendsList');
+
+        // Clear loading message
+        friendsList.innerHTML = '';
+
+        // Check if we have friends
+        if (!friendsData || friendsData.length === 0) {
+            friendsList.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <p>No online friends found.</p>
+                    <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                        Your friends need to be online to receive invitations.
+                    </p>
+                </div>`;
+            return;
+        }
+
+        // Create a container for the friends list
+        const listContainer = document.createElement('div');
+        listContainer.className = 'friends-list-container';
+
+        // Add each friend to the list
+        friendsData.forEach(friend => {
+            const friendItem = document.createElement('div');
+            friendItem.className = 'friend-item';
+            friendItem.style.display = 'flex';
+            friendItem.style.alignItems = 'center';
+            friendItem.style.padding = '10px';
+            friendItem.style.borderBottom = '1px solid #eee';
+
+            // Friend profile picture
+            let profilePicHtml = '';
+            if (friend.profile_picture) {
+                profilePicHtml = `<img src="${friend.profile_picture}" alt="${friend.username}" class="profile-picture">`;
+            } else {
+                profilePicHtml = `<div class="profile-picture bg-gray-300" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #ccc;"><span>${friend.username.charAt(0).toUpperCase()}</span></div>`;
+            }
+
+            // Create the inner HTML for the friend item
+            friendItem.innerHTML = `
+                <div style="flex: 0 0 40px; margin-right: 10px;">${profilePicHtml}</div>
+                <div style="flex: 1;">${friend.username}</div>
+                <div style="flex: 0 0 60px;">
+                    <button class="invite-btn" data-username="${friend.username}" style="padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Invite</button>
+                </div>
+            `;
+
+            listContainer.appendChild(friendItem);
+        });
+
+        friendsList.appendChild(listContainer);
+
+        // Add event listeners for invite buttons
+        const inviteButtons = friendsList.querySelectorAll('.invite-btn');
+        inviteButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const username = e.target.dataset.username;
+                this.inviteFriend(username);
+                e.target.disabled = true;
+                e.target.textContent = 'Invited';
+                e.target.style.backgroundColor = '#888';
+            });
+        });
+    }
+
+    // Add method to handle inviting an individual friend
+    inviteFriend(username) {
+        console.log(`Inviting friend: ${username}`);
+
+        // Send invitation to friend via WebSocket
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.send(JSON.stringify({
+                type: 'invite_friend',
+                friend_username: username
+            }));
+        } else {
+            // Connect WebSocket if not connected yet
+            this.connectWebSocket();
+            setTimeout(() => {
+                if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                    this.socket.send(JSON.stringify({
+                        type: 'invite_friend',
+                        friend_username: username
+                    }));
+                } else {
+                    console.error('Could not establish WebSocket connection');
+                    alert(`Could not send invite to ${username}. Please try again.`);
+                }
+            }, 1000);
+        }
+    }
+
+    // Update the existing sendTournamentInvites method
     sendTournamentInvites() {
-        // Placeholder function - you'll implement this with your friends system
-        console.log('Sending tournament invites to selected friends');
-        alert('Invites will be sent to your friends!');
-        
-        // This would connect to WebSocket and send appropriate messages
-        // to create a reserved tournament slot for friends
+        // Close dialog after sending invites
+        console.log('All invites sent. Ready to start tournament!');
+
+        // Optionally, you could automatically create the tournament after sending invites
+        const createTournamentBtn = document.getElementById('createTournamentBtn');
+        if (createTournamentBtn) {
+            // createTournamentBtn.click();  // Uncomment if you want to auto-start the tournament
+        }
     }
 
     displayWelcomeScreen() {

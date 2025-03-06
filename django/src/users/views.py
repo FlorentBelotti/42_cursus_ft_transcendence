@@ -125,3 +125,17 @@ def logout_view(request):
     response.delete_cookie('refresh_token')
     logout(request)
     return response
+
+@api_view(['GET'])
+def online_friends_view(request):
+    if request.user.is_authenticated:
+        all_friends = request.user.friends.all()
+        online_friends = [friend for friend in all_friends if friend.is_online()]
+    else:
+        online_friends = []
+
+    serializer = UserDataSerializer(online_friends, many=True)
+    return Response({
+        'online_friends': serializer.data,
+        'count': len(online_friends)
+    })
