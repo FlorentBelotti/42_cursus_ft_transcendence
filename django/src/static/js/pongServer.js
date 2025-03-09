@@ -3,6 +3,7 @@ class PongServerGame {
         this.canvas = document.getElementById('pongServer');
         this.ctx = this.canvas.getContext('2d');
         this.matchmakingButton = document.getElementById('matchmaking');
+        this.inviteFriendsBtn = document.getElementById('inviteFriendsBtn');
         this.socket = null;
         this.isGameRunning = false;
         this.isPageUnloading = false;
@@ -13,6 +14,8 @@ class PongServerGame {
             player2: { username: "", nickname: "", elo: 0}
         };
         this.keysPressed = {};
+        // Initialize friend invite manager
+        this.friendInviteManager = null;
         this.init();
     }
 
@@ -24,8 +27,57 @@ class PongServerGame {
         } else {
             console.error('Matchmaking button not found');
         }
+        
+        // Add event listener for invite friends button
+        if (this.inviteFriendsBtn) {
+            console.log('Invite friends button found');
+            this.inviteFriendsBtn.addEventListener('click', () => {
+                this.initFriendInviteManager();
+                this.friendInviteManager.showDialog();
+            });
+        } else {
+            console.error('Invite friends button not found');
+        }
+        
         this.addEventListeners();
         this.displayWelcomeScreen();
+    }
+
+    initFriendInviteManager() {
+        if (!this.friendInviteManager) {
+            this.friendInviteManager = new FriendInviteManager({
+                title: 'Invite Friends to Play Pong',
+                socket: this.socket,
+                onInviteSent: (username) => this.handleFriendInvite(username),
+                onDialogClosed: () => console.log('Invite dialog closed')
+            });
+        }
+    }
+
+    handleFriendInvite(username) {
+        console.log(`Pong Game handling friend invite for: ${username}`);
+        
+        // Send invitation to friend via WebSocket
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.send(JSON.stringify({
+                type: 'invite_friend',
+                friend_username: username
+            }));
+        } else {
+            // Connect WebSocket if not connected yet
+            this.connectWebSocket();
+            setTimeout(() => {
+                if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                    this.socket.send(JSON.stringify({
+                        type: 'invite_friend',
+                        friend_username: username
+                    }));
+                } else {
+                    console.error('Could not establish WebSocket connection');
+                    alert(`Could not send invite to ${username}. Please try again.`);
+                }
+            }, 1000);
+        }
     }
 
     displayWelcomeScreen() {
@@ -43,7 +95,7 @@ class PongServerGame {
         
         // Draw instructions
         this.ctx.font = '22px Arial';
-        this.ctx.fillText('Click "Lancer la recherche" to find an opponent', this.canvas.width / 2, 160);
+        this.ctx.fillText('Click "Search for a game" to find an opponent', this.canvas.width / 2, 160);
         
         this.ctx.font = '18px Arial';
         this.ctx.fillText('Use up/down arrow keys to control your paddle', this.canvas.width / 2, 200);
@@ -74,7 +126,12 @@ class PongServerGame {
             // Update button state
             if (this.matchmakingButton) {
                 this.matchmakingButton.disabled = true;
-                this.matchmakingButton.textContent = 'Recherche en cours...';
+                this.matchmakingButton.textContent = 'Searching...';
+            }
+            
+            // Disable invite button during matchmaking
+            if (this.inviteFriendsBtn) {
+                this.inviteFriendsBtn.disabled = true;
             }
         }
     }
@@ -104,7 +161,7 @@ class PongServerGame {
                 user: currentUser
             }));
             
-            this.displayMessage('Recherche d\'un adversaire...');
+            this.displayMessage('Searching for opponent...');
         };
 
         this.socket.onmessage = (event) => {
@@ -119,18 +176,23 @@ class PongServerGame {
             // Re-enable matchmaking button
             if (this.matchmakingButton) {
                 this.matchmakingButton.disabled = false;
-                this.matchmakingButton.textContent = 'Lancer la recherche';
+                this.matchmakingButton.textContent = 'Search for a game';
+            }
+            
+            // Re-enable invite button
+            if (this.inviteFriendsBtn) {
+                this.inviteFriendsBtn.disabled = false;
             }
             
             // Only show disconnection message if not during page unload
             if (!this.isPageUnloading) {
-                this.displayMessage('Déconnecté du serveur. Veuillez rafraîchir la page.');
+                this.displayMessage('Disconnected from server. Please refresh the page.');
             }
         };
 
         this.socket.onerror = (error) => {
             console.error('WebSocket error:', error);
-            this.displayMessage('Erreur de connexion. Veuillez réessayer.');
+            this.displayMessage('Connection error. Please try again.');
         };
     }
 
@@ -140,18 +202,21 @@ class PongServerGame {
         
         // Process game-related messages - no authentication check needed
         if (data.type === 'player_left') {
-            this.displayMessage(data.message || "Votre adversaire a quitté la partie.");
+            this.displayMessage(data.message || "Your opponent has left the game.");
             console.log('Player left the game.');
             this.stopGame();
         } else if (data.type === 'game_over') {
-            this.displayMessage(data.message || "Partie terminée!");
+            this.displayMessage(data.message || "Game over!");
             console.log('Game over.');
             this.stopGame();
         } else if (data.type === 'matchmaking_cancelled') {
-            this.displayMessage(data.message || "Recherche annulée.");
+            this.displayMessage(data.message || "Search cancelled.");
             if (this.matchmakingButton) {
                 this.matchmakingButton.disabled = false;
-                this.matchmakingButton.textContent = 'Lancer la recherche';
+                this.matchmakingButton.textContent = 'Search for a game';
+            }
+            if (this.inviteFriendsBtn) {
+                this.inviteFriendsBtn.disabled = false;
             }
         } else if (data.type === 'matchmaking_update' || data.waiting) {
             console.log('Matchmaking status update...');
@@ -164,7 +229,12 @@ class PongServerGame {
             // Disable matchmaking button during game
             if (this.matchmakingButton) {
                 this.matchmakingButton.disabled = true;
-                this.matchmakingButton.textContent = 'En jeu...';
+                this.matchmakingButton.textContent = 'In game...';
+            }
+            
+            // Disable invite button during game
+            if (this.inviteFriendsBtn) {
+                this.inviteFriendsBtn.disabled = true;
             }
             
             if (data.game_state) {
@@ -180,6 +250,12 @@ class PongServerGame {
                 this.playerInfo.player2 = data.player_info.player2;
             }
             this.draw(data);
+        } else if (data.type === 'friend_invite_sent') {
+            // Handle successful invite
+            alert(`Invitation sent to ${data.friend_username}`);
+        } else if (data.type === 'friend_invite_error') {
+            // Handle error
+            alert(`Error sending invitation: ${data.message}`);
         }
     }
     
@@ -242,7 +318,12 @@ class PongServerGame {
         // Re-enable matchmaking button
         if (this.matchmakingButton) {
             this.matchmakingButton.disabled = false;
-            this.matchmakingButton.textContent = 'Lancer la recherche';
+            this.matchmakingButton.textContent = 'Search for a game';
+        }
+        
+        // Re-enable invite button
+        if (this.inviteFriendsBtn) {
+            this.inviteFriendsBtn.disabled = false;
         }
     }
 
