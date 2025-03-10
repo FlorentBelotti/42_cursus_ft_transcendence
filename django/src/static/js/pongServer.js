@@ -46,7 +46,7 @@ class PongServerGame {
     initFriendInviteManager() {
         if (!this.friendInviteManager) {
             this.friendInviteManager = new FriendInviteManager({
-                title: 'Invite Friends to Play Pong',
+                title: 'Inviter des amis à jouer',
                 socket: this.socket,
                 onInviteSent: (username) => this.handleFriendInvite(username),
                 onDialogClosed: () => console.log('Invite dialog closed')
@@ -57,27 +57,42 @@ class PongServerGame {
     handleFriendInvite(username) {
         console.log(`Pong Game handling friend invite for: ${username}`);
         
-        // Send invitation to friend via WebSocket
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            this.socket.send(JSON.stringify({
-                type: 'invite_friend',
-                friend_username: username
-            }));
-        } else {
-            // Connect WebSocket if not connected yet
+        // Connect to WebSocket if not already connected
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            console.log('Connecting to WebSocket for invitation');
             this.connectWebSocket();
-            setTimeout(() => {
+            
+            // Wait for connection and then send invitation
+            let connectionAttempts = 0;
+            const maxAttempts = 5;
+            
+            const checkAndSendInvite = () => {
                 if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-                    this.socket.send(JSON.stringify({
-                        type: 'invite_friend',
-                        friend_username: username
-                    }));
+                    this.sendInvitation(username);
                 } else {
-                    console.error('Could not establish WebSocket connection');
-                    alert(`Could not send invite to ${username}. Please try again.`);
+                    connectionAttempts++;
+                    if (connectionAttempts < maxAttempts) {
+                        setTimeout(checkAndSendInvite, 500);
+                    } else {
+                        console.error('Failed to establish WebSocket connection for invitation');
+                        alert(`Impossible d'envoyer l'invitation à ${username}. Veuillez réessayer.`);
+                    }
                 }
-            }, 1000);
+            };
+            
+            setTimeout(checkAndSendInvite, 500);
+        } else {
+            // If already connected, send invitation directly
+            this.sendInvitation(username);
         }
+    }
+
+    sendInvitation(username) {
+        console.log(`Sending invitation to ${username}`);
+        this.socket.send(JSON.stringify({
+            type: 'invite_friend',
+            friend_username: username
+        }));
     }
 
     displayWelcomeScreen() {
@@ -251,11 +266,11 @@ class PongServerGame {
             }
             this.draw(data);
         } else if (data.type === 'friend_invite_sent') {
-            // Handle successful invite
-            alert(`Invitation sent to ${data.friend_username}`);
+            console.log('Invitation sent successfully to:', data.friend_username);
+            alert(`Invitation envoyée à ${data.friend_username} avec succès!`);
         } else if (data.type === 'friend_invite_error') {
-            // Handle error
-            alert(`Error sending invitation: ${data.message}`);
+            console.error('Error sending invitation:', data.message);
+            alert(`Erreur: ${data.message}`);
         }
     }
     

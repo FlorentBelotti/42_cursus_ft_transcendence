@@ -3,6 +3,14 @@
 
 <div class="container mx-auto p-4">
     <h1 class="text-2xl font-bold mb-6">Mes amis</h1>
+    {% csrf_token %}
+    <!-- Game Invitations Section -->
+    <div class="bg-white rounded-lg shadow mb-6 p-4">
+        <h2 class="text-xl font-bold mb-4">Invitations de jeu</h2>
+        <div id="game-invitations-container">
+            <p class="text-gray-500">Chargement des invitations...</p>
+        </div>
+    </div>
     
     <form method="post">
         {% csrf_token %}
@@ -45,3 +53,213 @@
         </table>
     </div>
 </div>
+
+<!-- Add styles for invitation cards -->
+<style>
+.invitation-card {
+    transition: all 0.3s ease;
+}
+
+.invitation-card:hover {
+    background-color: #f9fafb;
+}
+
+.invitation-avatar img,
+.invitation-avatar div {
+    object-fit: cover;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#game-invitations-container .invitation-card {
+    animation: fadeIn 0.3s ease-out;
+}
+</style>
+
+<!-- JavaScript to handle invitations -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const invitationsContainer = document.getElementById('game-invitations-container');
+    
+    // Function to fetch invitations
+    function fetchInvitations() {
+        fetch('/api/invitations/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]").value
+            },
+            credentials: 'include'
+        })
+        .then(response => {
+            // Check if we were redirected to the login page
+            if (response.redirected) {
+                invitationsContainer.innerHTML = `
+                    <p class="text-amber-500">Vous devez être connecté pour voir les invitations.</p>
+                `;
+                return Promise.reject('Not authenticated');
+            }
+            return response.json();
+        })
+        .then(data => {
+            displayInvitations(data.invitations || []);
+        })
+        .catch(error => {
+            if (error === 'Not authenticated') {
+                // Already handled above
+                return;
+            }
+            console.error('Error fetching invitations:', error);
+            invitationsContainer.innerHTML = `
+                <div class="text-red-500">
+                    Erreur lors du chargement des invitations. Veuillez actualiser la page.
+                </div>
+            `;
+        });
+    }
+    
+    // Function to display invitations
+    function displayInvitations(invitations) {
+        if (!invitations || invitations.length === 0) {
+            invitationsContainer.innerHTML = `
+                <p class="text-gray-500">Aucune invitation de jeu en attente.</p>
+            `;
+            return;
+        }
+        
+        let html = `<div class="space-y-4">`;
+        
+        invitations.forEach(invitation => {
+            // Calculate time remaining
+            const minutes = Math.floor(invitation.time_remaining / 60);
+            const seconds = invitation.time_remaining % 60;
+            
+            html += `
+                <div class="invitation-card bg-gray-50 border rounded-md p-3 flex justify-between items-center" data-id="${invitation.id}">
+                    <div class="flex items-center">
+                        <div class="invitation-avatar mr-3">
+                            ${invitation.sender_profile_pic ? 
+                                `<img src="${invitation.sender_profile_pic}" alt="${invitation.sender_display}" class="w-10 h-10 rounded-full">` :
+                                `<div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                                    ${invitation.sender_display.charAt(0).toUpperCase()}
+                                </div>`
+                            }
+                        </div>
+                        <div>
+                            <p class="font-medium">${invitation.sender_display} vous a invité à un ${invitation.match_type_display}</p>
+                            <p class="text-sm text-gray-500">Expire dans ${minutes}m ${seconds}s</p>
+                        </div>
+                    </div>
+                    <div class="invitation-actions space-x-2">
+                        <button class="accept-btn bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-sm transition-colors"
+                                data-id="${invitation.id}">
+                            Accepter
+                        </button>
+                        <button class="decline-btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm transition-colors"
+                                data-id="${invitation.id}">
+                            Refuser
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div>`;
+        invitationsContainer.innerHTML = html;
+        
+        // Add event listeners to buttons
+        document.querySelectorAll('.accept-btn').forEach(btn => {
+            btn.addEventListener('click', () => respondToInvitation(btn.dataset.id, 'accept'));
+        });
+        
+        document.querySelectorAll('.decline-btn').forEach(btn => {
+            btn.addEventListener('click', () => respondToInvitation(btn.dataset.id, 'decline'));
+        });
+    }
+    
+    // Function to respond to an invitation
+    function respondToInvitation(invitationId, action) {
+        // Disable buttons for this invitation
+        const card = document.querySelector(`.invitation-card[data-id="${invitationId}"]`);
+        if (card) {
+            const buttons = card.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+            });
+            
+            // Show responding status
+            card.querySelector('.invitation-actions').innerHTML += `
+                <span class="text-sm text-gray-500">Traitement en cours...</span>
+            `;
+        }
+        
+        // Send response to server
+        fetch(`/api/invitations/${invitationId}/respond/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ action })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                if (action === 'accept' && data.redirect) {
+                    // Redirect to the game
+                    window.location.href = data.redirect;
+                } else {
+                    // Remove the invitation card with animation
+                    if (card) {
+                        card.style.transition = 'opacity 0.5s, transform 0.5s';
+                        card.style.opacity = '0';
+                        card.style.transform = 'translateX(100px)';
+                        setTimeout(() => {
+                            card.remove();
+                            
+                            // Check if no invitations left
+                            if (document.querySelectorAll('.invitation-card').length === 0) {
+                                invitationsContainer.innerHTML = `
+                                    <p class="text-gray-500">Aucune invitation de jeu en attente.</p>
+                                `;
+                            }
+                        }, 500);
+                    }
+                }
+            } else {
+                alert(data.message || 'Erreur lors de la réponse à l\'invitation');
+                fetchInvitations(); // Refresh the list
+            }
+        })
+        .catch(error => {
+            console.error('Error responding to invitation:', error);
+            alert('Erreur lors de la réponse à l\'invitation. Veuillez réessayer.');
+            fetchInvitations(); // Refresh the list
+        });
+    }
+    
+    // Make sure the friends template has a CSRF token
+    if (!document.querySelector("[name=csrfmiddlewaretoken]")) {
+        const csrfToken = '{% csrf_token %}';
+        invitationsContainer.insertAdjacentHTML('beforebegin', csrfToken);
+    }
+    
+    try {
+        fetchInvitations();
+        
+        // Set up polling every 30 seconds
+        setInterval(fetchInvitations, 30000);
+    } catch (e) {
+        console.error('Failed to set up invitation polling:', e);
+    }
+});
+</script>

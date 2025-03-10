@@ -7,6 +7,7 @@ import asyncio
 import jwt
 from django.conf import settings
 from channels.db import database_sync_to_async
+from users.models import GameInvitation
 
 class MatchConsumer(BaseGameConsumer):
     """
@@ -93,10 +94,90 @@ class MatchConsumer(BaseGameConsumer):
             elif message_type == "player_input":
                 input_value = data.get('input', 0)
                 await self.process_player_input(input_value)
+            elif message_type == "invite_friend":
+                # Handle friend invitation
+                await self.handle_invite_friend(data)
         except json.JSONDecodeError:
             pass  # Invalid JSON format
         except Exception as e:
             print(f"Error in MatchConsumer.receive: {str(e)}")
+
+    async def handle_invite_friend(self, data):
+        """
+        Handle invitation to a friend to join a match
+        """
+        friend_username = data.get('friend_username')
+        
+        if not friend_username:
+            await self.send(text_data=json.dumps({
+                'type': 'friend_invite_error',
+                'message': 'Aucun nom d\'utilisateur fourni'
+            }))
+            return
+        
+        # Create the invitation in the database
+        success, message = await self.create_game_invitation(friend_username)
+        
+        if success:
+            await self.send(text_data=json.dumps({
+                'type': 'friend_invite_sent',
+                'friend_username': friend_username,
+                'message': message
+            }))
+        else:
+            await self.send(text_data=json.dumps({
+                'type': 'friend_invite_error',
+                'message': message
+            }))
+
+    @database_sync_to_async
+    def create_game_invitation(self, friend_username):
+        """
+        Create a game invitation in the database
+        
+        Args:
+            friend_username: Username of the friend to invite
+            
+        Returns:
+            tuple: (success, message)
+        """
+        try:
+            from users.models import customUser
+            
+            # Get friend user object
+            try:
+                friend = customUser.objects.get(username=friend_username)
+            except customUser.DoesNotExist:
+                return False, "Ami non trouvé"
+            
+            # Don't allow inviting yourself
+            if self.user.username == friend_username:
+                return False, "Vous ne pouvez pas vous inviter vous-même"
+                
+            # Check if there's already a pending invitation
+            existing_invitation = GameInvitation.objects.filter(
+                sender=self.user,
+                recipient=friend,
+                status='pending',
+                match_type='regular'
+            ).exists()
+            
+            if existing_invitation:
+                return False, "Vous avez déjà une invitation en attente pour cet ami"
+                
+            # Create the invitation
+            invitation = GameInvitation(
+                sender=self.user,
+                recipient=friend,
+                match_type='regular'
+            )
+            invitation.save()
+            
+            return True, "Invitation envoyée avec succès"
+            
+        except Exception as e:
+            print(f"Error creating invitation: {str(e)}")
+            return False, "Une erreur s'est produite lors de la création de l'invitation"
 
     async def handle_message(self, data, message_type):
         """

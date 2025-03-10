@@ -6,7 +6,7 @@ import logging
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from rest_framework.decorators import api_view
-from .models import customUser
+from .models import customUser, GameInvitation
 from .serializers import UserSerializer, UserDataSerializer
 from .forms import RegisterForm
 from django.contrib.auth import login, authenticate, logout
@@ -142,3 +142,73 @@ def online_friends_view(request):
         'online_friends': serializer.data,
         'count': len(online_friends)
     })
+
+@login_required
+def get_user_invitations(request):
+    """
+    Get all game invitations for the current user.
+    """
+    print(f"API Invitations: Getting invitations for {request.user.username}")
+    
+    # Expire old pending invitations first
+    pending_invitations = GameInvitation.objects.filter(recipient=request.user, status='pending')
+    for invitation in pending_invitations:
+        invitation.expire_if_needed()
+    
+    # Get active pending invitations
+    active_invitations = GameInvitation.objects.filter(
+        recipient=request.user, 
+        status='pending'
+    ).select_related('sender').order_by('-created_at')
+    
+    invitations_data = []
+    for invitation in active_invitations:
+        sender = invitation.sender
+        invitations_data.append({
+            'id': invitation.id,
+            'sender_username': sender.username,
+            'sender_display': sender.nickname or sender.username,
+            'sender_profile_pic': sender.profile_picture.url if sender.profile_picture else None,
+            'match_type': invitation.match_type,
+            'match_type_display': dict(GameInvitation.MATCH_TYPES).get(invitation.match_type, "Match"),
+            'created_at': invitation.created_at.isoformat(),
+            'expires_at': invitation.expires_at.isoformat(),
+            'time_remaining': int((invitation.expires_at - timezone.now()).total_seconds())
+        })
+    
+    return JsonResponse({
+        'invitations': invitations_data
+    })
+
+@login_required
+def respond_to_invitation(request, invitation_id):
+    """
+    Respond to a game invitation (accept or decline).
+    """
+    try:
+        invitation = GameInvitation.objects.get(id=invitation_id, recipient=request.user)
+        
+        # Check if expired
+        if invitation.expire_if_needed():
+            return JsonResponse({'success': False, 'message': 'Cette invitation a expiré'})
+        
+        action = request.data.get('action', '') if hasattr(request, 'data') else request.POST.get('action', '')
+        if action not in ['accept', 'decline']:
+            return JsonResponse({'success': False, 'message': 'Action invalide'})
+        
+        # Update status
+        invitation.status = action + 'ed'  # 'accepted' or 'declined'
+        invitation.save()
+        
+        if action == 'accept':
+            return JsonResponse({
+                'success': True,
+                'message': 'Invitation acceptée',
+                'redirect': f'/match/?invitation={invitation.id}' if invitation.match_type == 'regular' else f'/tournament/?invitation={invitation.id}',
+                'match_type': invitation.match_type
+            })
+        else:
+            return JsonResponse({'success': True, 'message': 'Invitation refusée'})
+            
+    except GameInvitation.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Invitation introuvable'})
