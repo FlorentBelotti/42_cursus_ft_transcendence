@@ -5,15 +5,19 @@ document.addEventListener('DOMContentLoaded', function () {
 	updateAuthButtons();
 
 	window.loadContent = function(url, addToHistory = true) {
-		if (window.sphereAnimation) {
-			window.sphereAnimation.cleanup();
-			window.sphereAnimation = null;
-		}
+		// if (window.sphereAnimation) {
+		// 	window.sphereAnimation.cleanup();
+		// 	window.sphereAnimation = null;
+		// }
 
-		if (window.snakeGame) {
-			window.snakeGame.cleanup();
-			window.snakeGame = null;
-		}
+		// if (window.snakeGame) {
+		// 	window.snakeGame.cleanup();
+		// 	window.snakeGame = null;
+		// }
+
+        // if (window.gameInvitationsManager) {
+        //     window.gameInvitationsManager.cleanup();
+        // }
 
 		cleanupScriptsAndEvents();
 
@@ -71,6 +75,9 @@ document.addEventListener('DOMContentLoaded', function () {
 							if (scriptUrl.includes('snake.js')) {
 								initSnake();
 							}
+							if (scriptUrl.includes('gameInvitations.js')) {
+                                initGameInvitations();
+                            }
 						}, scriptUrl.includes('sphere-animation.js') || scriptUrl.includes('snake.js'));
 					}
 					updateAuthButtons();
@@ -81,6 +88,18 @@ document.addEventListener('DOMContentLoaded', function () {
 				}
 			});
 	}
+
+    function initGameInvitations() {
+        console.log('Initializing game invitations...');
+        if (window.gameInvitationsManager) {
+            window.gameInvitationsManager.init();
+        } else {
+            console.error('Game invitations manager not found');
+            // If for some reason it's not available, let's create it
+            window.gameInvitationsManager = new GameInvitationsManager();
+            window.gameInvitationsManager.init();
+        }
+    }
 
 	function initPong() {
 		if (window.pongGame) {
@@ -144,18 +163,24 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (window.pongGame && window.pongGame.isGameRunning) {
 			window.pongGame.stopGame();
 		}
-
 		if (window.pongServerGame && window.pongServerGame.isGameRunning) {
 			window.pongServerGame.stopGame();
-		}
-
-		if (window.sphereAnimation) {
-			window.sphereAnimation.cleanup();
 		}
 		if (window.snakeGame){
 			window.snakeGame.cleanup();
 			window.snakeGame = null;
 		}
+		if (window.sphereAnimation) {
+			window.sphereAnimation.cleanup();
+			window.sphereAnimation = null;
+		}
+		if (window.snakeGame) {
+			window.snakeGame.cleanup();
+			window.snakeGame = null;
+		}
+        if (window.gameInvitationsManager) {
+            window.gameInvitationsManager.cleanup();
+        }
 	}
 
 	function loadScript(url, callback, isModule = false) {

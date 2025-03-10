@@ -1,19 +1,51 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const invitationsContainer = document.getElementById('game-invitations-container');
+class GameInvitationsManager {
+    constructor() {
+        this.invitationsContainer = document.getElementById('game-invitations-container');
+        this.pollingInterval = null;
+    }
+
+    init() {
+        this.invitationsContainer = document.getElementById('game-invitations-container');
+        if (!this.invitationsContainer) {
+            console.error('Game invitations container not found');
+            return;
+        }
+        
+        this.fetchInvitations();
+        
+        // Set up polling every 30 seconds
+        this.pollingInterval = setInterval(() => this.fetchInvitations(), 30000);
+        
+        // Make sure there's a CSRF token
+        if (!document.querySelector("[name=csrfmiddlewaretoken]")) {
+            const csrfToken = '{% csrf_token %}';
+            this.invitationsContainer.insertAdjacentHTML('beforebegin', csrfToken);
+        }
+    }
     
-    function fetchInvitations() {
+    cleanup() {
+        // Clear the polling interval when navigating away
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+        }
+    }
+
+    fetchInvitations() {
+        if (!this.invitationsContainer) return;
+        
         fetch('/api/invitations/', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]").value
+                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || ''
             },
             credentials: 'include'
         })
         .then(response => {
             if (response.redirected) {
-                invitationsContainer.innerHTML = `
+                this.invitationsContainer.innerHTML = `
                     <p class="text-amber-500">Vous devez être connecté pour voir les invitations.</p>
                 `;
                 return Promise.reject('Not authenticated');
@@ -21,24 +53,28 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            displayInvitations(data.invitations || []);
+            this.displayInvitations(data.invitations || []);
         })
         .catch(error => {
             if (error === 'Not authenticated') {
                 return;
             }
             console.error('Error fetching invitations:', error);
-            invitationsContainer.innerHTML = `
-                <div class="text-red-500">
-                    Erreur lors du chargement des invitations. Veuillez actualiser la page.
-                </div>
-            `;
+            if (this.invitationsContainer) {
+                this.invitationsContainer.innerHTML = `
+                    <div class="text-red-500">
+                        Erreur lors du chargement des invitations. Veuillez actualiser la page.
+                    </div>
+                `;
+            }
         });
     }
     
-    function displayInvitations(invitations) {
+    displayInvitations(invitations) {
+        if (!this.invitationsContainer) return;
+        
         if (!invitations || invitations.length === 0) {
-            invitationsContainer.innerHTML = `
+            this.invitationsContainer.innerHTML = `
                 <p class="text-gray-500">Aucune invitation de jeu en attente.</p>
             `;
             return;
@@ -81,18 +117,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         html += `</div>`;
-        invitationsContainer.innerHTML = html;
+        this.invitationsContainer.innerHTML = html;
         
+        // Add event listeners
         document.querySelectorAll('.accept-btn').forEach(btn => {
-            btn.addEventListener('click', () => respondToInvitation(btn.dataset.id, 'accept'));
+            btn.addEventListener('click', () => this.respondToInvitation(btn.dataset.id, 'accept'));
         });
         
         document.querySelectorAll('.decline-btn').forEach(btn => {
-            btn.addEventListener('click', () => respondToInvitation(btn.dataset.id, 'decline'));
+            btn.addEventListener('click', () => this.respondToInvitation(btn.dataset.id, 'decline'));
         });
     }
     
-    function respondToInvitation(invitationId, action) {
+    respondToInvitation(invitationId, action) {
         const card = document.querySelector(`.invitation-card[data-id="${invitationId}"]`);
         if (card) {
             const buttons = card.querySelectorAll('button');
@@ -110,7 +147,8 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || ''
             },
             credentials: 'include',
             body: JSON.stringify({ action })
@@ -131,8 +169,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         setTimeout(() => {
                             card.remove();
                             
-                            if (document.querySelectorAll('.invitation-card').length === 0) {
-                                invitationsContainer.innerHTML = `
+                            if (document.querySelectorAll('.invitation-card').length === 0 && this.invitationsContainer) {
+                                this.invitationsContainer.innerHTML = `
                                     <p class="text-gray-500">Aucune invitation de jeu en attente.</p>
                                 `;
                             }
@@ -141,26 +179,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else {
                 alert(data.message || 'Erreur lors de la réponse à l\'invitation');
-                fetchInvitations(); // Refresh the list
+                this.fetchInvitations(); // Refresh the list
             }
         })
         .catch(error => {
             console.error('Error responding to invitation:', error);
             alert('Erreur lors de la réponse à l\'invitation. Veuillez réessayer.');
-            fetchInvitations(); // Refresh the list
+            this.fetchInvitations(); // Refresh the list
         });
     }
-    
-    if (!document.querySelector("[name=csrfmiddlewaretoken]")) {
-        const csrfToken = '{% csrf_token %}';
-        invitationsContainer.insertAdjacentHTML('beforebegin', csrfToken);
-    }
-    
-    try {
-        fetchInvitations();
-        
-        setInterval(fetchInvitations, 30000);
-    } catch (e) {
-        console.error('Failed to set up invitation polling:', e);
+}
+
+// Create a global instance for dynamic.js to access
+window.gameInvitationsManager = window.gameInvitationsManager || new GameInvitationsManager();
+
+// Initialize when loaded directly (for backwards compatibility)
+document.addEventListener('DOMContentLoaded', function() {
+    // Only initialize if not being loaded by dynamic.js
+    if (!window.isDynamicLoading) {
+        window.gameInvitationsManager.init();
     }
 });
