@@ -2,6 +2,7 @@ class GameInvitationsManager {
     constructor() {
         this.invitationsContainer = document.getElementById('game-invitations-container');
         this.pollingInterval = null;
+        this.lastFetchTime = 0;
     }
 
     init() {
@@ -11,16 +12,27 @@ class GameInvitationsManager {
             return;
         }
         
-        this.fetchInvitations();
+        console.log("Initializing game invitations manager");
         
-        // Set up polling every 30 seconds
-        this.pollingInterval = setInterval(() => this.fetchInvitations(), 30000);
+        // Immediate initial fetch with forced refresh
+        this.fetchInvitationsWithForce();
+        
+        // Set up more frequent polling (every 3 seconds)
+        this.pollingInterval = setInterval(() => this.fetchInvitations(), 3000);
         
         // Make sure there's a CSRF token
         if (!document.querySelector("[name=csrfmiddlewaretoken]")) {
             const csrfToken = '{% csrf_token %}';
             this.invitationsContainer.insertAdjacentHTML('beforebegin', csrfToken);
         }
+        
+        // Add visibility change listener to refresh when tab becomes active
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                // Force refresh immediately when tab becomes active
+                this.fetchInvitationsWithForce();
+            }
+        });
     }
     
     cleanup() {
@@ -31,15 +43,63 @@ class GameInvitationsManager {
         }
     }
 
+    fetchInvitationsWithForce() {
+        console.log("Fetching invitations with cache busting");
+        // Add a random query parameter to bust cache
+        const cacheBuster = `?_=${new Date().getTime()}`;
+        
+        fetch(`/api/invitations/${cacheBuster}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || '',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            },
+            credentials: 'include'
+        })
+        .then(response => {
+            if (response.redirected) {
+                this.invitationsContainer.innerHTML = `
+                    <p class="text-amber-500">Vous devez être connecté pour voir les invitations.</p>
+                `;
+                return Promise.reject('Not authenticated');
+            }
+            return response.json();
+        })
+        .then(data => {
+            this.displayInvitations(data.invitations || []);
+        })
+        .catch(error => {
+            if (error === 'Not authenticated') {
+                return;
+            }
+            console.error('Error fetching invitations:', error);
+        });
+    }
+
     fetchInvitations() {
         if (!this.invitationsContainer) return;
+        
+        // Track the last fetch time (to prevent too frequent refreshes)
+        const now = Date.now();
+        if (now - this.lastFetchTime < 1000) {
+            // Don't fetch more than once per second
+            return;
+        }
+        this.lastFetchTime = now;
         
         fetch('/api/invitations/', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || ''
+                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || '',
+                // Add cache buster to ensure we get fresh results
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
             },
             credentials: 'include'
         })

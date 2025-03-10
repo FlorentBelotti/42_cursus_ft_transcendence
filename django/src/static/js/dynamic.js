@@ -5,20 +5,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	updateAuthButtons();
 
 	window.loadContent = function(url, addToHistory = true) {
-		// if (window.sphereAnimation) {
-		// 	window.sphereAnimation.cleanup();
-		// 	window.sphereAnimation = null;
-		// }
-
-		// if (window.snakeGame) {
-		// 	window.snakeGame.cleanup();
-		// 	window.snakeGame = null;
-		// }
-
-        // if (window.gameInvitationsManager) {
-        //     window.gameInvitationsManager.cleanup();
-        // }
-
+		
+		window.isDynamicLoading = true;
 		cleanupScriptsAndEvents();
 
 		fetch(url, {
@@ -153,6 +141,16 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function cleanupScriptsAndEvents() {
+		if (window.pongServerGame) {
+			console.log("Found pongServerGame, cancelling any pending invitations");
+			window.pongServerGame.cancelPendingInvitations();
+			
+			if (window.pongServerGame.isGameRunning) {
+				console.log("Game is running, stopping game");
+				window.pongServerGame.stopGame();
+			}
+		}
+		
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic]');
 		dynamicScripts.forEach(script => {
 			if (!script.src.includes('pong.js') && !script.src.includes('pongServer.js')) {

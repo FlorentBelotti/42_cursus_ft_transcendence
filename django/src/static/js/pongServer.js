@@ -69,6 +69,9 @@ class PongServerGame {
             const checkAndSendInvite = () => {
                 if (this.socket && this.socket.readyState === WebSocket.OPEN) {
                     this.sendInvitation(username);
+                    
+                    // Disable both invite and matchmaking buttons
+                    this.disableGameButtons("Invitation sent");
                 } else {
                     connectionAttempts++;
                     if (connectionAttempts < maxAttempts) {
@@ -84,6 +87,26 @@ class PongServerGame {
         } else {
             // If already connected, send invitation directly
             this.sendInvitation(username);
+            
+            // Disable both invite and matchmaking buttons
+            this.disableGameButtons("Invitation sent");
+        }
+    }
+
+    disableGameButtons(reason) {
+        // Disable invite friends button
+        if (this.inviteFriendsBtn) {
+            this.inviteFriendsBtn.disabled = true;
+            this.inviteFriendsBtn.classList.add('disabled');
+            this.inviteFriendsBtn.title = reason || 'You have already sent an invitation';
+        }
+        
+        // Disable matchmaking button
+        if (this.matchmakingButton) {
+            this.matchmakingButton.disabled = true;
+            this.matchmakingButton.classList.add('disabled');
+            this.matchmakingButton.title = reason || 'You have already sent an invitation';
+            this.matchmakingButton.textContent = 'Invitation Sent';
         }
     }
 
@@ -267,13 +290,54 @@ class PongServerGame {
             this.draw(data);
         } else if (data.type === 'friend_invite_sent') {
             console.log('Invitation sent successfully to:', data.friend_username);
-            alert(`Invitation envoyée à ${data.friend_username} avec succès!`);
+            if (window.showToast) {
+                window.showToast(`Invitation envoyée à ${data.friend_username} avec succès!`, 'success');
+            } else {
+                alert(`Invitation envoyée à ${data.friend_username} avec succès!`);
+            }
+            this.disableGameButtons(`Invitation sent to ${data.friend_username}`);
         } else if (data.type === 'friend_invite_error') {
             console.error('Error sending invitation:', data.message);
-            alert(`Erreur: ${data.message}`);
+            if (window.showToast) {
+                window.showToast(`Erreur: ${data.message}`, 'error');
+            } else {
+                alert(`Erreur: ${data.message}`);
+            }
         }
     }
     
+    cancelPendingInvitations() {
+        console.log('Cancelling any pending invitations');
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]")?.value || '';
+        
+        // Call the cancellation API with synchronous XMLHttpRequest to ensure it completes
+        // before page navigation
+        try {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/invitations/cancel/', false); // false makes it synchronous
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            xhr.withCredentials = true;
+            xhr.send();
+            
+            console.log('Invitation cancellation completed with status:', xhr.status);
+            
+            // Also close the WebSocket if it's open
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                console.log('Closing WebSocket connection');
+                this.socket.close();
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Error cancelling invitations:', error);
+            return false;
+        }
+    }
+
     handleGameState(gameState) {
         if (gameState.player_info) {
             this.playerInfo.player1 = gameState.player_info.player1;

@@ -32,6 +32,32 @@ class MatchConsumer(BaseGameConsumer):
         # Accept the connection since user is authenticated
         await self.accept()
 
+    async def handle_invitation_cancel(self, data):
+        """
+        Handle cancellation of an invitation
+        """
+        if not self.user.is_authenticated:
+            return
+
+        # Cancel all pending invitations from this user
+        await self.cancel_user_invitations()
+
+        await self.send(text_data=json.dumps({
+            'type': 'invitation_cancelled',
+            'message': 'Your invitation has been cancelled'
+        }))
+
+    @database_sync_to_async
+    def cancel_user_invitations(self):
+        """
+        Cancel all pending invitations sent by the user
+        """
+        from users.models import GameInvitation
+        return GameInvitation.objects.filter(
+            sender=self.user, 
+            status='pending'
+        ).update(status='cancelled')
+
     @database_sync_to_async
     def get_user_from_token(self, token):
         """
@@ -65,6 +91,10 @@ class MatchConsumer(BaseGameConsumer):
         """
         Handle player disconnection from match or queue.
         """
+
+        if hasattr(self, 'user') and self.user.is_authenticated:
+        # Cancel any pending invitations
+            await self.cancel_user_invitations()
         # Remove from waiting queue or handle match forfeit
         if hasattr(self, 'user'):
             await self.lobby_manager.remove_player(self)
@@ -97,6 +127,9 @@ class MatchConsumer(BaseGameConsumer):
             elif message_type == "invite_friend":
                 # Handle friend invitation
                 await self.handle_invite_friend(data)
+            elif message_type == "cancel_invitation":
+                # Handle invitation cancellation
+                await self.handle_invitation_cancel(data)
         except json.JSONDecodeError:
             pass  # Invalid JSON format
         except Exception as e:

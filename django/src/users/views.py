@@ -186,17 +186,14 @@ def respond_to_invitation(request, invitation_id):
     """
     try:
         invitation = GameInvitation.objects.get(id=invitation_id, recipient=request.user)
-        
-        # Check if expired
         if invitation.expire_if_needed():
             return JsonResponse({'success': False, 'message': 'Cette invitation a expiré'})
         
         action = request.data.get('action', '') if hasattr(request, 'data') else request.POST.get('action', '')
         if action not in ['accept', 'decline']:
             return JsonResponse({'success': False, 'message': 'Action invalide'})
-        
-        # Update status
-        invitation.status = action + 'ed'  # 'accepted' or 'declined'
+
+        invitation.status = action + 'ed'
         invitation.save()
         
         if action == 'accept':
@@ -211,3 +208,25 @@ def respond_to_invitation(request, invitation_id):
             
     except GameInvitation.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Invitation introuvable'})
+
+@login_required
+def cancel_game_invitation(request):
+    """
+    Cancel all pending game invitations sent by the current user.
+    """
+    if request.method == 'POST':
+
+        cancelled_count = GameInvitation.objects.filter(
+            sender=request.user,
+            status='pending'
+        ).update(status='cancelled')
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Cancelled {cancelled_count} invitation(s)'
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'message': 'Method not allowed'
+        }, status=405)

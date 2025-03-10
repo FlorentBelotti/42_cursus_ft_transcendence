@@ -5,9 +5,13 @@ class FriendInviteManager {
         this.customTitle = options.title || 'Invite Friends';
         this.socket = options.socket || null;
         this.onDialogClosed = options.onDialogClosed || (() => {});
+        this.hasInvitedSomeone = false;
     }
 
     showDialog() {
+        // Reset invitation state when showing dialog
+        this.hasInvitedSomeone = false;
+        
         // Check if there's an existing dialog element
         let dialog = document.getElementById(this.dialogId);
         
@@ -26,8 +30,9 @@ class FriendInviteManager {
                 </div>
                 <div style="margin-top: 20px; text-align: right;">
                     <button id="cancelInviteBtn" style="margin-right: 10px; padding: 8px 12px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 4px;">Cancel</button>
-                    <button id="sendInvitesBtn" style="padding: 8px 12px; background: #2196F3; color: white; border: none; border-radius: 4px;">Send Invites</button>
+                    <button id="closeDialogBtn" style="padding: 8px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px;">Close</button>
                 </div>
+                <div id="inviteStatus" style="margin-top: 10px; text-align: center; color: green; display: none;"></div>
             `;
             
             document.body.appendChild(dialog);
@@ -38,7 +43,7 @@ class FriendInviteManager {
                 this.onDialogClosed();
             });
             
-            document.getElementById('sendInvitesBtn').addEventListener('click', () => {
+            document.getElementById('closeDialogBtn').addEventListener('click', () => {
                 this.finishInvites();
                 dialog.remove();
                 this.onDialogClosed();
@@ -169,11 +174,27 @@ class FriendInviteManager {
             const inviteButtons = friendsList.querySelectorAll('.invite-btn');
             inviteButtons.forEach(button => {
                 button.addEventListener('click', (e) => {
+                    // Check if we've already invited someone
+                    if (this.hasInvitedSomeone) {
+                        // Prevent multiple invitations
+                        return;
+                    }
+                    
                     const username = e.target.dataset.username;
                     this.inviteFriend(username);
-                    e.target.disabled = true;
+                    
+                    // Disable all invite buttons
+                    this.disableAllInviteButtons();
+                    
+                    // Mark this button as invited
                     e.target.textContent = 'Invited';
                     e.target.style.backgroundColor = '#888';
+                    
+                    // Hide cancel button, only show close
+                    const cancelButton = document.getElementById('cancelInviteBtn');
+                    if (cancelButton) {
+                        cancelButton.style.display = 'none';
+                    }
                 });
             });
         })
@@ -241,24 +262,87 @@ class FriendInviteManager {
         const inviteButtons = friendsList.querySelectorAll('.invite-btn');
         inviteButtons.forEach(button => {
             button.addEventListener('click', (e) => {
+                if (this.hasInvitedSomeone) {
+                    // Prevent multiple invitations
+                    return;
+                }
+                
                 const username = e.target.dataset.username;
                 this.inviteFriend(username);
-                e.target.disabled = true;
+                
+                // Disable all invite buttons
+                this.disableAllInviteButtons();
+                
+                // Mark this button as invited
                 e.target.textContent = 'Invited';
                 e.target.style.backgroundColor = '#888';
+                
+                // Hide cancel button, only show close
+                const cancelButton = document.getElementById('cancelInviteBtn');
+                if (cancelButton) {
+                    cancelButton.style.display = 'none';
+                }
             });
         });
     }
 
     inviteFriend(username) {
         console.log(`Inviting friend: ${username}`);
-
+        
+        // Set the flag indicating someone has been invited
+        this.hasInvitedSomeone = true;
+        
         // Call the callback with the username
         this.onInviteSent(username);
+        
+        // Show invitation status
+        this.showInvitationStatus(`Invitation sent to ${username}`);
+    }
+
+    disableAllInviteButtons() {
+        // Disable all invite buttons
+        const inviteButtons = document.querySelectorAll('.invite-btn');
+        inviteButtons.forEach(button => {
+            if (button.textContent !== 'Invited') {
+                button.disabled = true;
+                button.style.opacity = '0.5';
+                button.style.backgroundColor = '#cccccc';
+                button.style.cursor = 'not-allowed';
+            }
+        });
+    }
+
+    updateSendInvitesButton() {
+        const sendInvitesBtn = document.getElementById('sendInvitesBtn');
+        if (sendInvitesBtn) {
+            sendInvitesBtn.textContent = 'Close';
+            sendInvitesBtn.style.backgroundColor = '#e74c3c';  // Red color
+            sendInvitesBtn.style.borderColor = '#c0392b';
+        }
+        
+        // Hide the cancel button since we only need one close option
+        const cancelButton = document.getElementById('cancelInviteBtn');
+        if (cancelButton) {
+            cancelButton.style.display = 'none';
+        }
+    }
+    
+    showInvitationStatus(message) {
+        const statusElement = document.getElementById('inviteStatus');
+        if (statusElement) {
+            statusElement.textContent = message;
+            statusElement.style.display = 'block';
+            
+            // Add success styling
+            statusElement.style.backgroundColor = '#d4edda';
+            statusElement.style.color = '#155724';
+            statusElement.style.padding = '10px';
+            statusElement.style.borderRadius = '4px';
+            statusElement.style.marginTop = '15px';
+        }
     }
 
     finishInvites() {
-        console.log('All invites sent.');
-        // This method can be extended if needed
+        console.log('Dialog closed.');
     }
 }
