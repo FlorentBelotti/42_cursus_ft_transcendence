@@ -7,3 +7,4 @@ daphne
 channels
 Pillow
 social-auth-app-django
+django-prometheus
