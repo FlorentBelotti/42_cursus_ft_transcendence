@@ -7,3 +7,4 @@ daphne
 channels
 Pillow
 social-auth-app-django
+channels-redis==4.1.0

@@ -212,21 +212,66 @@ def respond_to_invitation(request, invitation_id):
 @login_required
 def cancel_game_invitation(request):
     """
-    Cancel all pending game invitations sent by the current user.
+    Cancel all pending invitations from the current user.
     """
-    if request.method == 'POST':
-
+    try:
+        # Get the pending invitations before updating them
+        pending_invitations = list(GameInvitation.objects.filter(
+            sender=request.user,
+            status='pending'
+        ).values('id', 'recipient_id'))
+        
+        # Log cancellation action for debugging
+        print(f"User {request.user.username} is cancelling {len(pending_invitations)} invitations")
+        
+        # Update status to cancelled
         cancelled_count = GameInvitation.objects.filter(
             sender=request.user,
             status='pending'
         ).update(status='cancelled')
         
+        affected_recipients = []
+        
+        # Try to notify recipients via WebSocket (if channel layer is configured)
+        if pending_invitations:
+            try:
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                
+                channel_layer = get_channel_layer()
+                if channel_layer:
+                    for invitation in pending_invitations:
+                        recipient_id = invitation['recipient_id']
+                        affected_recipients.append(recipient_id)
+                        
+                        try:
+                            # Send to recipient's notification channel
+                            async_to_sync(channel_layer.group_send)(
+                                f"user_{recipient_id}_notifications",
+                                {
+                                    "type": "invitation_update",
+                                    "invitation_id": invitation['id'],
+                                    "status": "cancelled"
+                                }
+                            )
+                            print(f"Sent WebSocket notification to user_{recipient_id}_notifications")
+                        except Exception as e:
+                            print(f"Error sending WebSocket notification to user_{recipient_id}: {e}")
+                else:
+                    print("No channel layer available for WebSocket notifications")
+            except Exception as e:
+                print(f"Error with WebSocket notification system: {e}")
+                
+        # Return success response
         return JsonResponse({
             'success': True,
-            'message': f'Cancelled {cancelled_count} invitation(s)'
+            'message': f'Cancelled {cancelled_count} invitation(s)',
+            'affected_recipients': affected_recipients,
+            'invitations': [inv['id'] for inv in pending_invitations]
         })
-    else:
+    except Exception as e:
+        print(f"Error cancelling invitations: {e}")
         return JsonResponse({
             'success': False,
-            'message': 'Method not allowed'
-        }, status=405)
+            'message': str(e)
+        }, status=500)

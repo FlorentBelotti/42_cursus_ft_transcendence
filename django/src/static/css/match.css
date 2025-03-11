@@ -10,9 +10,9 @@ body{
 
 }
 
-canvas{
+/* canvas{
 	border: solid 1px #000;
-}
+} */
 
 .button-match{
     display: flex;
@@ -59,7 +59,7 @@ button:hover{
     max-height: 80vh;
     overflow-y: auto;
 }
-
+ 
 .friend-item button.invite-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;

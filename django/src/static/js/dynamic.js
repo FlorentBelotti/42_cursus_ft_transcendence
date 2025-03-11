@@ -7,6 +7,18 @@ document.addEventListener('DOMContentLoaded', function () {
 	window.loadContent = function(url, addToHistory = true) {
 		
 		window.isDynamicLoading = true;
+
+		// Log navigation for debugging
+		console.log(`Navigation initiated to ${url}`);
+		
+		// IMPORTANT: First cancel any pending invitations
+		if (typeof window.cancelPendingPongInvitations === 'function') {
+			console.log("Calling global invitation cancellation");
+			window.cancelPendingPongInvitations();
+		}
+		
+		// Then run regular cleanup
+		console.log("Starting cleanup before navigation");
 		cleanupScriptsAndEvents();
 
 		fetch(url, {
@@ -141,21 +153,48 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function cleanupScriptsAndEvents() {
+		
+		if (typeof window.cancelPendingPongInvitations === 'function') {
+			console.log("Calling global invitation cancellation during cleanup");
+			window.cancelPendingPongInvitations();
+		}
+
 		if (window.pongServerGame) {
-			console.log("Found pongServerGame, cancelling any pending invitations");
-			window.pongServerGame.cancelPendingInvitations();
-			
-			if (window.pongServerGame.isGameRunning) {
-				console.log("Game is running, stopping game");
-				window.pongServerGame.stopGame();
+			console.log("Cleaning up pongServerGame");
+			try {
+				// Make sure the socket is closed
+				if (window.pongServerGame.socket && 
+					window.pongServerGame.socket.readyState === WebSocket.OPEN) {
+					console.log("Closing socket connection");
+					window.pongServerGame.socket.close();
+				}
+				
+				// Set flags to prevent further activity
+				window.pongServerGame.isPageUnloading = true;
+			} catch (error) {
+				console.error("Error during pongServerGame cleanup:", error);
 			}
 		}
 		
-		const dynamicScripts = document.querySelectorAll('script[data-dynamic]');
-		dynamicScripts.forEach(script => {
-			if (!script.src.includes('pong.js') && !script.src.includes('pongServer.js')) {
-				script.remove();
+		// Clean up gameInvitationsManager
+		if (window.gameInvitationsManager) {
+			console.log("Cleaning up gameInvitationsManager");
+			try {
+				window.gameInvitationsManager.cleanup();
+			} catch (error) {
+				console.error("Error during gameInvitationsManager cleanup:", error);
 			}
+		}
+		
+		// Remove global instances to prevent conflicts on reload
+		window.pongServerGame = null;
+		window.pongGame = null;
+		
+		// Remove dynamic scripts
+		const dynamicScripts = document.querySelectorAll('script[data-dynamic="true"]');
+		console.log(`Removing ${dynamicScripts.length} dynamic scripts`);
+		dynamicScripts.forEach(script => {
+			script.remove();
 		});
 
 		if (window.pongGame && window.pongGame.isGameRunning) {
@@ -172,31 +211,39 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.sphereAnimation.cleanup();
 			window.sphereAnimation = null;
 		}
-		if (window.snakeGame) {
-			window.snakeGame.cleanup();
-			window.snakeGame = null;
-		}
         if (window.gameInvitationsManager) {
             window.gameInvitationsManager.cleanup();
         }
+		if (window.gameInvitationsManager) {
+			window.gameInvitationsManager.cleanup();
+		}
 	}
 
 	function loadScript(url, callback, isModule = false) {
-		const existingScript = document.querySelector(`script[src="${url}"]`);
+		// Check if script is already loaded (by data-src attribute)
+		const existingScript = document.querySelector(`script[data-src="${url}"]`);
 		if (existingScript) {
+			console.log(`Script already loaded: ${url}`);
 			if (callback) callback();
 			return;
 		}
-
+		
 		const script = document.createElement('script');
-		script.type = isModule ? 'module' : 'text/javascript';
-		script.src = url;
 		script.setAttribute('data-dynamic', 'true');
-
-		script.onload = function () {
-			if (callback) callback();
-		};
-		document.head.appendChild(script);
+		script.setAttribute('data-src', url);  // Add this attribute to check for duplicates
+		
+		if (isModule) {
+			script.type = 'module';
+		}
+		
+		if (callback) {
+			script.onload = function() {
+				callback();
+			};
+		}
+		
+		script.src = url;
+		document.body.appendChild(script);
 	}
 
 	document.querySelectorAll('.nav-button').forEach(function (button) {

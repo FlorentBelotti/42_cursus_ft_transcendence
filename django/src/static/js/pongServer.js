@@ -59,8 +59,8 @@ class PongServerGame {
         
         // Connect to WebSocket if not already connected
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-            console.log('Connecting to WebSocket for invitation');
-            this.connectWebSocket();
+            console.log('Connecting to WebSocket for invitation (NOT for matchmaking)');
+            this.connectWebSocket(false);  // Explicitly pass false
             
             // Wait for connection and then send invitation
             let connectionAttempts = 0;
@@ -69,16 +69,13 @@ class PongServerGame {
             const checkAndSendInvite = () => {
                 if (this.socket && this.socket.readyState === WebSocket.OPEN) {
                     this.sendInvitation(username);
-                    
-                    // Disable both invite and matchmaking buttons
-                    this.disableGameButtons("Invitation sent");
                 } else {
                     connectionAttempts++;
                     if (connectionAttempts < maxAttempts) {
                         setTimeout(checkAndSendInvite, 500);
                     } else {
-                        console.error('Failed to establish WebSocket connection for invitation');
-                        alert(`Impossible d'envoyer l'invitation à ${username}. Veuillez réessayer.`);
+                        console.error("Failed to connect to WebSocket");
+                        alert("Failed to connect to game server. Please try again.");
                     }
                 }
             };
@@ -87,9 +84,6 @@ class PongServerGame {
         } else {
             // If already connected, send invitation directly
             this.sendInvitation(username);
-            
-            // Disable both invite and matchmaking buttons
-            this.disableGameButtons("Invitation sent");
         }
     }
 
@@ -157,9 +151,9 @@ class PongServerGame {
 
     startMatchmaking() {
         console.log('Matchmaking started...');
-        if (!this.socket || this.socket.readyState === WebSocket.CLOSED) {
-            console.log('Connecting to WebSocket...');
-            this.connectWebSocket();
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            console.log('Connecting to WebSocket FOR MATCHMAKING...');
+            this.connectWebSocket(true);  // Explicitly pass true
             
             // Update button state
             if (this.matchmakingButton) {
@@ -181,8 +175,11 @@ class PongServerGame {
         return null;
     }
 
-    connectWebSocket() {
-        // Get token from cookie - use your original method
+    connectWebSocket(useForMatchmaking = false) {
+        // Store as instance property for access in callbacks
+        this.useForMatchmaking = useForMatchmaking;
+        
+        // Get token from cookie
         const token = document.cookie
             .split('; ')
             .find(cookie => cookie.startsWith('access_token='))
@@ -193,18 +190,29 @@ class PongServerGame {
         
         this.socket.onopen = () => {
             console.log('WebSocket connection established.');
-            // Immediately send find_match message
-            this.socket.send(JSON.stringify({ 
-                type: 'find_match',
-                user: currentUser
-            }));
             
-            this.displayMessage('Searching for opponent...');
+            // Only send find_match message if we're connecting for matchmaking
+            if (this.useForMatchmaking) {
+                console.log('Connected for matchmaking - sending find_match');
+                this.socket.send(JSON.stringify({ 
+                    type: 'find_match',
+                    user: currentUser
+                }));
+                
+                this.displayMessage('Searching for opponent...');
+            } else {
+                console.log('Connected for invitations - NOT starting matchmaking');
+            }
         };
-
+        
         this.socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            this.handleMessage(data);
+            // Rest of the method as before...
+            try {
+                const data = JSON.parse(event.data);
+                this.handleMessage(data);
+            } catch (error) {
+                console.error("Error parsing WebSocket message:", error);
+            }
         };
 
         this.socket.onclose = () => {
@@ -307,35 +315,58 @@ class PongServerGame {
     }
     
     cancelPendingInvitations() {
-        console.log('Cancelling any pending invitations');
+        console.log("Cancelling pending invitations...");
         
-        // Get CSRF token
-        const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]")?.value || '';
+        // Get CSRF token for the request
+        const csrfToken = this.getCookie('csrftoken');
         
-        // Call the cancellation API with synchronous XMLHttpRequest to ensure it completes
-        // before page navigation
+        // Create a synchronous XHR request to ensure it completes before navigation
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/invitations/cancel/', false); // false = synchronous
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('X-CSRFToken', csrfToken);
+        xhr.withCredentials = true;
+        
+        // Log request start
+        console.log("Sending cancellation request...");
+        
+        // Send the request
         try {
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/invitations/cancel/', false); // false makes it synchronous
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            xhr.setRequestHeader('X-CSRFToken', csrfToken);
-            xhr.withCredentials = true;
             xhr.send();
             
-            console.log('Invitation cancellation completed with status:', xhr.status);
+            // Log response status
+            console.log("Cancellation request status:", xhr.status);
             
-            // Also close the WebSocket if it's open
-            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-                console.log('Closing WebSocket connection');
-                this.socket.close();
+            // Process response if successful
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    console.log("Cancelled invitations:", response.message);
+                    
+                    // Use localStorage to broadcast cancellation to other tabs
+                    if (response.affected_recipients && response.affected_recipients.length > 0) {
+                        // Create a unique key with timestamp to trigger events in other tabs
+                        const storageKey = `invitation_cancelled_${Date.now()}`;
+                        localStorage.setItem(storageKey, JSON.stringify(response.affected_recipients));
+                        console.log("Broadcast cancellation via localStorage:", storageKey);
+                    }
+                } catch (e) {
+                    console.error("Error parsing cancellation response:", e);
+                }
+            } else {
+                console.error("Failed to cancel invitations:", xhr.status, xhr.statusText);
             }
-            
-            return true;
-        } catch (error) {
-            console.error('Error cancelling invitations:', error);
-            return false;
+        } catch (e) {
+            console.error("Exception during invitation cancellation:", e);
         }
+    }
+    
+    broadcastCancellation(recipientIds) {
+        // Broadcast to each affected recipient via browser storage
+        recipientIds.forEach(id => {
+            // Use localStorage with unique per-recipient keys
+            localStorage.setItem(`invitation_cancelled_for_${id}`, Date.now());
+        });
     }
 
     handleGameState(gameState) {
@@ -391,16 +422,34 @@ class PongServerGame {
     }
 
     stopGame() {
+        console.log("Stopping game and cleaning up resources");
         this.isGameRunning = false;
         this.playerNumber = null;
         
-        // Re-enable matchmaking button
+        // Cancel any pending matchmaking
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            try {
+                this.socket.send(JSON.stringify({ 
+                    type: 'cancel_matchmaking'
+                }));
+            } catch (e) {
+                console.error("Error sending cancel matchmaking:", e);
+            }
+        }
+        
+        // Cancel any pending invitations
+        try {
+            this.cancelPendingInvitations();
+        } catch (e) {
+            console.error("Error cancelling invitations:", e);
+        }
+        
+        // Re-enable UI buttons
         if (this.matchmakingButton) {
             this.matchmakingButton.disabled = false;
             this.matchmakingButton.textContent = 'Search for a game';
         }
         
-        // Re-enable invite button
         if (this.inviteFriendsBtn) {
             this.inviteFriendsBtn.disabled = false;
         }
@@ -512,5 +561,22 @@ class PongServerGame {
         });
     }
 }
+
+window.cancelPendingPongInvitations = function() {
+    console.log("Global invitation cancellation triggered");
+    try {
+        // If pongServerGame exists, use it
+        if (window.pongServerGame) {
+            window.pongServerGame.cancelPendingInvitations();
+        } else {
+            // Create temporary instance if needed
+            const tempInstance = new PongServerGame();
+            tempInstance.cancelPendingInvitations();
+        }
+        console.log("Invitations cancelled successfully via global function");
+    } catch (error) {
+        console.error("Error in global invitation cancellation:", error);
+    }
+};
 
 const pongGame = new PongServerGame();

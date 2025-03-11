@@ -3,83 +3,78 @@ class GameInvitationsManager {
         this.invitationsContainer = document.getElementById('game-invitations-container');
         this.pollingInterval = null;
         this.lastFetchTime = 0;
+        this.activeInvitationIds = new Set(); // Track active invitation IDs
+        this.isInitialized = false;
     }
 
     init() {
+        if (this.isInitialized) return;
+        
         this.invitationsContainer = document.getElementById('game-invitations-container');
         if (!this.invitationsContainer) {
-            console.error('Game invitations container not found');
+            console.error("Invitations container not found");
             return;
         }
         
         console.log("Initializing game invitations manager");
+        this.isInitialized = true;
         
-        // Immediate initial fetch with forced refresh
+        // Immediate initial fetch
         this.fetchInvitationsWithForce();
         
-        // Set up more frequent polling (every 3 seconds)
-        this.pollingInterval = setInterval(() => this.fetchInvitations(), 3000);
-        
-        // Make sure there's a CSRF token
-        if (!document.querySelector("[name=csrfmiddlewaretoken]")) {
-            const csrfToken = '{% csrf_token %}';
-            this.invitationsContainer.insertAdjacentHTML('beforebegin', csrfToken);
-        }
+        // Set up aggressive polling (every 1.5 seconds)
+        this.pollingInterval = setInterval(() => this.fetchInvitations(), 1500);
         
         // Add visibility change listener to refresh when tab becomes active
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                // Force refresh immediately when tab becomes active
-                this.fetchInvitationsWithForce();
-            }
-        });
+        document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+        
+        // Add storage event listener for cross-tab cancellation notifications
+        window.addEventListener('storage', this.handleStorageEvent.bind(this));
+    }
+    
+    handleVisibilityChange() {
+        if (document.visibilityState === 'visible') {
+            console.log("Page became visible - checking for invitation updates");
+            this.fetchInvitationsWithForce();
+        }
+    }
+    
+    handleStorageEvent(event) {
+        if (event.key && event.key.startsWith('invitation_cancelled_')) {
+            console.log("Invitation cancellation detected via localStorage");
+            this.fetchInvitationsWithForce();
+        }
+    }
+    
+    showStatusNotification(message) {
+        // Show a temporary notification message
+        const notification = document.createElement('div');
+        notification.className = 'status-notification';
+        notification.textContent = message;
+        
+        // Add to DOM and remove after 3 seconds
+        if (this.invitationsContainer) {
+            this.invitationsContainer.prepend(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
     }
     
     cleanup() {
+        console.log("Cleaning up game invitations manager");
         // Clear the polling interval when navigating away
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
             this.pollingInterval = null;
         }
-    }
-
-    fetchInvitationsWithForce() {
-        console.log("Fetching invitations with cache busting");
-        // Add a random query parameter to bust cache
-        const cacheBuster = `?_=${new Date().getTime()}`;
         
-        fetch(`/api/invitations/${cacheBuster}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || '',
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-            },
-            credentials: 'include'
-        })
-        .then(response => {
-            if (response.redirected) {
-                this.invitationsContainer.innerHTML = `
-                    <p class="text-amber-500">Vous devez être connecté pour voir les invitations.</p>
-                `;
-                return Promise.reject('Not authenticated');
-            }
-            return response.json();
-        })
-        .then(data => {
-            this.displayInvitations(data.invitations || []);
-        })
-        .catch(error => {
-            if (error === 'Not authenticated') {
-                return;
-            }
-            console.error('Error fetching invitations:', error);
-        });
+        // Remove event listeners
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+        window.removeEventListener('storage', this.handleStorageEvent);
+        
+        this.isInitialized = false;
     }
 
+    // Regular polling fetch (less aggressive caching)
     fetchInvitations() {
         if (!this.invitationsContainer) return;
         
@@ -97,9 +92,44 @@ class GameInvitationsManager {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || '',
-                // Add cache buster to ensure we get fresh results
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
+                'Cache-Control': 'no-cache'
+            },
+            credentials: 'include'
+        })
+        .then(response => {
+            if (response.redirected) {
+                return Promise.reject('Not authenticated');
+            }
+            return response.json();
+        })
+        .then(data => {
+            this.processInvitationUpdates(data.invitations || []);
+        })
+        .catch(error => {
+            if (error === 'Not authenticated') {
+                return;
+            }
+            console.error('Error fetching invitations:', error);
+        });
+    }
+
+    fetchInvitationsWithForce() {
+        console.log("🔄 Fetching invitations with forced refresh");
+        const cacheBuster = `?_=${new Date().getTime()}`;
+        
+        // Log the current known invitation IDs for debugging
+        console.log("Current active invitations before refresh:", [...this.activeInvitationIds]);
+        
+        // Use more aggressive cache prevention
+        fetch(`/api/invitations/${cacheBuster}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || '',
+                'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+                'Pragma': 'no-cache',
+                'Expires': '-1'
             },
             credentials: 'include'
         })
@@ -113,23 +143,42 @@ class GameInvitationsManager {
             return response.json();
         })
         .then(data => {
-            this.displayInvitations(data.invitations || []);
+            console.log("Invitation data received:", data.invitations ? data.invitations.length : 0, "invitations");
+            
+            // Log the IDs of the received invitations
+            if (data.invitations && data.invitations.length > 0) {
+                console.log("Received invitation IDs:", data.invitations.map(inv => inv.id));
+            }
+            
+            this.processInvitationUpdates(data.invitations || []);
         })
         .catch(error => {
             if (error === 'Not authenticated') {
                 return;
             }
             console.error('Error fetching invitations:', error);
-            if (this.invitationsContainer) {
-                this.invitationsContainer.innerHTML = `
-                    <div class="text-red-500">
-                        Erreur lors du chargement des invitations. Veuillez actualiser la page.
-                    </div>
-                `;
-            }
         });
     }
     
+    processInvitationUpdates(newInvitations) {
+        // Get current invitations
+        const currentIds = new Set(newInvitations.map(inv => inv.id));
+        
+        // Check for cancellations (invitations that disappeared)
+        const cancelledInvitations = [...this.activeInvitationIds].filter(id => !currentIds.has(id));
+        
+        if (cancelledInvitations.length > 0) {
+            console.log("Found cancelled invitations:", cancelledInvitations);
+            this.showStatusNotification("Une invitation a été annulée");
+        }
+        
+        // Update active invitations tracking
+        this.activeInvitationIds = currentIds;
+        
+        // Display all current invitations
+        this.displayInvitations(newInvitations);
+    }
+
     displayInvitations(invitations) {
         if (!this.invitationsContainer) return;
         
