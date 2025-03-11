@@ -8,14 +8,22 @@
     <link rel="stylesheet" href="{% static 'css/verify_code.css' %}">
 </head>
 <body>
-    <h1>Vérification du code</h1>
-    <div id="errorMessage" style="color: red; display: none;"></div>
-    <form id="verifyCodeForm">
-        {% csrf_token %}
-        <label for="code">Code de vérification :</label>
-        <input type="text" id="code" name="code" required>
-        <button type="submit">Vérifier</button>
-    </form>
+    <div class="verify-container">
+        <h1>Vérification du code</h1>
+        <div id="errorMessage" style="color: red; display: none;"></div>
+        
+        <form id="verifyCodeForm" class="verify-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.code.id_for_label }}">Code de vérification :</label>
+                {{ form.code }}
+                <span id="code-error" class="error"></span>
+            </div>
+
+            <button type="submit" class="submit-btn">Vérifier</button>
+        </form>
+    </div>
     <script src="{% static 'js/verify_code.js' %}"></script>
 </body>
 </html>

@@ -7,50 +7,85 @@
     <link rel="stylesheet" href="{% static 'css/account.css' %}">
 </head>
 <body>
-    <div style="margin: 20px;">
+    <div class="account-container">
         <h1>Mon Compte</h1>
         
         <!-- Affichage des informations -->
-        <div style="border: 1px solid #ccc; padding: 20px; margin-bottom: 20px;">
-            <div>
-                {% if user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" style="max-width: 200px; margin-bottom: 10px;">
-                {% else %}
-                    <p>Aucune photo de profil.</p>
-                {% endif %}
-                <h5>{{ user.username }}</h5>
-                <p>Email: {{ user.email }}</p>
-                <p>Elo: {{ user.elo }}</p>
-            </div>
+        <div class="user-info">
+            {% if user.profile_picture %}
+                <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="profile-pic">
+            {% else %}
+                <p>Aucune photo de profil.</p>
+            {% endif %}
+            <h5>{{ user.username }}</h5>
+            <p>Email: {{ user.email }}</p>
+            <p>Elo: {{ user.elo }}</p>
         </div>
 
         <!-- Formulaire de mise à jour -->
-        <form id="updateForm" method="post" enctype="multipart/form-data">
+        <form id="updateForm" class="account-form" enctype="multipart/form-data">
             {% csrf_token %}
-            {{ user_form.as_p }}
-            <button type="submit" name="update_info" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer;">Update account</button>
+            <div id="updateError" class="error" style="display: none;"></div>
+            
+            <div class="form-group">
+                <label for="{{ user_form.username.id_for_label }}">Nom d'utilisateur :</label>
+                {{ user_form.username }}
+                <span id="username-error" class="error"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ user_form.email.id_for_label }}">Email :</label>
+                {{ user_form.email }}
+                <span id="email-error" class="error"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ user_form.profile_picture.id_for_label }}">Photo de profil :</label>
+                {{ user_form.profile_picture }}
+                <span id="profile-picture-error" class="error"></span>
+            </div>
+
+            <button type="submit" name="update_info" class="submit-btn update-btn">Update account</button>
         </form>
 
         <!-- Formulaire de changement de mot de passe -->
-        <form id="passwordForm" method="post" style="margin-top: 20px;">
+        <form id="passwordForm" class="account-form">
             {% csrf_token %}
-            {{ password_form.as_p }}
-            <button type="submit" name="change_password" style="padding: 10px 20px; background-color: #ffc107; color: white; border: none; cursor: pointer;">Change password</button>
+            <div id="passwordError" class="error" style="display: none;"></div>
+            
+            <div class="form-group">
+                <label for="{{ password_form.old_password.id_for_label }}">Ancien mot de passe :</label>
+                {{ password_form.old_password }}
+                <span id="old-password-error" class="error"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ password_form.new_password1.id_for_label }}">Nouveau mot de passe :</label>
+                {{ password_form.new_password1 }}
+                <span id="new-password1-error" class="error"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ password_form.new_password2.id_for_label }}">Confirmer le nouveau mot de passe :</label>
+                {{ password_form.new_password2 }}
+                <span id="new-password2-error" class="error"></span>
+            </div>
+
+            <button type="submit" name="change_password" class="submit-btn password-btn">Change password</button>
         </form>
 
         <!-- Déconnexion -->
-        <form id="disconnectForm" method="post" style="margin-top: 20px;">
+        <form id="disconnectForm" class="account-form">
             {% csrf_token %}
-            <button type="submit" name="disconnect" style="padding: 10px 20px; background-color: #6c757d; color: white; border: none; cursor: pointer;">Disconnect</button>
+            <button type="submit" name="disconnect" class="submit-btn disconnect-btn">Disconnect</button>
         </form>
 
         <!-- Suppression du compte -->
-        <form id="deleteForm" method="post" style="margin-top: 20px;">
+        <form id="deleteForm" class="account-form">
             {% csrf_token %}
-            <button type="submit" name="delete_account" style="padding: 10px 20px; background-color: #dc3545; color: white; border: none; cursor: pointer;">Delete account</button>
+            <button type="submit" name="delete_account" class="submit-btn delete-btn">Delete accountttt</button>
         </form>
-
-        <script src="{% static 'js/account.js' %}"></script>
     </div>
+    <script src="{% static 'js/account.js' %}"></script>
 </body>
 </html>

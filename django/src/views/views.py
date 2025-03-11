@@ -134,9 +134,29 @@ def register(request):
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
+            username = form.cleaned_data['username']
+            email = form.cleaned_data['email']
+            password1 = form.cleaned_data.get('password1')
+            password2 = form.cleaned_data.get('password2')
+
+            if customUser.objects.filter(username=username).exists():
+                return JsonResponse({"error": "Ce nom d’utilisateur est déjà pris."}, status=401)
+            if customUser.objects.filter(email=email).exists():
+                return JsonResponse({"error": "Cet email est déjà utilisé."}, status=401)
+            if password1 != password2:
+                return JsonResponse({"error": "Les mots de passe ne correspondent pas."}, status=401)
+
             form.save()
             return JsonResponse({"success": "User registered"}, status=201)
         else:
+            if 'username' in form.errors:
+                return JsonResponse({"error": "Nom d'utilisateur invalide."}, status=401)
+            if 'email' in form.errors:
+                return JsonResponse({"error": "Adresse email invalide ou incorrecte."}, status=401)
+            if 'password1' in form.errors:
+                return JsonResponse({"error": "Mot de passe invalide."}, status=401)
+            if 'password2' in form.errors:
+                return JsonResponse({"error": "Confirmation du mot de passe invalide."}, status=401)
             return JsonResponse({"error": "User failed to register"}, status=401)
     else:
         form = RegisterForm()
