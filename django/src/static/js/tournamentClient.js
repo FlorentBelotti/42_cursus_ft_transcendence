@@ -17,10 +17,6 @@ class TournamentClient {
         this.keysPressed = {};
         this.animationFrameId = null;
         this.authenticated = false;
-        
-        // Initialize friend invite manager
-        this.friendInviteManager = null;
-        
         this.init();
     }
 
@@ -33,14 +29,6 @@ class TournamentClient {
         
         // Add button event listeners
         const createTournamentBtn = document.getElementById('createTournamentBtn');
-        const inviteFriendsBtn = document.getElementById('inviteFriendsBtn');
-        
-        if (inviteFriendsBtn) {
-            inviteFriendsBtn.addEventListener('click', () => {
-                this.initFriendInviteManager();
-                this.friendInviteManager.showDialog();
-            });
-        }
         
         if (createTournamentBtn) {
             createTournamentBtn.addEventListener('click', () => {
@@ -51,43 +39,6 @@ class TournamentClient {
                 // Now connect to WebSocket and join tournament
                 this.connectWebSocket();
             });
-        }
-    }
-
-    initFriendInviteManager() {
-        if (!this.friendInviteManager) {
-            this.friendInviteManager = new FriendInviteManager({
-                title: 'Invite Friends to Tournament',
-                socket: this.socket,
-                onInviteSent: (username) => this.handleFriendInvite(username),
-                onDialogClosed: () => console.log('Invite dialog closed')
-            });
-        }
-    }
-
-    handleFriendInvite(username) {
-        console.log(`Tournament handling friend invite for: ${username}`);
-        
-        // Send invitation to friend via WebSocket
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            this.socket.send(JSON.stringify({
-                type: 'invite_friend',
-                friend_username: username
-            }));
-        } else {
-            // Connect WebSocket if not connected yet
-            this.connectWebSocket();
-            setTimeout(() => {
-                if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-                    this.socket.send(JSON.stringify({
-                        type: 'invite_friend',
-                        friend_username: username
-                    }));
-                } else {
-                    console.error('Could not establish WebSocket connection');
-                    alert(`Could not send invite to ${username}. Please try again.`);
-                }
-            }, 1000);
         }
     }
 
