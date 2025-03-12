@@ -68,23 +68,23 @@
     </style>
 </head>
 <body>
-<div class="controls-container">
-    <button id="inviteFriendsBtn" class="invite-friends-btn">Invite Friends</button>
-    <button id="matchmaking" class="matchmaking-btn">Search for a game</button>
-</div>
+    <div class="controls-container">
+        <button id="inviteFriendsBtn" class="invite-friends-btn">Invite Friends</button>
+        <button id="matchmaking" class="matchmaking-btn">Search for a game</button>
+    </div>
 
-<div>
-    <canvas class="pong" id="pongServer" width="800" height="550"></canvas>
-</div>
-    
-<script>
-    const currentUser = {
-        username: "{{ request.user.username }}",
-        nickname: "{{ request.user.nickname|default:'' }}",
-        elo: {{ request.user.elo }}
-    };
-</script>
-<script src="{% static 'js/friendInviteManager.js' %}"></script>
-<script src="{% static 'js/pongServer.js' %}"></script>
+    <div>
+        <canvas class="pong" id="pongServer" width="800" height="550"></canvas>
+    </div>
+        
+    <script>
+        const currentUser = {
+            username: "{{ request.user.username }}",
+            nickname: "{{ request.user.nickname|default:'' }}",
+            elo: {{ request.user.elo }}
+        };
+    </script>
+    <script src="{% static 'js/friendInviteManager.js' %}"></script>
+    <script src="{% static 'js/pongServer.js' %}"></script>
 </body>
 </html>

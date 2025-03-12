@@ -241,15 +241,9 @@ class GameInvitationsManager {
     respondToInvitation(invitationId, action) {
         const card = document.querySelector(`.invitation-card[data-id="${invitationId}"]`);
         if (card) {
-            const buttons = card.querySelectorAll('button');
-            buttons.forEach(btn => {
-                btn.disabled = true;
-                btn.classList.add('opacity-50');
-            });
-            
-            card.querySelector('.invitation-actions').innerHTML += `
-                <span class="text-sm text-gray-500">Traitement en cours...</span>
-            `;
+            card.querySelector('.accept-btn').disabled = true;
+            card.querySelector('.decline-btn').disabled = true;
+            card.classList.add('processing');
         }
         
         fetch(`/api/invitations/${invitationId}/respond/`, {
@@ -263,39 +257,82 @@ class GameInvitationsManager {
             body: JSON.stringify({ action })
         })
         .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (response.redirected) {
+                window.location.href = response.url;
+                return { success: true, redirected: true };
+            }
             return response.json();
         })
         .then(data => {
+            if (data.redirected) return;
+            
             if (data.success) {
-                if (action === 'accept' && data.redirect) {
-                    window.location.href = data.redirect;
+                if (action === 'accept') {
+                    console.log("Invitation accepted, starting game...");
+                    this.startInvitedGame(data.game_id, data.sender_username);
                 } else {
-                    if (card) {
-                        card.style.transition = 'opacity 0.5s, transform 0.5s';
-                        card.style.opacity = '0';
-                        card.style.transform = 'translateX(100px)';
-                        setTimeout(() => {
-                            card.remove();
-                            
-                            if (document.querySelectorAll('.invitation-card').length === 0 && this.invitationsContainer) {
-                                this.invitationsContainer.innerHTML = `
-                                    <p class="text-gray-500">Aucune invitation de jeu en attente.</p>
-                                `;
-                            }
-                        }, 500);
-                    }
+                    console.log("Invitation declined");
+                    // Just refresh the invitations list
+                    this.fetchInvitationsWithForce();
                 }
             } else {
-                alert(data.message || 'Erreur lors de la réponse à l\'invitation');
-                this.fetchInvitations(); // Refresh the list
+                alert(`Error: ${data.message}`);
+                this.fetchInvitationsWithForce();
             }
         })
         .catch(error => {
             console.error('Error responding to invitation:', error);
-            alert('Erreur lors de la réponse à l\'invitation. Veuillez réessayer.');
-            this.fetchInvitations(); // Refresh the list
+            if (card) {
+                card.classList.remove('processing');
+                card.querySelector('.accept-btn').disabled = false;
+                card.querySelector('.decline-btn').disabled = false;
+            }
         });
+    }
+    
+    startInvitedGame(gameId, opponentUsername) {
+        console.log(`Starting invited game ${gameId} with ${opponentUsername}`);
+        
+        // Create a custom event for invited game
+        const invitedGameEvent = new CustomEvent('invitedGame', {
+            detail: { gameId, opponentUsername }
+        });
+        
+        // Use SPA navigation to match page
+        if (window.loadContent) {
+            // Save the game data to sessionStorage to retrieve after navigation
+            sessionStorage.setItem('pendingGame', JSON.stringify({
+                gameId,
+                opponentUsername,
+                timestamp: Date.now()
+            }));
+            
+            window.loadContent('/match/');
+            
+            // Set a small delay to ensure the page loads before connecting
+            setTimeout(() => {
+                // The match page should have loaded pongServer.js which creates pongServerGame
+                if (window.pongServerGame) {
+                    window.pongServerGame.joinInvitedGame(gameId, opponentUsername, false);
+                    console.log("Successfully initiated game join");
+                } else {
+                    console.error("Pong game not initialized!");
+                    // Try again with a longer delay as a fallback
+                    setTimeout(() => {
+                        if (window.pongServerGame) {
+                            window.pongServerGame.joinInvitedGame(gameId, opponentUsername, false);
+                            console.log("Successfully initiated game join on second attempt");
+                        } else {
+                            alert("Error initializing game - please refresh the page");
+                        }
+                    }, 1000);
+                }
+            }, 500);
+        } else {
+            console.error("SPA loadContent not available");
+            // Fallback to direct navigation with parameters
+            window.location.href = `/match/?game=${gameId}&opponent=${opponentUsername}`;
+        }
     }
 }
 

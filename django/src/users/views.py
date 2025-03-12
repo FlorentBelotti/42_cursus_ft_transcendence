@@ -25,6 +25,10 @@ from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import json
+import time
 
 def protected_view(request):
     if not request.user.is_authenticated:
@@ -189,21 +193,59 @@ def respond_to_invitation(request, invitation_id):
         if invitation.expire_if_needed():
             return JsonResponse({'success': False, 'message': 'Cette invitation a expiré'})
         
-        action = request.data.get('action', '') if hasattr(request, 'data') else request.POST.get('action', '')
+        data = json.loads(request.body) if request.body else {}
+        action = data.get('action', request.POST.get('action', ''))
+        
         if action not in ['accept', 'decline']:
             return JsonResponse({'success': False, 'message': 'Action invalide'})
 
         invitation.status = action + 'ed'
         invitation.save()
         
+        # Generate a unique game_id for the match if accepted
         if action == 'accept':
+            game_id = f"invitation_{invitation.id}_{int(time.time())}"
+            invitation.game_id = game_id
+            invitation.save()
+            
+            # Notify sender via WebSocket
+            try:
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{invitation.sender.id}_notifications",
+                    {
+                        'type': 'invitation_accepted',
+                        'invitation_id': invitation.id,
+                        'game_id': game_id,
+                        'recipient_username': request.user.username,
+                        'recipient_nickname': request.user.nickname if hasattr(request.user, 'nickname') else None
+                    }
+                )
+                print(f"Notification sent to user_{invitation.sender.id}_notifications")
+            except Exception as e:
+                print(f"Error notifying sender about accepted invitation: {e}")
+            
             return JsonResponse({
                 'success': True,
                 'message': 'Invitation acceptée',
-                'redirect': f'/match/?invitation={invitation.id}' if invitation.match_type == 'regular' else f'/tournament/?invitation={invitation.id}',
-                'match_type': invitation.match_type
+                'game_id': game_id,
+                'sender_username': invitation.sender.username
             })
         else:
+            # Notify sender about declined invitation
+            try:
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{invitation.sender.id}_notifications",
+                    {
+                        'type': 'invitation_declined',
+                        'invitation_id': invitation.id,
+                        'recipient_username': request.user.username
+                    }
+                )
+            except Exception as e:
+                print(f"Error notifying sender about declined invitation: {e}")
+                
             return JsonResponse({'success': True, 'message': 'Invitation refusée'})
             
     except GameInvitation.DoesNotExist:

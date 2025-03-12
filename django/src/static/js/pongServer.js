@@ -5,6 +5,7 @@ class PongServerGame {
         this.matchmakingButton = document.getElementById('matchmaking');
         this.inviteFriendsBtn = document.getElementById('inviteFriendsBtn');
         this.socket = null;
+        this.notificationSocket = null;
         this.isGameRunning = false;
         this.isPageUnloading = false;
         this.reconnectTimeout = null;
@@ -14,13 +15,35 @@ class PongServerGame {
             player2: { username: "", nickname: "", elo: 0}
         };
         this.keysPressed = {};
+        
         // Initialize friend invite manager
         this.friendInviteManager = null;
-        this.init();
+        
+        // Check URL parameters for pending game invitation
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameId = urlParams.get('game');
+        const opponent = urlParams.get('opponent');
+        
+        if (gameId && opponent) {
+            console.log(`Found invitation parameters in URL: game=${gameId}, opponent=${opponent}`);
+            // If we have URL parameters, we'll connect and join immediately
+            this.pendingInvitedGame = {
+                gameId,
+                opponentUsername: opponent,
+                isCreator: false
+            };
+            this.init(true); // Pass true to indicate we're initializing with an invitation
+        } else {
+            this.init(false);
+        }
+        
+        // Set up notification socket connection
+        this.setupNotificationSocket();
     }
 
-    init() {
-        console.log('Initializing PongServerGame');
+    init(hasInvitation = false) {
+        console.log('Initializing PongServerGame' + (hasInvitation ? ' with invitation' : ''));
+        window.initUserData();
         if (this.matchmakingButton) {
             console.log('Matchmaking button found');
             this.matchmakingButton.addEventListener('click', () => this.startMatchmaking());
@@ -40,7 +63,49 @@ class PongServerGame {
         }
         
         this.addEventListeners();
-        this.displayWelcomeScreen();
+        
+        // If we have a pending invitation, connect to WebSocket immediately
+        if (hasInvitation && this.pendingInvitedGame) {
+            console.log('Connecting to WebSocket for pending invitation');
+            this.connectWebSocket(false);
+        } else {
+            // Otherwise show the welcome screen
+            this.displayWelcomeScreen();
+        }
+    }
+
+    setupNotificationSocket() {
+        // Get token from cookie
+        const token = document.cookie
+            .split('; ')
+            .find(cookie => cookie.startsWith('access_token='))
+            ?.split('=')[1];
+            
+        // Create WebSocket connection for notifications
+        this.notificationSocket = new WebSocket(`ws://${window.location.host}/ws/notifications/?token=${token}`);
+        
+        this.notificationSocket.onopen = () => {
+            console.log('Notification WebSocket connected');
+        };
+        
+        this.notificationSocket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('Notification received:', data);
+                
+                if (data.type === 'invitation_accepted') {
+                    this.handleInvitationAccepted(data);
+                }
+            } catch (error) {
+                console.error('Error processing notification:', error);
+            }
+        };
+        
+        this.notificationSocket.onclose = () => {
+            console.log('Notification WebSocket disconnected');
+            // Reconnect after delay
+            setTimeout(() => this.setupNotificationSocket(), 2000);
+        };
     }
 
     initFriendInviteManager() {
@@ -132,12 +197,16 @@ class PongServerGame {
         this.ctx.font = '18px Arial';
         this.ctx.fillText('Use up/down arrow keys to control your paddle', this.canvas.width / 2, 200);
         
-        // Draw player info
-        if (currentUser) {
+        // Draw player info if currentUser is available
+        if (typeof currentUser !== 'undefined' && currentUser) {
             const displayName = currentUser.nickname || currentUser.username;
             this.ctx.font = '24px Arial';
             this.ctx.fillText(`Player: ${displayName}`, this.canvas.width / 2, 260);
             this.ctx.fillText(`ELO: ${currentUser.elo}`, this.canvas.width / 2, 295);
+        } else {
+            // Display generic message if currentUser is not available
+            this.ctx.font = '24px Arial';
+            this.ctx.fillText('Ready to play', this.canvas.width / 2, 260);
         }
         
         // Draw pong logo/icon
@@ -151,20 +220,27 @@ class PongServerGame {
 
     startMatchmaking() {
         console.log('Matchmaking started...');
+        
+        // Update button state immediately
+        if (this.matchmakingButton) {
+            this.matchmakingButton.disabled = true;
+            this.matchmakingButton.textContent = 'Searching...';
+        }
+        
+        // Disable invite button during matchmaking
+        if (this.inviteFriendsBtn) {
+            this.inviteFriendsBtn.disabled = true;
+        }
+        
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-            console.log('Connecting to WebSocket FOR MATCHMAKING...');
-            this.connectWebSocket(true);  // Explicitly pass true
-            
-            // Update button state
-            if (this.matchmakingButton) {
-                this.matchmakingButton.disabled = true;
-                this.matchmakingButton.textContent = 'Searching...';
-            }
-            
-            // Disable invite button during matchmaking
-            if (this.inviteFriendsBtn) {
-                this.inviteFriendsBtn.disabled = true;
-            }
+            console.log('Connecting to WebSocket for matchmaking...');
+            this.connectWebSocket(true);  // This will send find_match once connected
+        } else {
+            // Socket already connected, send find_match directly
+            console.log('WebSocket already connected, sending matchmaking request directly');
+            this.socket.send(JSON.stringify({
+                type: 'find_match'
+            }));
         }
     }
 
@@ -176,141 +252,251 @@ class PongServerGame {
     }
 
     connectWebSocket(useForMatchmaking = false) {
-        // Store as instance property for access in callbacks
+    // Store as instance property for access in callbacks
         this.useForMatchmaking = useForMatchmaking;
+        console.log(`Connecting WebSocket (useForMatchmaking: ${useForMatchmaking})`);
         
         // Get token from cookie
         const token = document.cookie
             .split('; ')
             .find(cookie => cookie.startsWith('access_token='))
             ?.split('=')[1];
-            
+
         // Include token in URL as query parameter
         this.socket = new WebSocket(`ws://${window.location.host}/ws/match/?token=${token}`);
         
         this.socket.onopen = () => {
-            console.log('WebSocket connection established.');
-            
-            // Only send find_match message if we're connecting for matchmaking
-            if (this.useForMatchmaking) {
-                console.log('Connected for matchmaking - sending find_match');
-                this.socket.send(JSON.stringify({ 
-                    type: 'find_match',
-                    user: currentUser
+            console.log('WebSocket connected for pong game');
+
+            // Check if we have a saved game in sessionStorage
+            const pendingGameData = sessionStorage.getItem('pendingGame');
+            if (pendingGameData) {
+                try {
+                    const {gameId, opponentUsername, timestamp} = JSON.parse(pendingGameData);
+                    // Only use if less than 30 seconds old to avoid using stale data
+                    if (Date.now() - timestamp < 30000) {
+                        console.log(`Restoring game from sessionStorage: ${gameId} with ${opponentUsername}`);
+                        this.joinInvitedGame(gameId, opponentUsername, false);
+                        // Clear after use
+                        sessionStorage.removeItem('pendingGame');
+                        return;
+                    } else {
+                        console.log("Pending game data expired, removing");
+                        sessionStorage.removeItem('pendingGame');
+                    }
+                } catch (e) {
+                    console.error("Error parsing pending game data:", e);
+                    sessionStorage.removeItem('pendingGame');
+                }
+            }
+
+            // Check for class property (pending invitation)
+            if (this.pendingInvitedGame) {
+                const { gameId, opponentUsername, isCreator } = this.pendingInvitedGame;
+                this.pendingInvitedGame = null;
+                this.joinInvitedGame(gameId, opponentUsername, isCreator);
+                return;
+            }
+
+            // Check URL parameters as fallback
+            const urlParams = new URLSearchParams(window.location.search);
+            const gameId = urlParams.get('game');
+            const opponent = urlParams.get('opponent');
+
+            if (gameId && opponent) {
+                console.log(`Joining game from URL parameters: ${gameId} with ${opponent}`);
+                this.joinInvitedGame(gameId, opponent, false);
+            }
+            // Only send find_match if specifically requested AND not already handled
+            else if (this.useForMatchmaking) {
+                console.log("Sending find_match request to server");
+                this.socket.send(JSON.stringify({
+                    type: 'find_match'
                 }));
-                
-                this.displayMessage('Searching for opponent...');
-            } else {
-                console.log('Connected for invitations - NOT starting matchmaking');
             }
         };
         
         this.socket.onmessage = (event) => {
-            // Rest of the method as before...
             try {
                 const data = JSON.parse(event.data);
-                this.handleMessage(data);
+                console.log('Received data:', data);
+                
+                // Handle invitation accepted notification
+                if (data.type === 'invitation_accepted') {
+                    this.handleInvitationAccepted(data);
+                }
+                else {
+                    this.handleMessage(data);
+                }
             } catch (error) {
-                console.error("Error parsing WebSocket message:", error);
+                console.error('Error parsing WebSocket message:', error);
             }
         };
-
-        this.socket.onclose = () => {
-            console.log('WebSocket connection closed.');
-            this.isGameRunning = false;
+    
+        this.socket.onclose = (event) => {
+            console.log(`WebSocket disconnected (code: ${event.code}, reason: ${event.reason || 'none'})`);
             
-            // Re-enable matchmaking button
-            if (this.matchmakingButton) {
-                this.matchmakingButton.disabled = false;
-                this.matchmakingButton.textContent = 'Search for a game';
-            }
-            
-            // Re-enable invite button
-            if (this.inviteFriendsBtn) {
-                this.inviteFriendsBtn.disabled = false;
-            }
-            
-            // Only show disconnection message if not during page unload
+            // Don't reconnect if we're intentionally closing
             if (!this.isPageUnloading) {
-                this.displayMessage('Disconnected from server. Please refresh the page.');
+                // If we were in an active game, show a message
+                if (this.isGameRunning) {
+                    this.displayMessage("Connection lost. Attempting to reconnect...");
+                }
+                
+                // Set a timeout to reconnect
+                if (!this.reconnectTimeout) {
+                    console.log("Scheduling reconnect...");
+                    this.reconnectTimeout = setTimeout(() => {
+                        console.log("Attempting to reconnect WebSocket...");
+                        this.connectWebSocket(this.useForMatchmaking);
+                        this.reconnectTimeout = null;
+                    }, 2000);
+                }
             }
         };
-
+    
         this.socket.onerror = (error) => {
             console.error('WebSocket error:', error);
-            this.displayMessage('Connection error. Please try again.');
+            // Note: most browsers will call onclose after an error occurs
         };
     }
-
+    
+    handleInvitationAccepted(data) {
+        console.log('Invitation accepted:', data);
+        
+        // Show notification
+        const message = `${data.recipient_nickname || data.recipient_username} a accepté votre invitation!`;
+        alert(message);
+        
+        // Save game data to session storage for persistence across navigation
+        sessionStorage.setItem('pendingGame', JSON.stringify({
+            gameId: data.game_id,
+            opponentUsername: data.recipient_username,
+            timestamp: Date.now(),
+            isCreator: true  // Important: mark this user as the creator
+        }));
+        
+        // Navigate to match page if we're not already there
+        if (!window.location.pathname.includes('/match/')) {
+            window.loadContent('/match/');
+        } else {
+            // We're already on the match page, just join the game
+            console.log("Already on match page, joining game as creator");
+            this.joinInvitedGame(data.game_id, data.recipient_username, true);
+        }
+    }
+    
+    joinInvitedGame(gameId, opponentUsername, isCreator) {
+        console.log(`Joining invited game: ${gameId}, opponent: ${opponentUsername}, creator: ${isCreator}`);
+        
+        // Make sure we have a WebSocket connection
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            // Store these parameters to use after connection
+            this.pendingInvitedGame = { gameId, opponentUsername, isCreator };
+            this.connectWebSocket(false);
+            return;
+        }
+        
+        // Update UI
+        if (this.matchmakingButton) {
+            this.matchmakingButton.textContent = "Dans un match...";
+            this.matchmakingButton.disabled = true;
+        }
+        
+        if (this.inviteFriendsBtn) {
+            this.inviteFriendsBtn.disabled = true;
+        }
+        
+        // Let server know we're joining an invited game
+        this.socket.send(JSON.stringify({
+            type: 'join_invited_game',
+            game_id: gameId,
+            opponent_username: opponentUsername,
+            is_game_creator: isCreator
+        }));
+        
+        // Show a message while waiting
+        if (isCreator) {
+            this.displayMessage(`Création de la partie avec ${opponentUsername}...`);
+        } else {
+            this.displayMessage(`Connexion à la partie avec ${opponentUsername}...`);
+        }
+    }
 
     handleMessage(data) {
         console.log('Received message:', data);
         
-        // Process game-related messages - no authentication check needed
-        if (data.type === 'player_left') {
-            this.displayMessage(data.message || "Your opponent has left the game.");
-            console.log('Player left the game.');
-            this.stopGame();
-        } else if (data.type === 'game_over') {
-            this.displayMessage(data.message || "Game over!");
-            console.log('Game over.');
-            this.stopGame();
-        } else if (data.type === 'matchmaking_cancelled') {
-            this.displayMessage(data.message || "Search cancelled.");
-            if (this.matchmakingButton) {
-                this.matchmakingButton.disabled = false;
-                this.matchmakingButton.textContent = 'Search for a game';
-            }
-            if (this.inviteFriendsBtn) {
-                this.inviteFriendsBtn.disabled = false;
-            }
-        } else if (data.type === 'matchmaking_update' || data.waiting) {
-            console.log('Matchmaking status update...');
-            this.displayMatchmakingStatus(data);
-        } else if (data.type === 'match_created') {
-            console.log('Match created!');
-            this.isGameRunning = true;
+        // Handle different message types
+        if (data.type === 'match_created') {
+            console.log('Match created!', data);
+            // Save player number and start game
             this.playerNumber = data.player_number;
+            this.isGameRunning = true;
             
-            // Disable matchmaking button during game
-            if (this.matchmakingButton) {
-                this.matchmakingButton.disabled = true;
-                this.matchmakingButton.textContent = 'In game...';
+            // Store player info
+            if (data.game_state && data.game_state.player_info) {
+                this.playerInfo = data.game_state.player_info;
             }
             
-            // Disable invite button during game
+            // Update UI elements
+            if (this.matchmakingButton) {
+                this.matchmakingButton.textContent = "Dans un match...";
+                this.matchmakingButton.disabled = true;
+            }
+            
             if (this.inviteFriendsBtn) {
                 this.inviteFriendsBtn.disabled = true;
             }
             
-            if (data.game_state) {
-                this.handleGameState(data.game_state);
-            }
-        } else if (data.type === 'game_update') {
+            // Start drawing the game
+            this.draw(data.game_state);
+            
+        } else if (data.type === 'game_state') {
+            // Handle regular game state updates
             this.handleGameState(data.game_state);
-        } else if (data.pads && data.ball) {
-            // For backward compatibility with your original message format
-            this.isGameRunning = true;
-            if (data.player_info) {
-                this.playerInfo.player1 = data.player_info.player1;
-                this.playerInfo.player2 = data.player_info.player2;
-            }
-            this.draw(data);
+            
+        } else if (data.type === 'player_left') {
+            // Handle player disconnection
+            alert(`${data.player_username} a quitté la partie!`);
+            this.stopGame();
+            this.displayWelcomeScreen();
+            
+        } else if (data.type === 'game_over') {
+            // Handle end of game
+            const winner = data.winner;
+            const currentUsername = currentUser ? currentUser.username : null;
+            const message = winner === currentUsername
+                ? "Félicitations! Vous avez gagné!"
+                : `${winner} a gagné la partie!`;
+                
+            alert(message);
+            this.stopGame();
+            this.displayWelcomeScreen();
+            
+        } else if (data.type === 'matchmaking_status' || data.type === 'waiting') {
+            // Handle matchmaking status updates
+            this.displayMatchmakingStatus(data);
+            
+        } else if (data.type === 'waiting_for_opponent') {
+            // Handle waiting for opponent
+            this.displayMessage(data.message);
+            
+        } else if (data.type === 'waiting_for_creator') {
+            // Handle waiting for creator
+            this.displayMessage(data.message);
+            
         } else if (data.type === 'friend_invite_sent') {
-            console.log('Invitation sent successfully to:', data.friend_username);
-            if (window.showToast) {
-                window.showToast(`Invitation envoyée à ${data.friend_username} avec succès!`, 'success');
-            } else {
-                alert(`Invitation envoyée à ${data.friend_username} avec succès!`);
-            }
-            this.disableGameButtons(`Invitation sent to ${data.friend_username}`);
+            // Handle successful friend invitation
+            console.log('Friend invite sent:', data);
+            
         } else if (data.type === 'friend_invite_error') {
-            console.error('Error sending invitation:', data.message);
-            if (window.showToast) {
-                window.showToast(`Erreur: ${data.message}`, 'error');
-            } else {
-                alert(`Erreur: ${data.message}`);
-            }
+            // Handle friend invitation error
+            console.error('Friend invite error:', data);
+            alert(data.message);
+            
+        } else {
+            // Log unknown message types
+            console.log('Unhandled message type:', data.type);
         }
     }
     
@@ -370,10 +556,12 @@ class PongServerGame {
     }
 
     handleGameState(gameState) {
+        // Update player info if available
         if (gameState.player_info) {
-            this.playerInfo.player1 = gameState.player_info.player1;
-            this.playerInfo.player2 = gameState.player_info.player2;
+            this.playerInfo = gameState.player_info;
         }
+        
+        // Draw the updated game state
         this.draw(gameState);
     }
 
@@ -421,6 +609,27 @@ class PongServerGame {
         this.ctx.fillText(message, this.canvas.width / 2, this.canvas.height / 2);
     }
 
+    cleanup() {
+        console.log("Cleaning up PongServerGame resources");
+        
+        // Mark as unloading to prevent reconnection attempts
+        this.isPageUnloading = true;
+        
+        // Close WebSocket connections if open
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.close();
+        }
+        
+        if (this.notificationSocket && this.notificationSocket.readyState === WebSocket.OPEN) {
+            this.notificationSocket.close();
+        }
+        
+        // Cancel any pending tasks
+        if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+        }
+    }
+
     stopGame() {
         console.log("Stopping game and cleaning up resources");
         this.isGameRunning = false;
@@ -456,7 +665,10 @@ class PongServerGame {
     }
 
     draw(gameState) {
-        if (!gameState) return;
+        if (!gameState) {
+            console.error("No game state to draw");
+            return;
+        }
         
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -499,13 +711,6 @@ class PongServerGame {
         
         this.ctx.textAlign = 'right';
         this.ctx.fillText(`${player2Display} (${this.playerInfo.player2.elo})`, this.canvas.width - 20, 20);
-        
-        // Request next animation frame
-        requestAnimationFrame(() => {
-            if (this.isGameRunning) {
-                this.draw(gameState);
-            }
-        });
     }
 
     sendInput(input) {
@@ -561,6 +766,39 @@ class PongServerGame {
         });
     }
 }
+
+window.initUserData = function() {
+    // Check if currentUser is not defined
+    if (typeof currentUser === 'undefined') {
+        // Try to get user info from window.currentUser (if set elsewhere)
+        if (typeof window.currentUser !== 'undefined') {
+            window.currentUser = window.currentUser;
+        } else {
+            // Create a placeholder user object from sessionStorage if available
+            const userData = sessionStorage.getItem('userData');
+            if (userData) {
+                try {
+                    window.currentUser = JSON.parse(userData);
+                } catch (e) {
+                    console.warn('Failed to parse user data from sessionStorage');
+                    // Create minimal placeholder
+                    window.currentUser = {
+                        username: 'Player',
+                        nickname: '',
+                        elo: 1000
+                    };
+                }
+            } else {
+                // Set a default placeholder user if nothing else is available
+                window.currentUser = {
+                    username: 'Player',
+                    nickname: '',
+                    elo: 1000
+                };
+            }
+        }
+    }
+};
 
 window.cancelPendingPongInvitations = function() {
     console.log("Global invitation cancellation triggered");

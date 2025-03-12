@@ -158,6 +158,16 @@ document.addEventListener('DOMContentLoaded', function () {
 			console.log("Calling global invitation cancellation during cleanup");
 			window.cancelPendingPongInvitations();
 		}
+	
+		if (window.pongServerGame) {
+			console.log("Cleaning up pongServerGame");
+			try {
+				// Use the new cleanup method
+				window.pongServerGame.cleanup();
+			} catch (error) {
+				console.error("Error during pongServerGame cleanup:", error);
+			}
+		}
 
 		if (window.pongServerGame) {
 			console.log("Cleaning up pongServerGame");

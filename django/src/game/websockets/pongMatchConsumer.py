@@ -106,10 +106,11 @@ class MatchConsumer(BaseGameConsumer):
         try:
             data = json.loads(text_data)
             message_type = data.get('type', '')
-            
+
             # Backward compatibility - handle simple input messages
             if 'input' in data and not message_type:
-                await self.process_player_input(data['input'])
+                input_value = data.get('input', 0)
+                await self.process_player_input(input_value)
                 return
                 
             # Handle specific message types
@@ -125,15 +126,124 @@ class MatchConsumer(BaseGameConsumer):
                 input_value = data.get('input', 0)
                 await self.process_player_input(input_value)
             elif message_type == "invite_friend":
-                # Handle friend invitation
                 await self.handle_invite_friend(data)
             elif message_type == "cancel_invitation":
-                # Handle invitation cancellation
                 await self.handle_invitation_cancel(data)
+            elif message_type == "join_invited_game":
+                await self.join_invited_game(data)
+                
         except json.JSONDecodeError:
             pass  # Invalid JSON format
         except Exception as e:
             print(f"Error in MatchConsumer.receive: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            
+    async def join_invited_game(self, data):
+        """
+        Join a game created from an invitation.
+
+        Args:
+            data: Message data containing game_id
+        """
+        game_id = data.get('game_id')
+        opponent_username = data.get('opponent_username')
+
+        if not game_id or not opponent_username:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Information de jeu manquante'
+            }))
+            return
+
+        # Cancel any active matchmaking
+        if hasattr(self, 'match_task') and self.match_task:
+            self.match_task.cancel()
+
+        # Look up the opponent
+        opponent_user = await self.get_user_by_username(opponent_username)
+        if not opponent_user:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Adversaire introuvable'
+            }))
+            return
+
+        # Check if we are first or second to join
+        is_game_creator = data.get('is_game_creator', False)
+
+        print(f"join_invited_game: User {self.user.username} joining game {game_id} as {'creator' if is_game_creator else 'recipient'}")
+
+        # Set up basic player information regardless of role
+        self.match_id = game_id
+        self.player_number = 1 if is_game_creator else 2
+
+        # Initialize game entry if it doesn't exist
+        if game_id not in self.lobby_manager.invited_games:
+            self.lobby_manager.invited_games[game_id] = {
+                'created_at': now_str()
+            }
+
+        # Register player in the appropriate role
+        if is_game_creator:
+            # Register as creator
+            self.lobby_manager.invited_games[game_id]['creator'] = self
+            print(f"Game {game_id}: {self.user.username} registered as creator")
+
+            # Check if recipient is already waiting
+            if 'recipient' in self.lobby_manager.invited_games[game_id]:
+                recipient = self.lobby_manager.invited_games[game_id]['recipient']
+                print(f"Game {game_id}: Found waiting recipient {recipient.user.username}, creating match")
+
+                # Create match between the two players
+                await self.lobby_manager.create_match_from_invitation(self, recipient, game_id)
+                return
+
+            # Recipient not found, send waiting message
+            await self.send(text_data=json.dumps({
+                'type': 'waiting_for_opponent',
+                'message': f'En attente de {opponent_username}...',
+                'game_id': game_id
+            }))
+
+        else:
+            # Register as recipient
+            self.lobby_manager.invited_games[game_id]['recipient'] = self
+            print(f"Game {game_id}: {self.user.username} registered as recipient")
+
+            # Check if creator is already waiting
+            if 'creator' in self.lobby_manager.invited_games[game_id]:
+                creator = self.lobby_manager.invited_games[game_id]['creator']
+                print(f"Game {game_id}: Found waiting creator {creator.user.username}, creating match")
+
+                # Create match between the two players
+                await self.lobby_manager.create_match_from_invitation(creator, self, game_id)
+                return
+
+            # Creator not found, send waiting message
+            await self.send(text_data=json.dumps({
+                'type': 'waiting_for_creator',
+                'message': f'En attente de {opponent_username} pour créer la partie...',
+                'game_id': game_id
+            }))
+
+    @database_sync_to_async
+    def get_user_by_username(self, username):
+        """
+        Look up a user by username.
+
+        Args:
+            username: Username to look up
+
+        Returns:
+            User object or None if not found
+        """
+        from users.models import customUser
+        try:
+            return customUser.objects.get(username=username)
+        except customUser.DoesNotExist:
+            print(f"User not found: {username}")
+            return None
 
     async def handle_invite_friend(self, data):
         """
@@ -300,47 +410,61 @@ class MatchConsumer(BaseGameConsumer):
         player_key = f"player{self.player_number}"
         match_data["game_state"]["inputs"][player_key] = input_value
 
-    # Add to MatchConsumer class
+
     async def run_game_loop(self, match_id):
         """
         Run the game loop for a match.
         """
         match_data = self.lobby_manager.active_matches.get(match_id)
         if not match_data:
+            print(f"Error: Match {match_id} not found in active_matches")
             return
 
         game_state = match_data["game_state"]
         players = match_data["players"]
 
-        while True:
-            # Sleep to control game speed
-            await asyncio.sleep(0.02)  # 50 FPS
+        print(f"Starting game loop for match {match_id} with players: {[p.user.username for p in players]}")
 
-            # Check if players are still connected
-            if not all(hasattr(player, 'match_id') and player.match_id == match_id for player in players):
-                # Handle disconnection
-                break
-            
-            # Update game state
-            self.game_engine.update_game_state(game_state)
+        try:
+            while True:
+                # Sleep to control game speed
+                await asyncio.sleep(0.02)  # 50 FPS
 
-            # Check for goals
-            game_over, winner_username = await self.game_engine.check_goals(game_state)
+                # Check if players are still connected
+                if not all(hasattr(player, 'match_id') and player.match_id == match_id for player in players):
+                    print(f"A player disconnected from match {match_id}")
+                    # Find the remaining player to declare them winner
+                    remaining_player = next((p for p in players if hasattr(p, 'match_id') and p.match_id == match_id), None)
+                    if remaining_player:
+                        print(f"Declaring {remaining_player.user.username} as winner due to opponent disconnect")
+                        await self.handle_match_result(match_id, remaining_player.user.username)
+                    return  # End the game loop
 
-            if game_over:
-                # Handle match completion
-                await self.handle_match_result(match_id, winner_username)
-                break
-            
-            # Send updated state to players
-            for player in players:
-                try:
-                    await player.send(text_data=json.dumps({
-                        "type": "game_update",
-                        "game_state": game_state
-                    }))
-                except Exception:
-                    pass
+                # Update game state
+                self.game_engine.update_game_state(game_state)
+
+                # Check for goals
+                game_over, winner_username = await self.game_engine.check_goals(game_state)
+
+                if game_over:
+                    print(f"Game over! Winner: {winner_username}")
+                    await self.handle_match_result(match_id, winner_username)
+                    return  # End the game loop
+
+                # Send updated state to players
+                for player in players:
+                    try:
+                        await player.send(text_data=json.dumps({
+                            "type": "game_state",
+                            "game_state": game_state
+                        }))
+                    except Exception as e:
+                        print(f"Error sending game state to {player.user.username}: {e}")
+                    
+        except Exception as e:
+            print(f"Error in game loop for match {match_id}: {e}")
+            import traceback
+            traceback.print_exc()
 
     async def handle_match_result(self, match_id, winner_username):
         """

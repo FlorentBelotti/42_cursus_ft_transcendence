@@ -12,39 +12,121 @@ class LobbyManager:
         """
         self.waiting_players = []
         self.active_matches = {}
+        self.invited_games = {}  # Store invited games waiting for second player
         self.matchmaking_lock = asyncio.Lock()
-        
+
+    async def create_match_from_invitation(self, player1, player2, match_id=None):
+        """
+        Create a match between two players from an invitation.
+
+        Args:
+            player1: First player (invitation sender)
+            player2: Second player (invitation recipient)
+            match_id: Optional ID to use for the match
+
+        Returns:
+            str: Match ID of the created match
+        """
+        print(f"Creating match from invitation: {player1.user.username} vs {player2.user.username}, match_id={match_id}")
+
+        # Set player numbers explicitly to be sure
+        player1.player_number = 1
+        player2.player_number = 2
+
+        # Use provided match ID or generate one
+        if not match_id:
+            match_id = f"invite_{player1.user.username}_vs_{player2.user.username}_{now_str()}"
+
+        # Create initial game state
+        game_state = create_initial_game_state(player1, player2)
+
+        # Assign match ID to both players
+        player1.match_id = match_id
+        player2.match_id = match_id
+
+        # Store the match in active_matches
+        self.active_matches[match_id] = {
+            "players": [player1, player2],
+            "game_state": game_state,
+            "created_at": now_str(),
+            "invitation_based": True
+        }
+
+        print(f"Match {match_id} created and stored in active_matches")
+
+        # Cancel any matchmaking tasks
+        if hasattr(player1, 'match_task') and player1.match_task:
+            player1.match_task.cancel()
+        if hasattr(player2, 'match_task') and player2.match_task:
+            player2.match_task.cancel()
+
+        # Notify players immediately
+        await player1.send(text_data=json.dumps({
+            "type": "match_created",
+            "match_id": match_id,
+            "player_number": 1,
+            "opponent": player2.user.username,
+            "game_state": game_state
+        }))
+
+        await player2.send(text_data=json.dumps({
+            "type": "match_created",
+            "match_id": match_id,
+            "player_number": 2,
+            "opponent": player1.user.username,
+            "game_state": game_state
+        }))
+
+        # Clean up from invited_games
+        if match_id in self.invited_games:
+            print(f"Removing invitation {match_id} from invited_games")
+            del self.invited_games[match_id]
+
+        # Start the game loop
+        try:
+            print(f"Starting game loop for match {match_id}")
+            asyncio.create_task(player1.run_game_loop(match_id))
+        except Exception as e:
+            print(f"Error starting game loop: {e}")
+
+        return match_id
+
     async def add_player_to_queue(self, player):
         """
         Add a player to the matchmaking queue.
         
         Args:
-            player: Player object containing connection and user info
-            
-        Returns:
-            bool: True if player was added to the queue
+            player: Player consumer instance to add to the queue
         """
-        async with self.matchmaking_lock:
-            # Send waiting message to player
-            await player.send(text_data=json.dumps({
-                "waiting": True,
-                "message": "Recherche d'un adversaire...",
-                "matchmaking_status": {
-                    "queue_position": len(self.waiting_players) + 1,
-                    "your_elo": player.user.elo
-                }
-            }))
-            
-            # Try to find a match first
-            match_found = await self.find_match_for_player(player)
-            
-            if not match_found:
-                # Add to waiting queue with timestamp and ELO
-                self.waiting_players.append((player, asyncio.get_event_loop().time(), player.user.elo))
-                return True
-                
-            return False
-    
+        # Check if player is already in queue
+        for existing_player, _, _ in self.waiting_players:
+            if existing_player == player:
+                print(f"Player {player.user.username} is already in queue")
+                return
+        
+        print(f"Adding {player.user.username} to matchmaking queue")
+        
+        # Store numeric timestamp for time calculations
+        current_time = asyncio.get_event_loop().time()
+        
+        # Add player with current timestamp and ELO rating
+        # This allows for ELO-based matchmaking
+        self.waiting_players.append((
+            player, 
+            current_time,  # Use numeric timestamp instead of string
+            player.user.elo if hasattr(player.user, 'elo') else 1000
+        ))
+        
+        # Let the player know they've been added to queue
+        await player.send(text_data=json.dumps({
+            "type": "waiting",
+            "message": "En attente d'un adversaire...",
+            "queue_position": len(self.waiting_players)
+        }))
+        
+        # Try to find a match immediately
+        await self.find_match_for_player(player)
+
     async def find_match_for_player(self, player):
         """
         Find a suitable match for a player based on ELO rating.

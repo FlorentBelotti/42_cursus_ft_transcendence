@@ -9,6 +9,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         
         if not self.user.is_authenticated:
             # Close connection if not authenticated
+            print(f"Notification connection rejected: User not authenticated")
             await self.close()
             return
         
@@ -24,7 +25,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         
         # Accept the connection since user is authenticated
         await self.accept()
-        print(f"User {self.user.username} connected to notifications")
+        print(f"User {self.user.username} (ID: {self.user_id}) connected to notifications in group {self.notification_group}")
 
     async def disconnect(self, close_code):
         if hasattr(self, 'notification_group'):
@@ -40,4 +41,22 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'type': 'invitation_update',
             'invitation_id': event['invitation_id'],
             'status': event['status']
+        }))
+
+    async def invitation_accepted(self, event):
+        """Handle notification when an invitation is accepted"""
+        await self.send(text_data=json.dumps({
+            'type': 'invitation_accepted',
+            'invitation_id': event['invitation_id'],
+            'game_id': event['game_id'],
+            'recipient_username': event['recipient_username'],
+            'recipient_nickname': event.get('recipient_nickname')
+        }))
+    
+    async def invitation_declined(self, event):
+        """Handle notification when an invitation is declined"""
+        await self.send(text_data=json.dumps({
+            'type': 'invitation_declined',
+            'invitation_id': event['invitation_id'],
+            'recipient_username': event['recipient_username']
         }))
