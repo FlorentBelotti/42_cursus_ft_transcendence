@@ -6,7 +6,16 @@ import json
 
 class BaseGameConsumer(AsyncWebsocketConsumer):
     """
-    Base consumer for game functionality with shared authentication and utilities.
+    ╔═══════════════════════════════════════════════════╗
+    ║               BaseGameConsumer                    ║
+    ╠═══════════════════════════════════════════════════╣
+    ║ WebSocket base class for Pong game communication  ║
+    ║                                                   ║
+    ║ • Handles JWT authentication                      ║
+    ║ • Provides error handling                         ║
+    ║ • Implements message formatting                   ║
+    ║ • Parent class for all game WebSocket consumers   ║
+    ╚═══════════════════════════════════════════════════╝
     """
     
     async def connect(self):
@@ -19,26 +28,25 @@ class BaseGameConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         """
         Handle WebSocket disconnection.
-        Specific cleanup logic is implemented in child classes.
+        Child classes implementation.
         """
-        pass  # Implemented by child classes
+        pass 
     
     async def receive(self, text_data):
         """
         Process incoming WebSocket messages.
-        Base implementation handles common messages like authentication.
+        Child classes implementation.
         """
+
+        # Authentication process
         try:
             data = json.loads(text_data)
             message_type = data.get('type', '')
-            
-            # Handle authentication if needed
             if message_type == 'authenticate':
                 await self.authenticate(data.get('token'))
             else:
-                # Child classes will implement specific message handling
                 await self.handle_message(data, message_type)
-                
+
         except json.JSONDecodeError:
             await self.send_error("Invalid JSON format")
         except Exception as e:
@@ -47,26 +55,28 @@ class BaseGameConsumer(AsyncWebsocketConsumer):
     async def handle_message(self, data, message_type):
         """
         Handle specific message types.
-        To be implemented by child classes.
+        Child classes implementation.
         """
-        pass  # Implemented by child classes
+
+        pass
     
     async def authenticate(self, token):
         """
         Authenticate the WebSocket connection using JWT token.
         """
+
+        # Authentication process
         if not token:
             await self.send_error("No authentication token provided")
             await self.close()
             return
-        
         user = await self.get_user_from_token(token)
         if not user:
             await self.send_error("Invalid authentication token")
             await self.close()
             return
         
-        # Set user on the consumer instance
+        # Set user's consumer instance
         self.user = user
         await self.send(text_data=json.dumps({
             "type": "authenticated",
@@ -79,21 +89,20 @@ class BaseGameConsumer(AsyncWebsocketConsumer):
         """
         Validate JWT token and return the corresponding user.
         """
+        
+        # Authentication process
         try:
-            from users.models import customUser  # Import here to avoid circular imports
-            
-            # Decode token
+            from users.models import customUser
             payload = jwt.decode(
                 token,
                 settings.SECRET_KEY,
                 algorithms=['HS256']
             )
-            
             user_id = payload.get('user_id')
             if not user_id:
                 return None
             
-            # Get user from database
+            # Retreive user from database
             return customUser.objects.filter(id=user_id).first()
             
         except jwt.ExpiredSignatureError:

@@ -3,40 +3,61 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 
 class NotificationConsumer(AsyncWebsocketConsumer):
+
+    """
+    ╔═══════════════════════════════════════════════════╗
+    ║            NotificationConsumer                   ║
+    ╠═══════════════════════════════════════════════════╣
+    ║ WebSocket consumer for real-time notifications    ║
+    ║                                                   ║
+    ║ • Creates user-specific notification channels     ║
+    ║ • Manages game invitation notifications           ║
+    ║ • Handles status updates and responses            ║
+    ║ • Pushes real-time events to frontend clients     ║
+    ╚═══════════════════════════════════════════════════╝
+    """
+
     async def connect(self):
-        # Get user from scope - Django Channels has already authenticated the user
+        """
+        Handle WebSocket connection, accepting all connections initially.
+        Authentication happens after connection is established.
+        """
+
+        # Authentication process
         self.user = self.scope["user"]
-        
         if not self.user.is_authenticated:
-            # Close connection if not authenticated
             print(f"Notification connection rejected: User not authenticated")
             await self.close()
             return
         
-        # Set up notification group for this user
+
         self.user_id = self.user.id
         self.notification_group = f"user_{self.user_id}_notifications"
         
-        # Join user-specific notification group
         await self.channel_layer.group_add(
             self.notification_group,
             self.channel_name
         )
         
-        # Accept the connection since user is authenticated
         await self.accept()
         print(f"User {self.user.username} (ID: {self.user_id}) connected to notifications in group {self.notification_group}")
 
     async def disconnect(self, close_code):
+        """
+        Handle WebSocket disconnection.
+        """
+
         if hasattr(self, 'notification_group'):
             await self.channel_layer.group_discard(
                 self.notification_group,
                 self.channel_name
             )
 
-    # Handle notification about invitation updates
     async def invitation_update(self, event):
-        # Send notification to WebSocket
+        """
+        Handle invitation status update (pending, canceled).
+        """
+
         await self.send(text_data=json.dumps({
             'type': 'invitation_update',
             'invitation_id': event['invitation_id'],
@@ -44,7 +65,10 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         }))
 
     async def invitation_accepted(self, event):
-        """Handle notification when an invitation is accepted"""
+        """
+        Handle notification when an invitation is accepted
+        """
+
         await self.send(text_data=json.dumps({
             'type': 'invitation_accepted',
             'invitation_id': event['invitation_id'],
@@ -54,7 +78,10 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         }))
     
     async def invitation_declined(self, event):
-        """Handle notification when an invitation is declined"""
+        """
+        Handle notification when an invitation is declined
+        """
+
         await self.send(text_data=json.dumps({
             'type': 'invitation_declined',
             'invitation_id': event['invitation_id'],

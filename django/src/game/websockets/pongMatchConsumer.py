@@ -11,37 +11,104 @@ from users.models import GameInvitation
 
 class MatchConsumer(BaseGameConsumer):
     """
-    Consumer for handling one-on-one Pong matches.
+    ╔═══════════════════════════════════════════════════╗
+    ║               MatchConsumer                       ║
+    ╠═══════════════════════════════════════════════════╣
+    ║ WebSocket consumer for Pong match communication   ║
+    ║                                                   ║
+    ║ • Handles matchmaking and game invitations        ║
+    ║ • Processes player input and game state           ║
+    ║ • Manages game loop and physics                   ║
+    ║ • Updates ELO ratings after matches               ║
+    ╚═══════════════════════════════════════════════════╝
     """
-    # Shared lobby manager across all instances
+
+    # Create lobby and game instances.
     lobby_manager = LobbyManager()
     game_engine = GameEngine()
+
+
+    #===========================================================#
+    #                AUTHENTICATION MANAGEMENT                  #
+    #===========================================================#
+
+    @database_sync_to_async
+    def get_user_from_token(self, token):
+        """
+        Validate JWT token and return the corresponding user.
+        """
+
+        try:
+            from users.models import customUser
+            payload = jwt.decode(
+                token,
+                settings.SECRET_KEY,
+                algorithms=['HS256']
+            )
+            
+            user_id = payload.get('user_id')
+            if not user_id:
+                return None
+            return customUser.objects.filter(id=user_id).first()
+            
+        except jwt.ExpiredSignatureError:
+            return None
+        except jwt.InvalidTokenError:
+            return None
+        except Exception:
+            return None
+
+    @database_sync_to_async
+    def get_user_by_username(self, username):
+        """
+        Look up a user by username.
+        """
+
+        from users.models import customUser
+        try:
+            return customUser.objects.get(username=username)
+        except customUser.DoesNotExist:
+            print(f"User not found: {username}")
+            return None
+
+    #===========================================================#
+    #                WEBSOCKET MANAGEMENT                       #
+    #===========================================================#
 
     async def connect(self):
         """
         Handle WebSocket connection with token in query string.
         """
-        # Get user from scope - Django Channels has already authenticated the user
+
         self.user = self.scope["user"]
-        
         if not self.user.is_authenticated:
-            # Close connection if not authenticated
             await self.close()
             return
             
-        # Accept the connection since user is authenticated
         await self.accept()
+
+    async def disconnect(self, close_code):
+        """
+        Handle player disconnection from match or queue.
+        """
+
+        if hasattr(self, 'user') and self.user.is_authenticated:
+            await self.cancel_user_invitations()
+        if hasattr(self, 'user'):
+            await self.lobby_manager.remove_player(self)
+
+    #===========================================================#
+    #                INVITATION MANAGEMENT                      #
+    #===========================================================#
 
     async def handle_invitation_cancel(self, data):
         """
         Handle cancellation of an invitation
         """
+
         if not self.user.is_authenticated:
             return
-
-        # Cancel all pending invitations from this user
         await self.cancel_user_invitations()
-
         await self.send(text_data=json.dumps({
             'type': 'invitation_cancelled',
             'message': 'Your invitation has been cancelled'
@@ -52,52 +119,169 @@ class MatchConsumer(BaseGameConsumer):
         """
         Cancel all pending invitations sent by the user
         """
+
         from users.models import GameInvitation
         return GameInvitation.objects.filter(
             sender=self.user, 
             status='pending'
         ).update(status='cancelled')
 
+    async def handle_invite_friend(self, data):
+        """
+        Handle invitation to a friend to join a match
+        """
+
+        friend_username = data.get('friend_username')
+        if not friend_username:
+            await self.send(text_data=json.dumps({
+                'type': 'friend_invite_error',
+                'message': 'Aucun nom d\'utilisateur fourni'
+            }))
+            return
+
+        success, message = await self.create_game_invitation(friend_username)
+        if success:
+            await self.send(text_data=json.dumps({
+                'type': 'friend_invite_sent',
+                'friend_username': friend_username,
+                'message': message
+            }))
+        else:
+            await self.send(text_data=json.dumps({
+                'type': 'friend_invite_error',
+                'message': message
+            }))
+
     @database_sync_to_async
-    def get_user_from_token(self, token):
+    def create_game_invitation(self, friend_username):
         """
-        Validate JWT token and return the corresponding user.
+        Create a game invitation in the database
         """
+
         try:
-            from users.models import customUser  # Import here to avoid circular imports
+            from users.models import customUser
             
-            # Decode token
-            payload = jwt.decode(
-                token,
-                settings.SECRET_KEY,
-                algorithms=['HS256']
+            # Get user's friend
+            try:
+                friend = customUser.objects.get(username=friend_username)
+            except customUser.DoesNotExist:
+                return False, "Ami non trouvé"
+            
+            # Auto-invitation not allowed
+            if self.user.username == friend_username:
+                return False, "Vous ne pouvez pas vous inviter vous-même"
+                
+            # Check for pending invitation
+            existing_invitation = GameInvitation.objects.filter(
+                sender=self.user,
+                recipient=friend,
+                status='pending',
+                match_type='regular'
+            ).exists()
+            
+            if existing_invitation:
+                return False, "Vous avez déjà une invitation en attente pour cet ami"
+                
+            # Create invitation
+            invitation = GameInvitation(
+                sender=self.user,
+                recipient=friend,
+                match_type='regular'
             )
+            invitation.save()
             
-            user_id = payload.get('user_id')
-            if not user_id:
-                return None
+            return True, "Invitation envoyée avec succès"
             
-            # Get user from database
-            return customUser.objects.filter(id=user_id).first()
-            
-        except jwt.ExpiredSignatureError:
-            return None
-        except jwt.InvalidTokenError:
-            return None
-        except Exception:
-            return None
+        except Exception as e:
+            print(f"Error creating invitation: {str(e)}")
+            return False, "Une erreur s'est produite lors de la création de l'invitation"
 
-    async def disconnect(self, close_code):
+    async def join_invited_game(self, data):
         """
-        Handle player disconnection from match or queue.
+        Join a game created from an invitation.
         """
 
-        if hasattr(self, 'user') and self.user.is_authenticated:
-        # Cancel any pending invitations
-            await self.cancel_user_invitations()
-        # Remove from waiting queue or handle match forfeit
-        if hasattr(self, 'user'):
-            await self.lobby_manager.remove_player(self)
+        game_id = data.get('game_id')
+        opponent_username = data.get('opponent_username')
+
+        if not game_id or not opponent_username:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Information de jeu manquante'
+            }))
+            return
+
+        # Disable matchmaking
+        if hasattr(self, 'match_task') and self.match_task:
+            self.match_task.cancel()
+
+        # Look for opponent
+        opponent_user = await self.get_user_by_username(opponent_username)
+        if not opponent_user:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Adversaire introuvable'
+            }))
+            return
+
+        # Player order
+        is_game_creator = data.get('is_game_creator', False)
+
+        # Common setup for both players
+        self.match_id = game_id
+        self.player_number = 1 if is_game_creator else 2
+
+        # Initialize game if it doesn't exist
+        if game_id not in self.lobby_manager.invited_games:
+            self.lobby_manager.invited_games[game_id] = {
+                'created_at': now_str()
+            }
+
+        # Register player as creator
+        if is_game_creator:
+            self.lobby_manager.invited_games[game_id]['creator'] = self
+            print(f"Game {game_id}: {self.user.username} registered as creator")
+
+            # Check if recipient is waiting
+            if 'recipient' in self.lobby_manager.invited_games[game_id]:
+                recipient = self.lobby_manager.invited_games[game_id]['recipient']
+                print(f"Game {game_id}: Found waiting recipient {recipient.user.username}, creating match")
+
+                # Create match
+                await self.lobby_manager.create_match_from_invitation(self, recipient, game_id)
+                return
+
+            # If recipient isn't waiting, print waiting message
+            await self.send(text_data=json.dumps({
+                'type': 'waiting_for_opponent',
+                'message': f'En attente de {opponent_username}...',
+                'game_id': game_id
+            }))
+
+        # Register player as recipient
+        else:
+            self.lobby_manager.invited_games[game_id]['recipient'] = self
+            print(f"Game {game_id}: {self.user.username} registered as recipient")
+
+            # Check if creator is waiting
+            if 'creator' in self.lobby_manager.invited_games[game_id]:
+                creator = self.lobby_manager.invited_games[game_id]['creator']
+                print(f"Game {game_id}: Found waiting creator {creator.user.username}, creating match")
+
+                # Create match
+                await self.lobby_manager.create_match_from_invitation(creator, self, game_id)
+                return
+
+            # If creator isn't waiting, print waiting message
+            await self.send(text_data=json.dumps({
+                'type': 'waiting_for_creator',
+                'message': f'En attente de {opponent_username} pour créer la partie...',
+                'game_id': game_id
+            }))
+
+    #===========================================================#
+    #                MESSAGE MANAGEMENT                         #
+    #===========================================================#
 
     async def receive(self, text_data):
         """
@@ -107,7 +291,7 @@ class MatchConsumer(BaseGameConsumer):
             data = json.loads(text_data)
             message_type = data.get('type', '')
 
-            # Backward compatibility - handle simple input messages
+            # Backward compatibility
             if 'input' in data and not message_type:
                 input_value = data.get('input', 0)
                 await self.process_player_input(input_value)
@@ -138,221 +322,41 @@ class MatchConsumer(BaseGameConsumer):
             print(f"Error in MatchConsumer.receive: {str(e)}")
             import traceback
             traceback.print_exc()
-            
-    async def join_invited_game(self, data):
-        """
-        Join a game created from an invitation.
-
-        Args:
-            data: Message data containing game_id
-        """
-        game_id = data.get('game_id')
-        opponent_username = data.get('opponent_username')
-
-        if not game_id or not opponent_username:
-            await self.send(text_data=json.dumps({
-                'type': 'error',
-                'message': 'Information de jeu manquante'
-            }))
-            return
-
-        # Cancel any active matchmaking
-        if hasattr(self, 'match_task') and self.match_task:
-            self.match_task.cancel()
-
-        # Look up the opponent
-        opponent_user = await self.get_user_by_username(opponent_username)
-        if not opponent_user:
-            await self.send(text_data=json.dumps({
-                'type': 'error',
-                'message': 'Adversaire introuvable'
-            }))
-            return
-
-        # Check if we are first or second to join
-        is_game_creator = data.get('is_game_creator', False)
-
-        print(f"join_invited_game: User {self.user.username} joining game {game_id} as {'creator' if is_game_creator else 'recipient'}")
-
-        # Set up basic player information regardless of role
-        self.match_id = game_id
-        self.player_number = 1 if is_game_creator else 2
-
-        # Initialize game entry if it doesn't exist
-        if game_id not in self.lobby_manager.invited_games:
-            self.lobby_manager.invited_games[game_id] = {
-                'created_at': now_str()
-            }
-
-        # Register player in the appropriate role
-        if is_game_creator:
-            # Register as creator
-            self.lobby_manager.invited_games[game_id]['creator'] = self
-            print(f"Game {game_id}: {self.user.username} registered as creator")
-
-            # Check if recipient is already waiting
-            if 'recipient' in self.lobby_manager.invited_games[game_id]:
-                recipient = self.lobby_manager.invited_games[game_id]['recipient']
-                print(f"Game {game_id}: Found waiting recipient {recipient.user.username}, creating match")
-
-                # Create match between the two players
-                await self.lobby_manager.create_match_from_invitation(self, recipient, game_id)
-                return
-
-            # Recipient not found, send waiting message
-            await self.send(text_data=json.dumps({
-                'type': 'waiting_for_opponent',
-                'message': f'En attente de {opponent_username}...',
-                'game_id': game_id
-            }))
-
-        else:
-            # Register as recipient
-            self.lobby_manager.invited_games[game_id]['recipient'] = self
-            print(f"Game {game_id}: {self.user.username} registered as recipient")
-
-            # Check if creator is already waiting
-            if 'creator' in self.lobby_manager.invited_games[game_id]:
-                creator = self.lobby_manager.invited_games[game_id]['creator']
-                print(f"Game {game_id}: Found waiting creator {creator.user.username}, creating match")
-
-                # Create match between the two players
-                await self.lobby_manager.create_match_from_invitation(creator, self, game_id)
-                return
-
-            # Creator not found, send waiting message
-            await self.send(text_data=json.dumps({
-                'type': 'waiting_for_creator',
-                'message': f'En attente de {opponent_username} pour créer la partie...',
-                'game_id': game_id
-            }))
-
-    @database_sync_to_async
-    def get_user_by_username(self, username):
-        """
-        Look up a user by username.
-
-        Args:
-            username: Username to look up
-
-        Returns:
-            User object or None if not found
-        """
-        from users.models import customUser
-        try:
-            return customUser.objects.get(username=username)
-        except customUser.DoesNotExist:
-            print(f"User not found: {username}")
-            return None
-
-    async def handle_invite_friend(self, data):
-        """
-        Handle invitation to a friend to join a match
-        """
-        friend_username = data.get('friend_username')
-        
-        if not friend_username:
-            await self.send(text_data=json.dumps({
-                'type': 'friend_invite_error',
-                'message': 'Aucun nom d\'utilisateur fourni'
-            }))
-            return
-        
-        # Create the invitation in the database
-        success, message = await self.create_game_invitation(friend_username)
-        
-        if success:
-            await self.send(text_data=json.dumps({
-                'type': 'friend_invite_sent',
-                'friend_username': friend_username,
-                'message': message
-            }))
-        else:
-            await self.send(text_data=json.dumps({
-                'type': 'friend_invite_error',
-                'message': message
-            }))
-
-    @database_sync_to_async
-    def create_game_invitation(self, friend_username):
-        """
-        Create a game invitation in the database
-        
-        Args:
-            friend_username: Username of the friend to invite
-            
-        Returns:
-            tuple: (success, message)
-        """
-        try:
-            from users.models import customUser
-            
-            # Get friend user object
-            try:
-                friend = customUser.objects.get(username=friend_username)
-            except customUser.DoesNotExist:
-                return False, "Ami non trouvé"
-            
-            # Don't allow inviting yourself
-            if self.user.username == friend_username:
-                return False, "Vous ne pouvez pas vous inviter vous-même"
-                
-            # Check if there's already a pending invitation
-            existing_invitation = GameInvitation.objects.filter(
-                sender=self.user,
-                recipient=friend,
-                status='pending',
-                match_type='regular'
-            ).exists()
-            
-            if existing_invitation:
-                return False, "Vous avez déjà une invitation en attente pour cet ami"
-                
-            # Create the invitation
-            invitation = GameInvitation(
-                sender=self.user,
-                recipient=friend,
-                match_type='regular'
-            )
-            invitation.save()
-            
-            return True, "Invitation envoyée avec succès"
-            
-        except Exception as e:
-            print(f"Error creating invitation: {str(e)}")
-            return False, "Une erreur s'est produite lors de la création de l'invitation"
 
     async def handle_message(self, data, message_type):
         """
         Handle match-specific messages.
         """
+
         if not hasattr(self, 'user'):
             await self.send_error("You must authenticate first")
             return
             
         if message_type == "find_match":
-            # Request to find a match
             await self.find_match()
             
         elif message_type == "cancel_matchmaking":
-            # Cancel ongoing matchmaking
             await self.lobby_manager.remove_player(self)
             await self.send_message("matchmaking_cancelled", {
                 "message": "Recherche de match annulée"
             })
             
         elif message_type == "player_input":
-            # Handle player paddle movement
             if not hasattr(self, 'match_id'):
                 return
                 
             input_value = data.get('input', 0)
             await self.process_player_input(input_value)
-            
+
+    #===========================================================#
+    #                MATCHMAKING MANAGEMENT                     #
+    #===========================================================#
+
     async def find_match(self):
         """
         Find a match for the player.
         """
+
         # Set up player data for matchmaking
         self.match_id = None
         self.player_number = None
@@ -367,12 +371,13 @@ class MatchConsumer(BaseGameConsumer):
         """
         Periodically try to find matches for all waiting players.
         """
+
         try:
+            # Try to find matches
             while not hasattr(self, 'match_id') or not self.match_id:
-                # Try to find matches
                 await self.lobby_manager.find_matches_for_all()
                 
-                # Update queue position for the player
+                # Update queue position
                 if not hasattr(self, 'match_id') or not self.match_id:
                     position = 0
                     for i, (player, _, _) in enumerate(self.lobby_manager.waiting_players):
@@ -386,22 +391,27 @@ class MatchConsumer(BaseGameConsumer):
                             "message": f"Position dans la file: {position}"
                         })
                 
-                # Wait before next attempt
+                # Wait for next attempt
                 await asyncio.sleep(2)
                 
+        # End of task
         except asyncio.CancelledError:
-            # Task was cancelled (likely because a match was found)
             pass
-                
+
+    #===========================================================#
+    #                PONG MANAGEMENT                            #
+    #===========================================================#
+
     async def process_player_input(self, input_value):
         """
         Update paddle position based on player input.
         """
-        # Validate input
+
+        # Verify input
         if input_value not in [-1, 0, 1]:
             return
             
-        # Find match in active matches
+        # Find match to update
         match_data = self.lobby_manager.active_matches.get(self.match_id)
         if not match_data:
             return
@@ -415,6 +425,7 @@ class MatchConsumer(BaseGameConsumer):
         """
         Run the game loop for a match.
         """
+
         match_data = self.lobby_manager.active_matches.get(match_id)
         if not match_data:
             print(f"Error: Match {match_id} not found in active_matches")
@@ -427,18 +438,17 @@ class MatchConsumer(BaseGameConsumer):
 
         try:
             while True:
-                # Sleep to control game speed
+                # Game speed control
                 await asyncio.sleep(0.02)  # 50 FPS
 
-                # Check if players are still connected
+                # Check players connection status
                 if not all(hasattr(player, 'match_id') and player.match_id == match_id for player in players):
-                    print(f"A player disconnected from match {match_id}")
-                    # Find the remaining player to declare them winner
+                    # Find remaining player to declare a winner
                     remaining_player = next((p for p in players if hasattr(p, 'match_id') and p.match_id == match_id), None)
                     if remaining_player:
                         print(f"Declaring {remaining_player.user.username} as winner due to opponent disconnect")
                         await self.handle_match_result(match_id, remaining_player.user.username)
-                    return  # End the game loop
+                    return
 
                 # Update game state
                 self.game_engine.update_game_state(game_state)
@@ -449,7 +459,7 @@ class MatchConsumer(BaseGameConsumer):
                 if game_over:
                     print(f"Game over! Winner: {winner_username}")
                     await self.handle_match_result(match_id, winner_username)
-                    return  # End the game loop
+                    return
 
                 # Send updated state to players
                 for player in players:
@@ -469,11 +479,8 @@ class MatchConsumer(BaseGameConsumer):
     async def handle_match_result(self, match_id, winner_username):
         """
         Handle the end of a match.
-
-        Args:
-            match_id: ID of the completed match
-            winner_username: Username of the winner
         """
+
         match_data = self.lobby_manager.active_matches.get(match_id)
         if not match_data:
             return
@@ -487,14 +494,14 @@ class MatchConsumer(BaseGameConsumer):
 
         loser = next((player for player in players if player != winner), None)
 
-        # Update ELO ratings in the database
+        # Update ELO
         if winner and loser:
             await self.update_elo_ratings(winner.user, loser.user)
 
-        # Notify players of game result
+        # Display game result
         for player in players:
             try:
-                # Get appropriate display names
+                # Get display name
                 winner_display = winner.user.nickname if hasattr(winner.user, 'nickname') and winner.user.nickname else winner.user.username
 
                 await player.send(text_data=json.dumps({
@@ -505,11 +512,9 @@ class MatchConsumer(BaseGameConsumer):
             except Exception as e:
                 print(f"Error sending game result notification: {str(e)}")
 
-        # Clean up
+        # Cleanup
         if match_id in self.lobby_manager.active_matches:
             del self.lobby_manager.active_matches[match_id]
-
-        # Clear match IDs
         for player in players:
             if hasattr(player, 'match_id'):
                 player.match_id = None
@@ -520,18 +525,13 @@ class MatchConsumer(BaseGameConsumer):
     def update_elo_ratings(self, winner, loser, K=32):
         """
         Updates ELO ratings after a match.
-
-        Args:
-            winner: User object of the winner
-            loser: User object of the loser
-            K: K-factor for ELO calculation (default: 32)
         """
         from ..pongHelper import calculate_elo_change
 
-        # Calculate new ELO ratings
+        # Calculate ELO ratings
         winner_elo, loser_elo = calculate_elo_change(winner.elo, loser.elo, K)
 
-        # Update user records
+        # Update user elo
         winner.elo = winner_elo
         loser.elo = loser_elo
         winner.wins += 1
@@ -539,7 +539,6 @@ class MatchConsumer(BaseGameConsumer):
 
         # Record match in history
         timestamp = now_str()
-
         winner.history.append({
             'opponent_id': loser.id,
             'opponent_username': loser.username,
@@ -547,7 +546,6 @@ class MatchConsumer(BaseGameConsumer):
             'timestamp': timestamp,
             'match_type': 'regular'
         })
-
         loser.history.append({
             'opponent_id': winner.id,
             'opponent_username': winner.username,
@@ -555,7 +553,5 @@ class MatchConsumer(BaseGameConsumer):
             'timestamp': timestamp,
             'match_type': 'regular'
         })
-
-        # Save changes
         winner.save()
         loser.save()
