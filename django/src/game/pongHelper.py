@@ -1,3 +1,16 @@
+"""
+╔═══════════════════════════════════════════════════╗
+║                 PongHelper                        ║
+╠═══════════════════════════════════════════════════╣
+║ Utility functions and constants for Pong game     ║
+║                                                   ║
+║ • Defines game dimensions and physics constants   ║
+║ • Manages game state creation and reset           ║
+║ • Handles ELO rating calculations                 ║
+║ • Provides common utility functions               ║
+╚═══════════════════════════════════════════════════╝
+"""
+
 from datetime import datetime
 import math
 from random import random
@@ -13,29 +26,16 @@ BALL_SPEED = 3
 
 def get_display_name(user):
     """
-    Returns the display name for a user, using nickname if available.
-    
-    Args:
-        user: User object with username and possibly nickname attributes
-        
-    Returns:
-        str: The nickname if it exists, otherwise the username
+    Returns the display name for a user, using nickname if available.e
     """
+
     return user.nickname if hasattr(user, 'nickname') and user.nickname else user.username
 
 def create_initial_game_state(player1, player2, match_id=None, tournament_id=None):
     """
     Creates the initial game state for a Pong match.
-    
-    Args:
-        player1: First player object
-        player2: Second player object
-        match_id: Optional identifier for the match
-        tournament_id: Optional identifier for the tournament
-        
-    Returns:
-        dict: Initial game state dictionary
     """
+
     game_state = {
         "ball": {"x": CANVAS_WIDTH / 2 - BALL_RADIUS / 2, "y": CANVAS_HEIGHT / 2 - BALL_RADIUS / 2},
         "pads": {
@@ -72,14 +72,8 @@ def create_initial_game_state(player1, player2, match_id=None, tournament_id=Non
 def reset_ball(game_state, scorer=None):
     """
     Resets the ball to the center of the game after a score.
-    
-    Args:
-        game_state: Current game state dictionary
-        scorer: Optional 'player1' or 'player2' string indicating who scored
-    
-    Returns:
-        dict: Updated game state with reset ball
     """
+
     game_state["ball"]["x"] = CANVAS_WIDTH / 2 - BALL_RADIUS / 2
     game_state["ball"]["y"] = CANVAS_HEIGHT / 2 - BALL_RADIUS / 2
     
@@ -98,15 +92,8 @@ def reset_ball(game_state, scorer=None):
 def calculate_elo_change(winner_elo, loser_elo, k_factor=20):
     """
     Calculates ELO rating changes after a match.
-    
-    Args:
-        winner_elo: Current ELO rating of the winner
-        loser_elo: Current ELO rating of the loser
-        k_factor: K-factor for ELO calculation (default: 20)
-        
-    Returns:
-        tuple: (winner_new_elo, loser_new_elo)
     """
+
     expected_winner = 1 / (1 + 10 ** ((loser_elo - winner_elo) / 400))
     expected_loser = 1 / (1 + 10 ** ((winner_elo - loser_elo) / 400))
     
@@ -118,8 +105,6 @@ def calculate_elo_change(winner_elo, loser_elo, k_factor=20):
 def now_str():
     """
     Returns the current datetime as a string.
-    
-    Returns:
-        str: Current datetime as string
     """
+    
     return str(datetime.now())

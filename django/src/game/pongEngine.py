@@ -3,29 +3,64 @@ import asyncio
 from .pongHelper import CANVAS_WIDTH, CANVAS_HEIGHT, PAD_WIDTH, PAD_HEIGHT, PAD_SPEED, BALL_RADIUS, BALL_SPEED, reset_ball
 
 class GameEngine:
+    """
+    ╔═══════════════════════════════════════════════════╗
+    ║                GameEngine                         ║
+    ╠═══════════════════════════════════════════════════╣
+    ║ Core physics and logic for Pong game              ║
+    ║                                                   ║
+    ║ • Handles paddle movement and constraints         ║
+    ║ • Processes ball physics and collision detection  ║
+    ║ • Manages bounce angles and speed increases       ║
+    ║ • Tracks scoring and determines game completion   ║
+    ╚═══════════════════════════════════════════════════╝
+    """
+
+    #===========================================================#
+    #                GAME STATE                                 #
+    #===========================================================#
+
     def update_game_state(self, game_state):
         """
         Updates the entire game state for one frame.
-        
-        Args:
-            game_state: Current game state dictionary
-            
-        Returns:
-            dict: Updated game state
         """
+
         self.update_pads(game_state)
         self.update_ball(game_state)
         self.collision_wall(game_state)
         self.collision_pad(game_state)
         return game_state
+
+    async def check_goals(self, game_state):
+        """
+        Checks if a goal was scored and updates the score.
+        """
+
+        # Player 2 scores
+        if game_state["ball"]["x"] <= 0:
+            reset_ball(game_state, "player2")
+            game_state["score"]["player2"] += 1
+            if game_state["score"]["player2"] >= 3:
+                return True, game_state["player_info"]["player2"]["username"]
         
+        # Player 1 scores
+        elif game_state["ball"]["x"] >= CANVAS_WIDTH:
+            reset_ball(game_state, "player1")
+            game_state["score"]["player1"] += 1
+            if game_state["score"]["player1"] >= 3:
+                return True, game_state["player_info"]["player1"]["username"]
+                
+        return False, None
+
+    #===========================================================#
+    #                GAME PHYSICS                               #
+    #===========================================================#
+
     def update_pads(self, game_state):
         """
         Updates paddle positions based on player inputs.
-        
-        Args:
-            game_state: Current game state dictionary
         """
+
         game_state["pads"]["player1"]["y"] += game_state["inputs"]["player1"] * PAD_SPEED
         game_state["pads"]["player2"]["y"] += game_state["inputs"]["player2"] * PAD_SPEED
 
@@ -36,10 +71,8 @@ class GameEngine:
     def update_ball(self, game_state):
         """
         Updates ball position based on its current direction and speed.
-        
-        Args:
-            game_state: Current game state dictionary
         """
+
         ball_speed = game_state.get("ballSpeed", BALL_SPEED)
         game_state["ball"]["x"] += game_state["directionBall"]["x"] * ball_speed
         if game_state["ballTouched"]:
@@ -48,20 +81,16 @@ class GameEngine:
     def collision_wall(self, game_state):
         """
         Handles ball collision with top and bottom walls.
-        
-        Args:
-            game_state: Current game state dictionary
         """
+
         if game_state["ball"]["y"] <= 0 or game_state["ball"]["y"] >= CANVAS_HEIGHT - BALL_RADIUS:
             game_state["directionBall"]["y"] *= -1
 
     def collision_pad(self, game_state):
         """
         Detects and handles ball collision with paddles.
-        
-        Args:
-            game_state: Current game state dictionary
         """
+
         # Left paddle (player1) collision
         if (game_state["ball"]["x"] <= game_state["pads"]["player1"]["x"] + PAD_WIDTH and
             game_state["ball"]["x"] >= game_state["pads"]["player1"]["x"] and
@@ -79,10 +108,6 @@ class GameEngine:
     def handle_collision(self, game_state, player):
         """
         Calculates ball bounce physics when hitting a paddle.
-        
-        Args:
-            game_state: Current game state dictionary
-            player: String identifier of the player ('player1' or 'player2')
         """
         pad = game_state["pads"][player]
         
@@ -111,30 +136,3 @@ class GameEngine:
             game_state["ball"]["x"] = pad["x"] - BALL_RADIUS - 1
 
         game_state["ballTouched"] = True
-
-    async def check_goals(self, game_state):
-        """
-        Checks if a goal was scored and updates the score.
-        
-        Args:
-            game_state: Current game state dictionary
-            
-        Returns:
-            tuple: (bool indicating if game is over, string with winner username if game over)
-        """
-
-        # Player 2 scores
-        if game_state["ball"]["x"] <= 0:
-            reset_ball(game_state, "player2")
-            game_state["score"]["player2"] += 1
-            if game_state["score"]["player2"] >= 3:
-                return True, game_state["player_info"]["player2"]["username"]
-        
-        # Player 1 scores
-        elif game_state["ball"]["x"] >= CANVAS_WIDTH:
-            reset_ball(game_state, "player1")
-            game_state["score"]["player1"] += 1
-            if game_state["score"]["player1"] >= 3:
-                return True, game_state["player_info"]["player1"]["username"]
-                
-        return False, None
