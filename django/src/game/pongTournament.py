@@ -658,40 +658,50 @@ class TournamentManager:
         forfeiter_username = player.user.username
         forfeiter_display = get_display_name(player.user)
     
-        # Check if the tournament has started
         if tournament.get("started", False):
             # Tournament has already started, cancel it and penalize the player
             print(f"Player {forfeiter_username} disconnected from active tournament {tournament_id}. Cancelling tournament.")
-    
+            
             # Apply ELO penalty to forfeiting player
             await self.apply_forfeit_penalty(player.user)
-    
+            
             # Mark tournament as cancelled
             tournament["cancelled"] = True
             tournament["cancelled_by"] = forfeiter_username
             tournament["cancelled_at"] = now_str()
-    
+            
+            # IMPORTANT: Cancel any ongoing match tasks first
+            active_match_ids = []
+            for match_id in list(tournament.get("match_states", {}).keys()):
+                active_match_ids.append(match_id)
+                
+            # Clear match states immediately to stop game logic updates
+            if "match_states" in tournament:
+                tournament["match_states"] = {}
+            
+            # Reset all players' match info to prevent further updates
+            for p in players:
+                p.match_id = None
+                p.player_number = None
+            
             # Notify all players about cancellation
             for p in players:
-                if p != player:  # Don't notify the player who left
+                if p != player:  # Don't need to notify the player who left
                     try:
                         print(f"Sending cancellation notice to {p.user.username}")
                         await p.send(text_data=json.dumps({
                             "type": "tournament_cancelled",
                             "message": "Tournament cancelled due to player forfeit",
                             "forfeiter": forfeiter_username,
-                            "forfeiter_display": forfeiter_display
+                            "forfeiter_display": forfeiter_display,
+                            "active_match_ids": active_match_ids  # Include this so frontend knows which matches to ignore
                         }))
                     except Exception as e:
                         print(f"Error notifying player of cancellation: {e}")
-    
-            # Clean up ongoing matches
-            if "match_states" in tournament:
-                tournament["match_states"] = {}
-                
+            
             # Keep the tournament record for a while but mark as inactive
             tournament["active"] = False
-    
+            
             return True
         else:
             # Tournament hasn't started yet, just remove player

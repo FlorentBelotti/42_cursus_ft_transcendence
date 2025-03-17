@@ -17,6 +17,8 @@ class TournamentClient {
         this.keysPressed = {};
         this.animationFrameId = null;
         this.authenticated = false;
+        this.isTournamentCancelled = false; // Add this flag
+        this.cancelledMatchIds = []; // Add this array
         this.init();
     }
 
@@ -88,12 +90,20 @@ class TournamentClient {
         };
     
         this.socket.onmessage = (event) => {
-            console.log('Received message:', event.data);
+            console.log('⚡ Tournament WebSocket message received:', event.data);
             try {
                 const data = JSON.parse(event.data);
+                console.log('📥 Parsed message type:', data.type);
+                
+                // Skip game updates for cancelled tournaments
+                if (this.isTournamentCancelled && data.type === 'game_update') {
+                    console.log('✂️ Skipping game update for cancelled tournament');
+                    return;
+                }
+                
                 this.handleMessage(data);
             } catch (e) {
-                console.error("Error parsing message:", e);
+                console.error("❌ Error parsing message:", e);
             }
         };
     
@@ -117,15 +127,32 @@ class TournamentClient {
         };
     }
 
+    resetTournamentState() {
+        this.isInMatch = false;
+        this.matchId = null;
+        this.gameState = null;
+        this.playerNumber = null;
+        this.isTournamentCancelled = false;
+        this.cancelledMatchIds = [];
+    }
+
     handleMessage(data) {
         console.log('Processing data:', data.type);
 
         if (data.type === 'tournament_cancelled') {
             console.log('Tournament cancelled:', data);
             
-            // Force exit from any match mode
+            // Force exit from any match mode and reset all game state
             this.isInMatch = false;
             this.matchId = null;
+            this.gameState = null;
+            this.playerNumber = null;
+            
+            // Set a flag to ignore future game state updates
+            this.isTournamentCancelled = true;
+            
+            // Store active match IDs to explicitly ignore
+            this.cancelledMatchIds = data.active_match_ids || [];
             
             // Display cancellation screen
             this.displayTournamentCancelled(data);
@@ -137,7 +164,20 @@ class TournamentClient {
                 createTournamentBtn.textContent = 'Create Tournament';
             }
             
+            return; // Exit early
+        }
+
+        if (this.isTournamentCancelled) {
+            console.log('Ignoring message for cancelled tournament:', data.type);
             return;
+        }
+
+        if (data.type === 'game_update' && data.game_state && data.game_state.match_id) {
+            if (this.cancelledMatchIds && 
+                this.cancelledMatchIds.includes(data.game_state.match_id)) {
+                console.log('Ignoring update for cancelled match:', data.game_state.match_id);
+                return;
+            }
         }
 
         if (data.type === 'tournament_rankings') {
@@ -224,8 +264,12 @@ class TournamentClient {
     displayTournamentCancelled(data) {
         console.log("⚠️ Displaying tournament cancellation screen", data);
         
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+
         try {
-            // Clear canvas and display cancellation message
             this.clearCanvas();
             
             // Draw red warning banner
@@ -266,46 +310,23 @@ class TournamentClient {
             this.ctx.fillText("You can join a new tournament", 
                              this.canvas.width / 2, 380);
             
-            // Add countdown indicator
-            this.ctx.fillStyle = '#666666';
-            this.ctx.font = '16px Arial';
-            this.ctx.fillText("Please wait...", this.canvas.width / 2, 450);
-            
             console.log("✅ Cancellation screen drawn successfully");
-            
-            // Update info div
-            const infoDiv = document.getElementById('tournamentInfo');
-            if (infoDiv) {
-                infoDiv.innerHTML = '<p class="error">Tournament cancelled due to player forfeit</p>';
-            }
-            
-            // Disable controls during display period
-            const createTournamentBtn = document.getElementById('createTournamentBtn');
-            if (createTournamentBtn) {
-                createTournamentBtn.disabled = true;
-            }
-            
-            // Add a 3-second delay before re-enabling controls
-            console.log("Waiting 3 seconds before re-enabling tournament controls...");
-            setTimeout(() => {
-                console.log("Delay complete, re-enabling tournament controls");
-                // Re-enable the create tournament button
-                if (createTournamentBtn) {
-                    createTournamentBtn.disabled = false;
-                    createTournamentBtn.textContent = 'Create Tournament';
-                }
-            }, 3000);
-            
         } catch (err) {
-            console.error("Error displaying cancellation screen:", err);
-            // Make sure controls are re-enabled even if there's an error
-            setTimeout(() => {
-                const createTournamentBtn = document.getElementById('createTournamentBtn');
-                if (createTournamentBtn) {
-                    createTournamentBtn.disabled = false;
-                    createTournamentBtn.textContent = 'Create Tournament';
-                }
-            }, 3000);
+            console.error("❌ Error displaying cancellation screen:", err);
+        }
+        
+        // Always update UI elements outside of try/catch
+        // Re-enable the create tournament button
+        const createTournamentBtn = document.getElementById('createTournamentBtn');
+        if (createTournamentBtn) {
+            createTournamentBtn.disabled = false;
+            createTournamentBtn.textContent = 'Create Tournament';
+        }
+        
+        // Information div update
+        const infoDiv = document.getElementById('tournamentInfo');
+        if (infoDiv) {
+            infoDiv.innerHTML = '<p class="error">Tournament cancelled due to player forfeit</p>';
         }
     }
 
