@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import create_user, list_users, user_detail, update_user, delete_user, logout_action, RefreshTokenView, online_friends_view, get_user_invitations, respond_to_invitation, cancel_game_invitation, forfeit_match
+from .views import (create_user, list_users, user_detail, update_user, delete_user, 
+                   logout_action, RefreshTokenView, online_friends_view, 
+                   get_user_invitations, respond_to_invitation, cancel_game_invitation, 
+                   forfeit_match, forfeit_tournament) 
 
 urlpatterns = [
     path('users/', list_users, name='list_users'),
@@ -14,4 +17,5 @@ urlpatterns = [
     path('invitations/<int:invitation_id>/respond/', respond_to_invitation, name='respond_to_invitation'),
     path('invitations/cancel/', cancel_game_invitation, name='cancel_game_invitation'),
     path('match/forfeit/', forfeit_match, name='forfeit_match'),
+    path('tournament/forfeit/', forfeit_tournament, name='forfeit_tournament'),
 ]

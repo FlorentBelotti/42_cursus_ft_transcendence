@@ -100,7 +100,10 @@ class TournamentClient {
         this.socket.onclose = (event) => {
             console.log('Tournament WebSocket connection closed.', event.code, event.reason);
             this.stopGame();
-            
+            if (!this.isPageUnloading) {
+                // Set a timeout to reconnect
+                setTimeout(() => this.connectWebSocket(), 2000);
+            }
             // Re-enable the button if connection is lost
             const createTournamentBtn = document.getElementById('createTournamentBtn');
             if (createTournamentBtn) {
@@ -116,13 +119,34 @@ class TournamentClient {
 
     handleMessage(data) {
         console.log('Processing data:', data.type);
+
+        if (data.type === 'tournament_cancelled') {
+            console.log('Tournament cancelled:', data);
+            
+            // Force exit from any match mode
+            this.isInMatch = false;
+            this.matchId = null;
+            
+            // Display cancellation screen
+            this.displayTournamentCancelled(data);
+            
+            // Re-enable buttons
+            const createTournamentBtn = document.getElementById('createTournamentBtn');
+            if (createTournamentBtn) {
+                createTournamentBtn.disabled = false;
+                createTournamentBtn.textContent = 'Create Tournament';
+            }
+            
+            return;
+        }
+
         if (data.type === 'tournament_rankings') {
             console.log('Tournament rankings received:', data);
             
             // If tournament is complete, update UI accordingly
             if (data.complete) {
-                this.isInMatch = false;  // Ensure we're not in match mode
-                this.matchId = null;     // Clear match ID
+                this.isInMatch = false;
+                this.matchId = null;
             }
             
             // Display rankings (this should work regardless of if we're in a match)
@@ -143,9 +167,9 @@ class TournamentClient {
             }
             else if (data.type === 'match_result' && data.match_id === this.matchId) {
                 // Only handle match result if it's for our current match
-                this.isInMatch = false;  // End match mode
-                this.matchId = null;     // Clear match ID
-                this.clearCanvas();      // Completely clear the canvas
+                this.isInMatch = false; 
+                this.matchId = null;    
+                this.clearCanvas();
                 this.displayMatchResult(data);
             }
             // Strictly ignore ALL other messages while in a match
@@ -196,7 +220,95 @@ class TournamentClient {
             this.displayThirdPlaceAnnouncement(data);
         }
     }
-    
+
+    displayTournamentCancelled(data) {
+        console.log("⚠️ Displaying tournament cancellation screen", data);
+        
+        try {
+            // Clear canvas and display cancellation message
+            this.clearCanvas();
+            
+            // Draw red warning banner
+            this.ctx.fillStyle = '#ffcccc';
+            this.ctx.fillRect(0, 100, this.canvas.width, 80);
+            
+            // Draw title
+            this.ctx.fillStyle = '#cc0000';
+            this.ctx.font = '32px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('Tournament Cancelled', this.canvas.width / 2, 150);
+            
+            // Draw cancellation reason
+            this.ctx.fillStyle = 'black';
+            this.ctx.font = '22px Arial';
+            
+            // If we have forfeiter info, display it
+            const displayName = data.forfeiter_display || data.forfeiter || "A player";
+            this.ctx.fillText(`${displayName} left the tournament`, 
+                             this.canvas.width / 2, 220);
+            
+            // Draw penalty message
+            this.ctx.font = '18px Arial';
+            this.ctx.fillText("The player who left received an ELO penalty (-15)", 
+                             this.canvas.width / 2, 280);
+            
+            // Draw divider
+            this.ctx.strokeStyle = '#dddddd';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(200, 320);
+            this.ctx.lineTo(600, 320);
+            this.ctx.stroke();
+            
+            // Draw try again message
+            this.ctx.fillStyle = '#4CAF50';
+            this.ctx.font = '24px Arial';
+            this.ctx.fillText("You can join a new tournament", 
+                             this.canvas.width / 2, 380);
+            
+            // Add countdown indicator
+            this.ctx.fillStyle = '#666666';
+            this.ctx.font = '16px Arial';
+            this.ctx.fillText("Please wait...", this.canvas.width / 2, 450);
+            
+            console.log("✅ Cancellation screen drawn successfully");
+            
+            // Update info div
+            const infoDiv = document.getElementById('tournamentInfo');
+            if (infoDiv) {
+                infoDiv.innerHTML = '<p class="error">Tournament cancelled due to player forfeit</p>';
+            }
+            
+            // Disable controls during display period
+            const createTournamentBtn = document.getElementById('createTournamentBtn');
+            if (createTournamentBtn) {
+                createTournamentBtn.disabled = true;
+            }
+            
+            // Add a 3-second delay before re-enabling controls
+            console.log("Waiting 3 seconds before re-enabling tournament controls...");
+            setTimeout(() => {
+                console.log("Delay complete, re-enabling tournament controls");
+                // Re-enable the create tournament button
+                if (createTournamentBtn) {
+                    createTournamentBtn.disabled = false;
+                    createTournamentBtn.textContent = 'Create Tournament';
+                }
+            }, 3000);
+            
+        } catch (err) {
+            console.error("Error displaying cancellation screen:", err);
+            // Make sure controls are re-enabled even if there's an error
+            setTimeout(() => {
+                const createTournamentBtn = document.getElementById('createTournamentBtn');
+                if (createTournamentBtn) {
+                    createTournamentBtn.disabled = false;
+                    createTournamentBtn.textContent = 'Create Tournament';
+                }
+            }, 3000);
+        }
+    }
+
     // Add a helper method to ensure canvas is fully cleared
     clearCanvas() {
         if (this.ctx && this.canvas) {
@@ -588,6 +700,34 @@ class TournamentClient {
         });
     }
 
+    // In your TournamentClient class in tournamentClient.js
+    declareForfeit() {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            console.log("No active tournament connection to forfeit");
+            return;
+        }
+
+        console.log("Declaring tournament forfeit before navigation");
+
+        try {
+            // Send leave tournament message
+            this.socket.send(JSON.stringify({
+                type: 'leave_tournament'
+            }));
+
+            // Force close the socket
+            this.socket.onclose = null; // Remove reconnect handler
+            this.socket.close(1000, "User forfeited tournament");
+
+            console.log("Tournament forfeit signal sent and socket closed");
+
+            // Set flags to prevent reconnection
+            this.isPageUnloading = true;
+        } catch (e) {
+            console.error("Error sending tournament forfeit:", e);
+        }
+    }
+
     sendInput() {
         if (!this.socket || !this.isInMatch) return;
 
@@ -601,6 +741,70 @@ class TournamentClient {
         }));
     }
 }
+
+// Add this to the bottom of /home/fbelotti/Documents/Workspace/42_cursus_ft_transcendence/django/src/static/js/tournamentClient.js
+window.declarePongTournamentForfeit = function() {
+    console.log("Global tournament forfeit declaration triggered");
+    
+    try {
+        // Case 1: Use the existing tournament client if available
+        if (window.tournamentClient && window.tournamentClient.socket) {
+            console.log("Found active tournament client, sending forfeit via WebSocket");
+            
+            if (window.tournamentClient.socket.readyState === WebSocket.OPEN) {
+                // Send forfeit message
+                window.tournamentClient.socket.send(JSON.stringify({
+                    type: 'leave_tournament'
+                }));
+                
+                // Force close the socket
+                window.tournamentClient.socket.onclose = null; // Remove reconnect handler
+                window.tournamentClient.socket.close(1000, "User navigated away");
+                console.log("Socket forcibly closed for tournament forfeit");
+                
+                // Set flags to prevent reconnection
+                if (window.tournamentClient) {
+                    window.tournamentClient.isPageUnloading = true;
+                }
+                
+                return true;
+            }
+        } 
+        // Case 2: Direct API call as fallback when no tournament client exists
+        else {
+            console.log("No active tournament client, using API fallback");
+            
+            // Make a synchronous API call to forfeit
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/tournament/forfeit/', false); // false = synchronous
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            
+            // Get CSRF token from cookie if available
+            const csrfToken = document.cookie
+                .split('; ')
+                .find(cookie => cookie.startsWith('csrftoken='))
+                ?.split('=')[1];
+                
+            if (csrfToken) {
+                xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            }
+            
+            // Send the forfeit request
+            try {
+                xhr.send();
+                console.log("Tournament forfeit API response:", xhr.status);
+                return true;
+            } catch (e) {
+                console.error("Tournament forfeit API call failed:", e);
+            }
+        }
+        
+        return false;
+    } catch (error) {
+        console.error("Error in global tournament forfeit declaration:", error);
+        return false;
+    }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     const tournament = new TournamentClient();

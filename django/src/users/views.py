@@ -358,3 +358,42 @@ def forfeit_match(request):
             'success': False,
             'message': f'Error processing forfeit: {str(e)}'
         }, status=500)
+
+@login_required
+def forfeit_tournament(request):
+    """Handle tournament forfeit via API call."""
+    try:
+        # Get the user's active tournament from tournament manager
+        from game.websockets.pongTournamentConsumer import TournamentConsumer
+        
+        # Mark user as forfeited in any active tournament
+        user = request.user
+        forfeit_successful = False
+        
+        # Access the singleton tournament manager
+        tournament_manager = TournamentConsumer.tournament_manager
+        
+        # Find all tournaments where the user is participating
+        for tournament_id, tournament in list(tournament_manager.tournaments.items()):
+            players = tournament.get("players", [])
+            
+            # Find if the current user is in this tournament
+            for player in players:
+                if player.user.id == user.id:
+                    # Use existing tournament logic to handle player disconnect
+                    forfeit_successful = async_to_sync(tournament_manager.handle_player_disconnect)(player)
+                    break
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Tournament forfeit processed successfully' if forfeit_successful 
+                      else 'No active tournament found'
+        })
+    except Exception as e:
+        print(f"Error processing tournament forfeit: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error processing tournament forfeit: {str(e)}'
+        }, status=500)

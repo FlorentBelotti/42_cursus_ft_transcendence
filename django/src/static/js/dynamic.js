@@ -8,21 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		
 		window.isDynamicLoading = true;
 
-		// Log navigation for debugging
-		console.log(`Navigation initiated to ${url}`);
-		
-		if (typeof window.declarePongForfeit === 'function') {
-			console.log("FORFEIT Calling global forfeit declaration");
-			window.declarePongForfeit();
-		}
-
-		// IMPORTANT: First cancel any pending invitations
-		if (typeof window.cancelPendingPongInvitations === 'function') {
-			console.log("INVITE Calling global invitation cancellation");
-			window.cancelPendingPongInvitations();
-		}
-		
-		// Then run regular cleanup
+		console.log(`Navigation initiated to ${url}`);	
 		console.log("Starting cleanup before navigation");
 		cleanupScriptsAndEvents();
 
@@ -159,21 +145,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	function cleanupScriptsAndEvents() {
 		
+		if (typeof window.declarePongForfeit === 'function') {
+			console.log("MATCH FORFEIT: Calling global forfeit declaration");
+			window.declarePongForfeit();
+		}
+
 		if (typeof window.cancelPendingPongInvitations === 'function') {
-			console.log("Calling global invitation cancellation during cleanup");
+			console.log("INVITE CANCEL: Calling global invitation cancellation");
 			window.cancelPendingPongInvitations();
+		}
+
+		if (typeof window.declarePongTournamentForfeit === 'function') {
+			console.log("TOURNAMENT FORFEIT: Calling global forfeit declaration");
+			window.declarePongTournamentForfeit();
 		}
 	
 		if (window.pongServerGame && window.pongServerGame.socket) {
 			try {
 				console.log("Forcing socket close during cleanup");
 				if (window.pongServerGame.socket.readyState === WebSocket.OPEN) {
-					// Try to send forfeit
 					window.pongServerGame.socket.send(JSON.stringify({
 						type: 'declare_forfeit'
 					}));
-					
-					// Force close
 					window.pongServerGame.socket.onclose = null;
 					window.pongServerGame.socket.close(1000, "Navigation cleanup");
 				}

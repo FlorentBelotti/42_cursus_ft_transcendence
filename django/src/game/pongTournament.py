@@ -520,7 +520,34 @@ class TournamentManager:
     #===========================================================#
     #                ELO MANAGEMENT                             #
     #===========================================================#
-    
+
+    @database_sync_to_async
+    def apply_forfeit_penalty(self, user):
+        """
+        Apply ELO penalty to a player who forfeited the tournament.
+        """
+        # Standard penalty
+        penalty = 15
+
+        # Apply penalty
+        user.elo = max(0, user.elo - penalty)  # Ensure ELO doesn't go below 0
+        user.losses += 1
+
+        # Add to history
+        user.history.append({
+            'result': 'forfeit',
+            'timestamp': now_str(),
+            'match_type': 'tournament',
+            'elo_change': -penalty,
+            'reason': 'Tournament forfeit penalty'
+        })
+
+        # Save changes
+        user.save()
+
+        print(f"Applied forfeit penalty to {user.username}: -15 ELO")
+        return True
+
     @database_sync_to_async
     def update_elo_ratings_db(self, champion, runner_up, third_place, fourth_place):
         """
@@ -611,44 +638,77 @@ class TournamentManager:
     async def handle_player_disconnect(self, player):
         """
         Handle player disconnection from tournament.
+        Cancel the entire tournament if it has already started.
+        Apply ELO penalty to the disconnected player.
         """
         if not hasattr(player, 'tournament_id') or player.tournament_id is None:
             return False
-            
+    
         tournament_id = player.tournament_id
         if tournament_id not in self.tournaments:
             return False
+    
         tournament = self.tournaments[tournament_id]
         players = tournament["players"]
-        
+    
         if player not in players:
             return False
-        if hasattr(player, 'match_id') and player.match_id:
-            match_id = player.match_id
-            
-            # Find opponent
-            opponent = next((p for p in players 
-                           if hasattr(p, 'match_id') and p.match_id == match_id 
-                           and p != player), None)
-            
-            # Handle match result
-            if opponent:
-                await self.handle_match_result(match_id, tournament_id, opponent.user.username, forfeit=True)
-        
-        # Remove player from tournament
-        tournament["players"] = [p for p in players if p != player]
-        
-        # Notify players
-        if "started" not in tournament and len(tournament["players"]) > 0:
-            for p in tournament["players"]:
-                try:
-                    state = await self.get_tournament_state(tournament_id)
-                    state["your_position"] = p.player_position
-                    await p.send(text_data=json.dumps(state))
-                except Exception:
-                    pass
-        
-        return True
+    
+        # Get forfeiter info for notifications
+        forfeiter_username = player.user.username
+        forfeiter_display = get_display_name(player.user)
+    
+        # Check if the tournament has started
+        if tournament.get("started", False):
+            # Tournament has already started, cancel it and penalize the player
+            print(f"Player {forfeiter_username} disconnected from active tournament {tournament_id}. Cancelling tournament.")
+    
+            # Apply ELO penalty to forfeiting player
+            await self.apply_forfeit_penalty(player.user)
+    
+            # Mark tournament as cancelled
+            tournament["cancelled"] = True
+            tournament["cancelled_by"] = forfeiter_username
+            tournament["cancelled_at"] = now_str()
+    
+            # Notify all players about cancellation
+            for p in players:
+                if p != player:  # Don't notify the player who left
+                    try:
+                        print(f"Sending cancellation notice to {p.user.username}")
+                        await p.send(text_data=json.dumps({
+                            "type": "tournament_cancelled",
+                            "message": "Tournament cancelled due to player forfeit",
+                            "forfeiter": forfeiter_username,
+                            "forfeiter_display": forfeiter_display
+                        }))
+                    except Exception as e:
+                        print(f"Error notifying player of cancellation: {e}")
+    
+            # Clean up ongoing matches
+            if "match_states" in tournament:
+                tournament["match_states"] = {}
+                
+            # Keep the tournament record for a while but mark as inactive
+            tournament["active"] = False
+    
+            return True
+        else:
+            # Tournament hasn't started yet, just remove player
+            print(f"Player {forfeiter_username} disconnected from waiting tournament {tournament_id}.")
+            tournament["players"] = [p for p in players if p != player]
+    
+            # Notify remaining players
+            if len(tournament["players"]) > 0:
+                for p in tournament["players"]:
+                    try:
+                        state = await self.get_tournament_state(tournament_id)
+                        state["your_position"] = p.player_position
+                        await p.send(text_data=json.dumps(state))
+                    except Exception:
+                        pass
+                    
+            return True
     
     async def handle_player_input(self, player, input_value):
         """
