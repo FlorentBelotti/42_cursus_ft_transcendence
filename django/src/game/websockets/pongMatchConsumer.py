@@ -315,6 +315,8 @@ class MatchConsumer(BaseGameConsumer):
                 await self.handle_invitation_cancel(data)
             elif message_type == "join_invited_game":
                 await self.join_invited_game(data)
+            elif message_type == "declare_forfeit":
+                await self.lobby_manager.remove_player(self)
                 
         except json.JSONDecodeError:
             pass  # Invalid JSON format

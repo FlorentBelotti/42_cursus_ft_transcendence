@@ -432,6 +432,7 @@ class PongServerGame {
             // Save player number and start game
             this.playerNumber = data.player_number;
             this.isGameRunning = true;
+            this.match_id = data.match_id;
             
             // Store player info
             if (data.game_state && data.game_state.player_info) {
@@ -713,6 +714,30 @@ class PongServerGame {
         this.ctx.fillText(`${player2Display} (${this.playerInfo.player2.elo})`, this.canvas.width - 20, 20);
     }
 
+    declareForfeit() {
+        
+        console.log("Declaring forfeit for current game before navigation");
+        
+        try {
+            // 1. First send an explicit forfeit message
+            this.socket.send(JSON.stringify({
+                type: 'declare_forfeit',
+                match_id: this.match_id
+            }));
+            
+            // 2. Mark as forfeiting to prevent reconnection attempts
+            this.isForfeiting = true;
+            this.isGameRunning = false;
+            
+            // 3. Close the WebSocket connection
+            this.socket.close(1000, "User forfeited game");
+            
+            console.log("Forfeit signal sent and socket closed");
+        } catch (e) {
+            console.error("Error sending forfeit:", e);
+        }
+    }
+
     sendInput(input) {
         if (this.socket && this.socket.readyState === WebSocket.OPEN && this.isGameRunning) {
             this.socket.send(JSON.stringify({ 
@@ -805,6 +830,7 @@ window.cancelPendingPongInvitations = function() {
     try {
         // If pongServerGame exists, use it
         if (window.pongServerGame) {
+            console.log("CANCEL INVITE");
             window.pongServerGame.cancelPendingInvitations();
         } else {
             // Create temporary instance if needed
@@ -814,6 +840,71 @@ window.cancelPendingPongInvitations = function() {
         console.log("Invitations cancelled successfully via global function");
     } catch (error) {
         console.error("Error in global invitation cancellation:", error);
+    }
+};
+
+window.declarePongForfeit = function() {
+    console.log("Global forfeit declaration triggered");
+    
+    try {
+        console.log("PongServerGame exists:", !!window.pongServerGame);
+        
+        // Case 1: Use the existing game instance if available
+        if (window.pongServerGame && window.pongServerGame.socket) {
+            console.log("Found active pongServerGame, sending forfeit via WebSocket");
+            
+            if (window.pongServerGame.socket.readyState === WebSocket.OPEN) {
+                // Send forfeit message with match_id if we have it
+                window.pongServerGame.socket.send(JSON.stringify({
+                    type: 'declare_forfeit',
+                    match_id: window.pongServerGame.match_id || ''
+                }));
+                
+                // Force close the socket
+                window.pongServerGame.socket.onclose = null; // Remove reconnect handler
+                window.pongServerGame.socket.close(1000, "User navigated away");
+                console.log("Socket forcibly closed for forfeit");
+                
+                // Set flags to prevent reconnection
+                window.pongServerGame.isPageUnloading = true;
+                window.pongServerGame.isGameRunning = false;
+                
+                return true;
+            }
+        } 
+        // Case 2: Direct API call as fallback when no game instance exists
+        else {
+            console.log("No active pongServerGame, using API fallback");
+            
+            // Make a synchronous API call to forfeit
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/match/forfeit/', false); // false = synchronous
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            
+            // Get CSRF token from cookie if available
+            const csrfToken = document.cookie
+                .split('; ')
+                .find(cookie => cookie.startsWith('csrftoken='))
+                ?.split('=')[1];
+                
+            if (csrfToken) {
+                xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            }
+            
+            // Send the forfeit request
+            try {
+                xhr.send();
+                console.log("Forfeit API response:", xhr.status);
+                return true;
+            } catch (e) {
+                console.error("Forfeit API call failed:", e);
+            }
+        }
+        
+        return false;
+    } catch (error) {
+        console.error("Error in global forfeit declaration:", error);
+        return false;
     }
 };
 

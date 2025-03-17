@@ -317,3 +317,44 @@ def cancel_game_invitation(request):
             'success': False,
             'message': str(e)
         }, status=500)
+
+@login_required
+def forfeit_match(request):
+    """Handle match forfeit via API call."""
+    try:
+        # Get the user's active matches from lobby manager
+        from game.websockets.pongMatchConsumer import MatchConsumer
+        
+        # Mark user as forfeited in any active matches
+        user = request.user
+        forfeit_successful = False
+        
+        for match_id, match_data in list(MatchConsumer.lobby_manager.active_matches.items()):
+            players = match_data.get('players', [])
+            
+            # Find if the current user is in this match
+            for player in players:
+                if player.user.id == user.id:
+                    # Use existing game logic to handle forfeit
+                    # This will eventually call remove_player
+                    winner = next((p for p in players if p.user.id != user.id), None)
+                    if winner:
+                        # Use the existing method for handling match results
+                        async_to_sync(MatchConsumer().handle_match_result)(
+                            match_id, winner.user.username
+                        )
+                        forfeit_successful = True
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Forfeit processed successfully' if forfeit_successful 
+                      else 'No active matches found'
+        })
+    except Exception as e:
+        print(f"Error processing forfeit: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error processing forfeit: {str(e)}'
+        }, status=500)

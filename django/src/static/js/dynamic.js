@@ -11,9 +11,14 @@ document.addEventListener('DOMContentLoaded', function () {
 		// Log navigation for debugging
 		console.log(`Navigation initiated to ${url}`);
 		
+		if (typeof window.declarePongForfeit === 'function') {
+			console.log("FORFEIT Calling global forfeit declaration");
+			window.declarePongForfeit();
+		}
+
 		// IMPORTANT: First cancel any pending invitations
 		if (typeof window.cancelPendingPongInvitations === 'function') {
-			console.log("Calling global invitation cancellation");
+			console.log("INVITE Calling global invitation cancellation");
 			window.cancelPendingPongInvitations();
 		}
 		
@@ -159,13 +164,21 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.cancelPendingPongInvitations();
 		}
 	
-		if (window.pongServerGame) {
-			console.log("Cleaning up pongServerGame");
+		if (window.pongServerGame && window.pongServerGame.socket) {
 			try {
-				// Use the new cleanup method
-				window.pongServerGame.cleanup();
-			} catch (error) {
-				console.error("Error during pongServerGame cleanup:", error);
+				console.log("Forcing socket close during cleanup");
+				if (window.pongServerGame.socket.readyState === WebSocket.OPEN) {
+					// Try to send forfeit
+					window.pongServerGame.socket.send(JSON.stringify({
+						type: 'declare_forfeit'
+					}));
+					
+					// Force close
+					window.pongServerGame.socket.onclose = null;
+					window.pongServerGame.socket.close(1000, "Navigation cleanup");
+				}
+			} catch (e) {
+				console.error("Error closing socket:", e);
 			}
 		}
 
