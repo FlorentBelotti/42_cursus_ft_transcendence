@@ -757,7 +757,7 @@ class Snake3D {
 		return false;
 	}
 
-    resetGame() {
+	resetGame() {
 		this.snake = [{ x: 9, y: 10 }];
 		this.direction = { x: 1, y: 0 };
 		this.score = 0;
@@ -770,16 +770,26 @@ class Snake3D {
 			y: Math.floor(Math.random() * this.tileCount)
 		};
 
-		// Régénérer les obstacles après avoir défini this.food
-		this.generateObstacles(Math.floor(this.tileCount * 0.15));
+		// Régénérer les obstacles avec le même nombre qu'à l'initialisation (20)
+		this.generateObstacles(20); // Remplace Math.floor(this.tileCount * 0.15) par 20
 		this.createObstacles();
 
-		// S'assurer que la nourriture n'apparaît pas sur un obstacle
+		// S'assurer que la nourriture n'apparaît pas sur un obstacle ou le serpent
 		let validFoodPosition = false;
 		while (!validFoodPosition) {
 			validFoodPosition = true;
 			for (const obstacle of this.obstacles) {
 				if (this.food.x === obstacle.x && this.food.y === obstacle.y) {
+					validFoodPosition = false;
+					this.food = {
+						x: Math.floor(Math.random() * this.tileCount),
+						y: Math.floor(Math.random() * this.tileCount)
+					};
+					break;
+				}
+			}
+			for (const segment of this.snake) {
+				if (this.food.x === segment.x && this.food.y === segment.y) {
 					validFoodPosition = false;
 					this.food = {
 						x: Math.floor(Math.random() * this.tileCount),

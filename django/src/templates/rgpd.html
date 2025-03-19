@@ -1,0 +1,174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="">
+    <title>RGPD</title>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Page RGPD - ft_transcendence</h1>
+        <h2 class="text-center">Gestion de vos Données Personnelles (RGPD)</h2>
+
+        <p class="mt-4">
+          Chez ft_transcendence, nous nous engageons à protéger vos données personnelles conformément au Règlement Général sur la Protection des Données (RGPD). Ce règlement vise à protéger la vie privée et les informations personnelles des individus au sein de l'Union Européenne (UE) et de l'Espace Économique Européen (EEE).
+        </p>
+
+        <p>
+          Le RGPD vous confère plusieurs droits fondamentaux en matière de gestion et de protection de vos données personnelles. Nous appliquons ces droits dans notre plateforme afin de garantir une transparence totale et un contrôle complet sur vos informations.
+        </p>
+
+        <p>
+          Vous trouverez ci-dessous un aperçu des droits que vous pouvez exercer, ainsi que des boutons pour effectuer des demandes spécifiques.
+        </p>
+
+        <h2 class="mt-5 mb-4 text-center">Vos Droits en vertu du RGPD</h2>
+
+        <!-- Droit d'accès -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <strong>1. Droit d'accès (Article 15)</strong>
+          </div>
+          <div class="card-body">
+            <p>
+              Vous avez le droit de consulter les informations personnelles que nous avons collectées sur vous. Cela inclut des informations telles que votre nom, prénom, âge, email et sexe. Vous pouvez également savoir comment vos données sont utilisées et à quelles fins.
+            </p>
+            <button class="btn btn-primary" onclick="handleRGPDRequest('access')">
+              <i class="fas fa-eye"></i> Demander l'accès à mes données
+            </button>
+          </div>
+        </div>
+
+        <!-- Droit de rectification -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <strong>2. Droit de rectification (Article 16)</strong>
+          </div>
+          <div class="card-body">
+            <p>
+              Si vos informations personnelles sont incorrectes ou incomplètes, vous avez le droit de demander leur rectification. Cela vous permet de maintenir des informations exactes et à jour dans votre compte.
+            </p>
+            <button class="btn btn-warning" onclick="handleRGPDRequest('rectify')">
+              <i class="fas fa-edit"></i> Mettre à jour mes informations
+            </button>
+          </div>
+        </div>
+
+        <!-- Droit à l'effacement -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <strong>3. Droit à l'effacement (droit à l'oubli) (Article 17)</strong>
+          </div>
+          <div class="card-body">
+            <p>
+              Vous pouvez demander la suppression complète de votre compte et de toutes vos données personnelles. Une fois cette demande effectuée, nous procéderons à la suppression dans un délai de 30 jours, sauf s'il existe des raisons légales ou réglementaires de conserver vos informations.
+            </p>
+            <button class="btn btn-danger" onclick="handleRGPDRequest('delete')">
+              <i class="fas fa-trash"></i> Supprimer mon compte
+            </button>
+          </div>
+        </div>
+
+        <!-- Droit à la limitation du traitement -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <strong>4. Droit à la limitation du traitement (Article 18)</strong>
+          </div>
+          <div class="card-body">
+            <p>
+              Ce droit vous permet de restreindre l'utilisation de vos données personnelles. Par exemple, si vous avez des doutes sur l'exactitude de vos données ou si vous souhaitez limiter leur traitement sans les supprimer.
+            </p>
+            <button class="btn btn-secondary" onclick="handleRGPDRequest('restrict')">
+              <i class="fas fa-lock"></i> Restreindre le traitement de mes données
+            </button>
+          </div>
+        </div>
+
+        <!-- Droit à la portabilité des données -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <strong>5. Droit à la portabilité des données (Article 20)</strong>
+          </div>
+          <div class="card-body">
+            <p>
+              Vous pouvez demander à recevoir vos données personnelles dans un format lisible par machine (CSV, JSON). Cela vous permet de transférer vos informations à un autre service ou de les stocker pour vos besoins personnels.
+            </p>
+            <button class="btn btn-success" onclick="handleRGPDRequest('portability')">
+              <i class="fas fa-file-download"></i> Télécharger mes données
+            </button>
+          </div>
+        </div>
+
+        <!-- Informations supplémentaires -->
+        <div class="mt-5">
+          <h3>Notre engagement en matière de conservation des données</h3>
+          <p>
+            Le RGPD ne prévoit pas spécifiquement l'obligation de suppression automatique des comptes inactifs ni un délai de 30 jours pour purger les demandes de suppression. Cependant, il impose les principes de minimisation des données et de limitation de conservation qui doivent être pris en compte dans la gestion de vos données.
+          </p>
+          <p>
+            En conformité avec ces principes, nous effectuons une révision périodique de notre base de données tous les 30 jours afin de nous assurer que nous ne conservons pas de données personnelles inutiles ou obsolètes. Cette révision est effectuée en respectant les articles suivants :
+          </p>
+
+          <!-- Principe de limitation de conservation -->
+          <h4>1. Principe de limitation de conservation (Article 5, paragraphe 1, point e)</h4>
+          <p>
+            Les données personnelles doivent être conservées sous une forme permettant l'identification des personnes concernées pendant une durée n'excédant pas celle nécessaire au regard des finalités pour lesquelles elles sont traitées. Cela signifie que nous ne devons pas conserver les données personnelles plus longtemps que nécessaire.
+          </p>
+          <p>
+            <em>Interprétation :</em> La suppression ou l'anonymisation des comptes inactifs (par exemple, après 12 mois d'inactivité) peut être justifiée en respectant ce principe, car il est recommandé de ne pas conserver des données inutiles. Toutefois, cela doit être clairement expliqué aux utilisateurs dans la politique de confidentialité et les conditions d'utilisation.
+          </p>
+
+          <!-- Principe de minimisation des données -->
+          <h4>2. Principe de minimisation des données (Article 5, paragraphe 1, point c)</h4>
+          <p>
+            Les données personnelles collectées doivent être adéquates, pertinentes et limitées à ce qui est nécessaire au regard des finalités pour lesquelles elles sont traitées.
+          </p>
+          <p>
+            <em>Interprétation :</em> Le fait de purger les données des comptes inactifs ou de traiter automatiquement les demandes de suppression peut répondre au principe de minimisation, en évitant de conserver des données qui ne sont plus pertinentes ou nécessaires.
+          </p>
+
+          <!-- Exercice des droits des utilisateurs -->
+          <h4>3. Exercice des droits des utilisateurs (Article 12)</h4>
+          <p>
+            Le responsable du traitement doit faciliter l'exercice des droits des utilisateurs (comme la demande de suppression) et répondre sans retard injustifié et, en tout état de cause, dans un délai d'un mois (30 jours).
+          </p>
+          <p>
+            <em>Interprétation :</em> Le délai de 30 jours pour traiter les demandes de suppression est conforme à cet article, car le RGPD impose ce délai pour répondre aux demandes des utilisateurs concernant leurs droits.
+          </p>
+        </div>
+
+        <div class="mt-4">
+          <h3>Pratiques de conservation des données</h3>
+          <p>
+            En application des principes ci-dessus, nous nous engageons à :
+          </p>
+          <ul>
+            <li>
+              <strong>Supprimer ou anonymiser les comptes inactifs :</strong> Si vous n'avez pas utilisé votre compte depuis plus de 12 mois, nous procéderons à la suppression ou à l'anonymisation de vos données personnelles, sauf demande contraire de votre part ou obligation légale de les conserver. Cette suppression est effectuée pour garantir que nous ne conservons que des informations pertinentes et nécessaires.
+            </li>
+            <li>
+              <strong>Purger les demandes de suppression :</strong> Toutes les demandes de suppression effectuées par les utilisateurs sont traitées dans un délai de 30 jours maximum, conformément à l'Article 12 du RGPD. Après ce délai, les données sont définitivement supprimées, sauf demande contraire ou obligation légale.
+            </li>
+          </ul>
+          <p>
+            Ces pratiques respectent les principes de minimisation des données et de limitation de conservation, assurant que nous gérons vos informations personnelles de manière transparente et sécurisée.
+          </p>
+        </div>
+
+        <div class="mt-4 text-center footer-links">
+          <p>
+            Si vous avez des questions ou des préoccupations concernant notre gestion des données ou l'exercice de vos droits, n'hésitez pas à nous contacter à :
+            <a href="mailto:support@ft_transcendence.com">support@ft_transcendence.com</a>.
+          </p>
+          <div class="mt-3">
+            <a href="/profile" class="btn btn-primary me-2">Retourner à mon profil</a>
+            <a href="/legal" class="btn btn-outline-secondary">Voir les informations légales complètes</a>
+          </div>
+        </div>
+        <input type="hidden" id="user_id" value="<%= @user['id'] %>">
+    </div>
+
+    <!-- Toast notifications container -->
+    <div class="toast-container"></div>

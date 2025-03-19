@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	updateAuthButtons();
 
 	window.loadContent = function(url, addToHistory = true) {
-		
+
 		window.isDynamicLoading = true;
 		cleanupScriptsAndEvents();
 
@@ -66,7 +66,10 @@ document.addEventListener('DOMContentLoaded', function () {
 							if (scriptUrl.includes('gameInvitations.js')) {
                                 initGameInvitations();
                             }
-						}, scriptUrl.includes('sphere-animation.js') || scriptUrl.includes('snake.js'));
+							if (scriptUrl.includes('cube-animation.js')){
+								initCubeAnimation();
+							}
+						}, scriptUrl.includes('sphere-animation.js') || scriptUrl.includes('snake.js') || scriptUrl.includes('cube-animation.js'));
 					}
 					updateAuthButtons();
 				});
@@ -76,6 +79,20 @@ document.addEventListener('DOMContentLoaded', function () {
 				}
 			});
 	}
+
+	function initCubeAnimation() {
+        console.log('Initializing cube animation...');
+        if (window.cubeAnimation) {
+            console.log('Cleaning up old cube animation...');
+            window.cubeAnimation.cleanup();
+        }
+        const container = document.getElementById('cube-container');
+        if (!container) {
+            console.error('Cube container not found!');
+            return;
+        }
+        window.cubeAnimation = new CubeAnimation(container);
+    }
 
     function initGameInvitations() {
         console.log('Initializing game invitations...');
@@ -144,13 +161,13 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (window.pongServerGame) {
 			console.log("Found pongServerGame, cancelling any pending invitations");
 			window.pongServerGame.cancelPendingInvitations();
-			
+
 			if (window.pongServerGame.isGameRunning) {
 				console.log("Game is running, stopping game");
 				window.pongServerGame.stopGame();
 			}
 		}
-		
+
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic]');
 		dynamicScripts.forEach(script => {
 			if (!script.src.includes('pong.js') && !script.src.includes('pongServer.js')) {
@@ -176,6 +193,11 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.snakeGame.cleanup();
 			window.snakeGame = null;
 		}
+		if (window.cubeAnimation) {
+            console.log('Cleaning up cube animation...');
+            window.cubeAnimation.cleanup();
+            window.cubeAnimation = null;
+        }
         if (window.gameInvitationsManager) {
             window.gameInvitationsManager.cleanup();
         }

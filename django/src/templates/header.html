@@ -1,70 +1,127 @@
 {% load static %}
 {% block content %}
 <header>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chivo:ital,wght@0,100..900;1,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/header.css' %}">
-    <nav>
-        <h1>TRANSCENDENCE</h1>
-        <ul>
-            <li><button class="nav-button" data-url="{% url 'home' %}">Home</button></li>
-            <!-- Game buttons moved to auth-header.js -->
-            <span id="game-buttons"></span>
-            <span id="auth-buttons"></span>
-        </ul>
-    </nav>
+	<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chivo:ital,wght@0,100..900;1,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="{% static 'css/header.css' %}">
+	<nav>
+		<h1>TRANSCENDENCE</h1>
+		<ul>
+			<li><button class="nav-button" data-url="{% url 'home' %}">Home</button></li>
+			<!-- Game buttons moved to auth-header.js -->
+			<span id="game-buttons"></span>
+			<span id="auth-buttons"></span>
+		</ul>
+	</nav>
 
-    <div id="pong-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2>Game Mode</h2>
-            <button class="modal-button" data-url="{% url 'local' %}">Local</button>
-            <button class="modal-button" data-url="{% url 'vsBot' %}">IA</button>
-            <button class="modal-button" data-url="{% url 'match' %}">Match</button>
-            <button class="modal-button" data-url="{% url 'tournament' %}">Tournament</button>
-        </div>
-    </div>
+	<div id="pong-modal" class="modal">
+		<div class="modal-content">
+			<span class="close-modal">&times;</span>
+			<h2>Pong Game</h2>
+			<button class="modal-button" data-url="{% url 'local' %}">Local</button>
+			<button class="modal-button" data-url="{% url 'vsBot' %}">IA</button>
+			<button class="modal-button" data-url="{% url 'match' %}">Match</button>
+			<button class="modal-button" data-url="{% url 'tournament' %}">Tournament</button>
+			<h2>Other Game</h2>
+			<button class="modal-button" data-url="{% url 'snake' %}"> Snake </button>
+		</div>
+	</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const pongModal = document.getElementById('pong-modal');
-            const closeModalButton = document.querySelector('.close-modal');
-            
-            // Pong button setup moved to updateAuthButtons
-            
-            closeModalButton.addEventListener('click', function () {
-                pongModal.style.display = 'none';
-            });
-            window.addEventListener('click', function (event) {
-                if (event.target === pongModal) {
-                    pongModal.style.display = 'none';
-                }
-            });
-            const modalButtons = document.querySelectorAll('.modal-button');
-            modalButtons.forEach(button => {
-                button.addEventListener('click', function () {
-                    const url = button.getAttribute('data-url');
-                    if (url) {
-                        window.location.href = url;
-                    }
-                });
-            });
-        });
-    </script>
+	<div id="friends-modal" class="modal">
+		<div class="friends-modal-content">
+			<span class="close-friend-modal">&times;</span>
+			<h2>Friends List</h2>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/"
-            }
-        }
-    </script>
+			<form method="post">
+				{% csrf_token %}
+				<input type="text" name="username" placeholder="Add Friend" required>
+				<button type="submit">+</button>
+			</form>
 
-    <style>
-        @font-face {
-            font-family: 'PPNeueMontreal';
-            src: url('{% static "fonts/PPNeueMontreal-Book.otf" %}') format('truetype');
-        }
-    </style>
+			<div class="horizontal-line"></div>
+
+			{% if messages %}
+				<ul class="messages">
+					{% for message in messages %}
+						<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+					{% endfor %}
+				</ul>
+			{% endif %}
+
+			<div class="modal-friends-list">
+				<div class="friends-container">
+					{% for friend in friends %}
+					<div class="friends-list-item">
+						<div class="profile-picture-container">
+							{% if friend.profile_picture %}
+								<img src="{{ friend.profile_picture.url }}" alt="{{ friend.username }}" class="profile-picture">
+							{% else %}
+								<div class="profile-picture">
+									<span>{{ friend.username|first|upper }}</span>
+								</div>
+							{% endif %}
+							<span class="status-dot {% if user.is_online %}green{% else %}gray{% endif %}"></span>
+						</div>
+						<div class="friends-info">
+							<span class="friends-username">{{ friend.username }}</span>
+							<span class="friends-state {% if user.is_online %}connected{% else %}disconnected{% endif %}">disconnected</span>
+						</div>
+					</div>
+					{% endfor %}
+				</div>
+			</div>
+
+			{% csrf_token %}
+			<div class="">
+				<h2 class="">Invitations de jeu</h2>
+				<div id="game-invitations-container">
+					<p class="">Chargement des invitations...</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			const pongModal = document.getElementById('pong-modal');
+			const closeModalButton = document.querySelector('.close-modal');
+
+			closeModalButton.addEventListener('click', function () {
+				pongModal.style.display = 'none';
+			});
+			window.addEventListener('click', function (event) {
+				if (event.target === pongModal) {
+					pongModal.style.display = 'none';
+				}
+			});
+			const modalButtons = document.querySelectorAll('.modal-button');
+			modalButtons.forEach(button => {
+				button.addEventListener('click', function () {
+					const url = button.getAttribute('data-url');
+					if (url) {
+						window.location.href = url;
+					}
+				});
+			});
+		});
+	</script>
+
+	<script type="importmap">
+		{
+			"imports": {
+				"three": "https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js",
+				"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/"
+			}
+		}
+	</script>
+
+	<style>
+		@font-face {
+			font-family: 'PPNeueMontreal';
+			src: url('{% static "fonts/PPNeueMontreal-Book.otf" %}') format('truetype');
+		}
+	</style>
+	<!-- <script src="{% static 'js/loadFriends.js' %}"></script> -->
+
+
 </header>
 {% endblock %}

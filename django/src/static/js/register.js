@@ -22,7 +22,7 @@ function registerFormEvent() {
                 const errorDiv = document.getElementById("errorMessage");
                 errorDiv.textContent = data.error;
                 errorDiv.style.display = "block";
-            }, 100); 
+            }, 100);
         }
     })
 }

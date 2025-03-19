@@ -7,15 +7,65 @@
     {% load static %}
 	<link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
-<body>
-    <h1>Connexion</h1>
-    <div id="errorMessage" style="color: red; display: none;"></div>
-    <form id="loginForm">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Se connecter</button>
-    </form>
-    <script src="{% static 'js/login.js' %}"></script>
-    <a href="{% url 'social:begin' '42' %}">Se connecter avec 42</a>
-</body>
+	<body>
+		<div class="box">
+			<div class="left-box">
+				<div class="cube">
+					<div id="cube-container"></div>
+				</div>
+				<div class="signup">
+					<a href="{% url 'register' %}">I'm not a TRNSCNDNC member</a>
+				</div>
+			</div>
+			<div class="right-box">
+				<h1>Connexion</h1>
+				<div id="errorMessage" style="color: red; display: none;"></div>
+				<div>
+					<form id="loginForm">
+						{% csrf_token %}
+						<div class="username group">
+							<img src="{% static 'assets/username.png' %}">
+							{{ form.username }}
+						</div>
+						<div class="password group">
+							<img src="{% static 'assets/password1.png' %}">
+							{{ form.password }}
+						</div>
+						<button type="submit" class="submit-button">Se connecter</button>
+						<div class="social">
+							<p>ou se connecter avec</p>
+							<a href="{% url 'social:begin' '42' %}">
+								<img src="{% static 'assets/42.svg' %}" class="social-img">
+							</a>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+		<div id="verifyModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<span class="close-modal">&times;</span>
+					<h1>Vérification du code</h1>
+				</div>
+				<div id="verifyErrorMessage"></div>
+				<form id="verifyCodeForm">
+					{% csrf_token %}
+					<div class="label-code">
+						<label for="code">Code de vérification :</label>
+					</div>
+					<div class="input-code">
+						<input type="text" id="code" name="code" required>
+					</div>
+					<div class="button-code">
+						<button type="submit">Vérifier</button>
+					</div>
+				</form>
+			</div>
+		</div>
+		<script type="module" src="{% static 'js/cube-animation.js' %}"></script>
+		<script src="{% static 'js/login.js' %}"></script>
+		<script src="{% static 'js/verify_code.js' %}"></script>
+		<!-- <script src="{% static 'js/closeModal.js' %}"></script> -->
+	</body>
 </html>

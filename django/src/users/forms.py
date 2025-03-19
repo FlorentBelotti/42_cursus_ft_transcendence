@@ -1,11 +1,19 @@
+from typing import Any
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserChangeForm, PasswordChangeForm
 from .models import customUser
+from django.contrib.auth.forms import AuthenticationForm
 
 User = get_user_model()
+
+class CustomLoginForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({'placeholder': 'Nom d\'utilisateur'})
+        self.fields['password'].widget.attrs.update({'placeholder': 'Mot de passe'})
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -13,6 +21,13 @@ class RegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = ["username", "email", "password1", "password2"]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({'placeholder': 'Username'})
+        self.fields['email'].widget.attrs.update({'placeholder': 'Email'})
+        self.fields['password1'].widget.attrs.update({'placeholder': 'Password'})
+        self.fields['password2'].widget.attrs.update({'placeholder': 'Confirm Password'})
 
 class UserUpdateForm(UserChangeForm):
     class Meta:

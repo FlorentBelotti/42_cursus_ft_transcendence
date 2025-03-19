@@ -29,7 +29,7 @@ from rest_framework.response import Response
 def protected_view(request):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Non authentifié"}, status=401)
-    
+
     return JsonResponse({"message": f"Bienvenue, {request.user.username} !"})
 
 # Create
@@ -101,14 +101,14 @@ def logout_action(request):
 class RefreshTokenView(APIView):
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token') or request.data.get('refresh_token')
-        
+
         if not refresh_token:
             return Response({"error": "Refresh token manquant"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         try:
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
-            
+
             response = Response({"access_token": access_token}, status=status.HTTP_200_OK)
             response.set_cookie(
                 key='access_token',
@@ -117,7 +117,7 @@ class RefreshTokenView(APIView):
                 secure=True  # En production uniquement
             )
             return response
-            
+
         except Exception as e:
             return Response({"error": "Refresh token invalide"}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -148,18 +148,18 @@ def get_user_invitations(request):
     Get all game invitations for the current user.
     """
     print(f"API Invitations: Getting invitations for {request.user.username}")
-    
+
     # Expire old pending invitations first
     pending_invitations = GameInvitation.objects.filter(recipient=request.user, status='pending')
     for invitation in pending_invitations:
         invitation.expire_if_needed()
-    
+
     # Get active pending invitations
     active_invitations = GameInvitation.objects.filter(
-        recipient=request.user, 
+        recipient=request.user,
         status='pending'
     ).select_related('sender').order_by('-created_at')
-    
+
     invitations_data = []
     for invitation in active_invitations:
         sender = invitation.sender
@@ -174,7 +174,7 @@ def get_user_invitations(request):
             'expires_at': invitation.expires_at.isoformat(),
             'time_remaining': int((invitation.expires_at - timezone.now()).total_seconds())
         })
-    
+
     return JsonResponse({
         'invitations': invitations_data
     })
@@ -188,14 +188,14 @@ def respond_to_invitation(request, invitation_id):
         invitation = GameInvitation.objects.get(id=invitation_id, recipient=request.user)
         if invitation.expire_if_needed():
             return JsonResponse({'success': False, 'message': 'Cette invitation a expiré'})
-        
+
         action = request.data.get('action', '') if hasattr(request, 'data') else request.POST.get('action', '')
         if action not in ['accept', 'decline']:
             return JsonResponse({'success': False, 'message': 'Action invalide'})
 
         invitation.status = action + 'ed'
         invitation.save()
-        
+
         if action == 'accept':
             return JsonResponse({
                 'success': True,
@@ -205,7 +205,7 @@ def respond_to_invitation(request, invitation_id):
             })
         else:
             return JsonResponse({'success': True, 'message': 'Invitation refusée'})
-            
+
     except GameInvitation.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Invitation introuvable'})
 
@@ -220,7 +220,7 @@ def cancel_game_invitation(request):
             sender=request.user,
             status='pending'
         ).update(status='cancelled')
-        
+
         return JsonResponse({
             'success': True,
             'message': f'Cancelled {cancelled_count} invitation(s)'
@@ -230,3 +230,17 @@ def cancel_game_invitation(request):
             'success': False,
             'message': 'Method not allowed'
         }, status=405)
+
+@login_required
+@api_view(['GET'])
+def get_all_friends(request):
+    if request.user.is_authenticated:
+        all_friends = request.user.friends.all()
+    else:
+        all_friends = []
+
+    serializer = UserSerializer(all_friends, many=True)
+    return Response({
+        'friends': serializer.data, 
+        'count': len(all_friends)
+    })

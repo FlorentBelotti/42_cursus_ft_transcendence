@@ -13,8 +13,17 @@ function loginFormEvent() {
         if ('success' in data) {
             console.log('Success:', "Redirecting to double authentication");
             localStorage.setItem('user_id', data.user_id);
-            let verifyCodeUrl = `/verify_code/${data.user_id}/`;
-            window.loadContent(verifyCodeUrl);
+			const modal = document.getElementById('verifyModal');
+			// const closeModal = document.querySelector('.close-modal');
+
+			modal.style.display = 'block';
+			document.addEventListener('click', function (event) {
+                if (event.target.classList.contains('close-modal')) {
+                    modal.style.display = 'none';
+                }
+			})
+            // let verifyCodeUrl = `/verify_code/${data.user_id}/`;
+            // window.loadContent(verifyCodeUrl);
         }
         else if ('error' in data) {
             console.log('Error:', "Wrong username or password");
@@ -23,7 +32,7 @@ function loginFormEvent() {
                 const errorDiv = document.getElementById("errorMessage");
                 errorDiv.textContent = data.error;
                 errorDiv.style.display = "block";
-            }, 100); 
+            }, 100);
         }
     })
 }

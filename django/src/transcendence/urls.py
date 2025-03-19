@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
 from views import views
@@ -27,6 +28,9 @@ urlpatterns = [
     path('vsBot/', views.define_render, name='vsBot'),
     path('match/', views.define_render, name='match'),
     path('tournament/', views.define_render, name='tournament'),
+
+	path('admin/', admin.site.urls),
+    path('users/', include('users.urls'))
 ]
 
 if settings.DEBUG:
