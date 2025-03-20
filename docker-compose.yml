@@ -45,7 +45,31 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml # Fichier de configuration
+      - prometheus_data:/prometheus # Stockage persistant des données
+    ports:
+      - "9090:9090" # Interface de Prometheus
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000" # Interface de Grafana
+    volumes:
+      - grafana_data:/var/lib/grafana # Stockage persistant des données Grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin # Nom d'utilisateur par défaut
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Mot de passe par défaut (à changer après le premier login)
+
 volumes:
   postgres_data:
   pgadmin_data:
   redis_data:
+  prometheus_data:
+  grafana_data:
