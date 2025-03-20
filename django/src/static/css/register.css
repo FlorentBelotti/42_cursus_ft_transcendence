@@ -1,11 +1,103 @@
 body {
-	margin: 0;
-	padding: 150px;
+	/* margin-top: 150px; */
+	/* padding: 150px; */
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 100vh;
 	font-family: 'Bebas Neue', sans-serif;
 	background-color: #F7F7F7;
-	overflow-x: hidden;
+	/* overflow-x: hidden; */
 }
 
-/* .background{
-    padding: 80px 40px 10px 40px;
-} */
+.box {
+	display: flex;
+	width: 100%;
+	max-width: 900px;
+	border: solid 1px #000;
+	margin: 0 auto;
+}
+
+.left-box, .right-box{
+	flex: 1;
+	padding: 40px;
+}
+
+.inscription-box h1{
+	font-family: 'Bebas Neue', sans-serif;
+	font-size: 42px;
+	font-weight: 400;
+	text-align: center;
+	margin-bottom: 30px;
+	margin-left: 50px;
+}
+
+.form-group img{
+	width: 20px;
+	/* margin-right: 10px; */
+}
+
+.form-group{
+	display: flex;
+	align-items: center;
+	margin-top: 40px;
+	padding-bottom: 5px;
+	margin-left: 50px;
+	border-bottom: solid 1px #000;
+}
+
+.form-group input{
+	border: none;
+	background-color: #F7F7F7;
+	width: 100%;
+	font-size: 16px;
+	padding: 0 20px 0 10px;
+	font-family: 'Chivo', sans-serif;
+	outline: none;
+}
+
+.submit-button{
+	margin-top: 60px;
+	border: solid 1px transparent;
+	background-color: #000;
+	color: #F7F7F7;
+	padding: 15px 30px;
+	display: block;
+	margin-left: 50px;
+	font-size: 20px;
+	box-sizing: border-box;
+}
+
+.submit-button:hover{
+	background-color: transparent;
+	border: solid 1px #000 ;
+	color: #000;
+}
+
+.right-box{
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+#cube-container{
+	width: 400px;
+	height: 400px;
+	/* margin-bottom: 20px; */
+}
+
+.connection {
+	text-align: center;
+	/* margin-top: 20px; */
+}
+
+.connection a{
+	color: #323232;
+	/* text-decoration: none; */
+}
+
+.connection a:hover{
+	color:red;
+	/* border-bottom: solid 1px #949494; */
+}

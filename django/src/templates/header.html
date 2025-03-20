@@ -16,11 +16,13 @@
     <div id="pong-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
-            <h2>Game Mode</h2>
+            <h2>Pong Mode</h2>
             <button class="modal-button" data-url="{% url 'local' %}">Local</button>
             <button class="modal-button" data-url="{% url 'vsBot' %}">IA</button>
             <button class="modal-button" data-url="{% url 'match' %}">Match</button>
             <button class="modal-button" data-url="{% url 'tournament' %}">Tournament</button>
+			<h2>Other Game</h2>
+			<button class="modal-button" data-url="{% url 'snake' %}">Snake</button>
         </div>
     </div>
 
@@ -28,9 +30,9 @@
         document.addEventListener('DOMContentLoaded', function () {
             const pongModal = document.getElementById('pong-modal');
             const closeModalButton = document.querySelector('.close-modal');
-            
+
             // Pong button setup moved to updateAuthButtons
-            
+
             closeModalButton.addEventListener('click', function () {
                 pongModal.style.display = 'none';
             });

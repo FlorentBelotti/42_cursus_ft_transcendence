@@ -1,18 +1,18 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    font-family: 'PPNeueMontreal', sans-serif; /* Alignement avec le header */
+    background-color: #F7F7F7; /* Couleur de fond de la modale */
     margin: 0;
     padding: 0;
 }
 
 .container {
     width: 100%;
-    padding: 60px;
-    background-color: #ffffff;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    margin: 20px auto;
-    max-width: 600px;
-    border-radius: 8px;
+    padding: 0; /* Pas de padding supplémentaire dans la modale */
+    background-color: transparent; /* Pas de fond spécifique */
+    box-shadow: none; /* Pas d'ombre dans la modale */
+    margin: 0;
+    max-width: none; /* Pleine largeur dans la modale */
+    border-radius: 0;
 }
 
 form {
@@ -21,7 +21,7 @@ form {
 
 input[type="text"] {
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid #000; /* Alignement avec le style du header */
     border-radius: 4px;
     width: calc(100% - 22px);
 }
@@ -51,6 +51,7 @@ input[type="text"] {
     width: 40px;
     height: 40px;
     object-fit: cover;
+    border-radius: 50%;
 }
 
 .status-notification {

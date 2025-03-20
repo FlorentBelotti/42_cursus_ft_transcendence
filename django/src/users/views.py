@@ -33,7 +33,7 @@ import time
 def protected_view(request):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Non authentifié"}, status=401)
-    
+
     return JsonResponse({"message": f"Bienvenue, {request.user.username} !"})
 
 # Create
@@ -105,14 +105,14 @@ def logout_action(request):
 class RefreshTokenView(APIView):
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token') or request.data.get('refresh_token')
-        
+
         if not refresh_token:
             return Response({"error": "Refresh token manquant"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         try:
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
-            
+
             response = Response({"access_token": access_token}, status=status.HTTP_200_OK)
             response.set_cookie(
                 key='access_token',
@@ -121,7 +121,7 @@ class RefreshTokenView(APIView):
                 secure=True  # En production uniquement
             )
             return response
-            
+
         except Exception as e:
             return Response({"error": "Refresh token invalide"}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -152,18 +152,18 @@ def get_user_invitations(request):
     Get all game invitations for the current user.
     """
     print(f"API Invitations: Getting invitations for {request.user.username}")
-    
+
     # Expire old pending invitations first
     pending_invitations = GameInvitation.objects.filter(recipient=request.user, status='pending')
     for invitation in pending_invitations:
         invitation.expire_if_needed()
-    
+
     # Get active pending invitations
     active_invitations = GameInvitation.objects.filter(
-        recipient=request.user, 
+        recipient=request.user,
         status='pending'
     ).select_related('sender').order_by('-created_at')
-    
+
     invitations_data = []
     for invitation in active_invitations:
         sender = invitation.sender
@@ -178,7 +178,7 @@ def get_user_invitations(request):
             'expires_at': invitation.expires_at.isoformat(),
             'time_remaining': int((invitation.expires_at - timezone.now()).total_seconds())
         })
-    
+
     return JsonResponse({
         'invitations': invitations_data
     })
@@ -192,22 +192,22 @@ def respond_to_invitation(request, invitation_id):
         invitation = GameInvitation.objects.get(id=invitation_id, recipient=request.user)
         if invitation.expire_if_needed():
             return JsonResponse({'success': False, 'message': 'Cette invitation a expiré'})
-        
+
         data = json.loads(request.body) if request.body else {}
         action = data.get('action', request.POST.get('action', ''))
-        
+
         if action not in ['accept', 'decline']:
             return JsonResponse({'success': False, 'message': 'Action invalide'})
 
         invitation.status = action + 'ed'
         invitation.save()
-        
+
         # Generate a unique game_id for the match if accepted
         if action == 'accept':
             game_id = f"invitation_{invitation.id}_{int(time.time())}"
             invitation.game_id = game_id
             invitation.save()
-            
+
             # Notify sender via WebSocket
             try:
                 channel_layer = get_channel_layer()
@@ -224,7 +224,7 @@ def respond_to_invitation(request, invitation_id):
                 print(f"Notification sent to user_{invitation.sender.id}_notifications")
             except Exception as e:
                 print(f"Error notifying sender about accepted invitation: {e}")
-            
+
             return JsonResponse({
                 'success': True,
                 'message': 'Invitation acceptée',
@@ -245,9 +245,9 @@ def respond_to_invitation(request, invitation_id):
                 )
             except Exception as e:
                 print(f"Error notifying sender about declined invitation: {e}")
-                
+
             return JsonResponse({'success': True, 'message': 'Invitation refusée'})
-            
+
     except GameInvitation.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Invitation introuvable'})
 
@@ -262,30 +262,30 @@ def cancel_game_invitation(request):
             sender=request.user,
             status='pending'
         ).values('id', 'recipient_id'))
-        
+
         # Log cancellation action for debugging
         print(f"User {request.user.username} is cancelling {len(pending_invitations)} invitations")
-        
+
         # Update status to cancelled
         cancelled_count = GameInvitation.objects.filter(
             sender=request.user,
             status='pending'
         ).update(status='cancelled')
-        
+
         affected_recipients = []
-        
+
         # Try to notify recipients via WebSocket (if channel layer is configured)
         if pending_invitations:
             try:
                 from channels.layers import get_channel_layer
                 from asgiref.sync import async_to_sync
-                
+
                 channel_layer = get_channel_layer()
                 if channel_layer:
                     for invitation in pending_invitations:
                         recipient_id = invitation['recipient_id']
                         affected_recipients.append(recipient_id)
-                        
+
                         try:
                             # Send to recipient's notification channel
                             async_to_sync(channel_layer.group_send)(
@@ -303,7 +303,7 @@ def cancel_game_invitation(request):
                     print("No channel layer available for WebSocket notifications")
             except Exception as e:
                 print(f"Error with WebSocket notification system: {e}")
-                
+
         # Return success response
         return JsonResponse({
             'success': True,
@@ -324,14 +324,14 @@ def forfeit_match(request):
     try:
         # Get the user's active matches from lobby manager
         from game.websockets.pongMatchConsumer import MatchConsumer
-        
+
         # Mark user as forfeited in any active matches
         user = request.user
         forfeit_successful = False
-        
+
         for match_id, match_data in list(MatchConsumer.lobby_manager.active_matches.items()):
             players = match_data.get('players', [])
-            
+
             # Find if the current user is in this match
             for player in players:
                 if player.user.id == user.id:
@@ -344,10 +344,10 @@ def forfeit_match(request):
                             match_id, winner.user.username
                         )
                         forfeit_successful = True
-        
+
         return JsonResponse({
             'success': True,
-            'message': 'Forfeit processed successfully' if forfeit_successful 
+            'message': 'Forfeit processed successfully' if forfeit_successful
                       else 'No active matches found'
         })
     except Exception as e:
@@ -365,28 +365,28 @@ def forfeit_tournament(request):
     try:
         # Get the user's active tournament from tournament manager
         from game.websockets.pongTournamentConsumer import TournamentConsumer
-        
+
         # Mark user as forfeited in any active tournament
         user = request.user
         forfeit_successful = False
-        
+
         # Access the singleton tournament manager
         tournament_manager = TournamentConsumer.tournament_manager
-        
+
         # Find all tournaments where the user is participating
         for tournament_id, tournament in list(tournament_manager.tournaments.items()):
             players = tournament.get("players", [])
-            
+
             # Find if the current user is in this tournament
             for player in players:
                 if player.user.id == user.id:
                     # Use existing tournament logic to handle player disconnect
                     forfeit_successful = async_to_sync(tournament_manager.handle_player_disconnect)(player)
                     break
-        
+
         return JsonResponse({
             'success': True,
-            'message': 'Tournament forfeit processed successfully' if forfeit_successful 
+            'message': 'Tournament forfeit processed successfully' if forfeit_successful
                       else 'No active tournament found'
         })
     except Exception as e:

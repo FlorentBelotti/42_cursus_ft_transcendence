@@ -33,6 +33,8 @@ from users.serializers import UserSerializer, UserDataSerializer
 from users.forms import RegisterForm
 from users.models import customUser
 from users.forms import UserUpdateForm, CustomPasswordChangeForm, NicknameUpdateForm
+from users.forms import CustomLoginForm
+
 
 def check_auth_status(request):
     return JsonResponse({
@@ -67,16 +69,16 @@ def define_render(request, additional_context=None):
 def leaderboard(request):
     User = get_user_model()
     users = User.objects.all().order_by('-elo')
-    
+
     # Get the current user's history if they're logged in
     user_history = []
     if request.user.is_authenticated:
         user_history = request.user.history if hasattr(request.user, 'history') else []
-        
+
         # Sort history by timestamp (newest first)
         if user_history:
             user_history = sorted(user_history, key=lambda x: x.get('timestamp', ''), reverse=True)
-            
+
             # Add opponent profile picture URLs
             enhanced_history = []
             for match in user_history:
@@ -88,7 +90,7 @@ def leaderboard(request):
                 except User.DoesNotExist:
                     pass
                 enhanced_history.append(match_copy)
-            
+
             user_history = enhanced_history
     return define_render(request, {
         'users': users,
@@ -184,10 +186,10 @@ def register(request):
     else:
         form = RegisterForm()
         return define_render(request, {'form': form})
-    
+
 def user_login(request):
     if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
+        form = CustomLoginForm(request, data=request.POST)  # Utilisez CustomLoginForm ici
         if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
@@ -216,7 +218,7 @@ def user_login(request):
         else:
             return JsonResponse({"error": "Wrong username or password"}, status=400)
     else:
-        form = AuthenticationForm()
+        form = CustomLoginForm()  # Utilisez CustomLoginForm ici aussi
         return define_render(request, {'form': form})
 
 def verify_code(request, user_id):
@@ -253,13 +255,13 @@ def verify_code(request, user_id):
                 'secure': True,
                 'samesite': 'Strict'
             }
-            
+
             response.set_cookie(
                 key='access_token',
                 value=access_token,
                 **cookie_params
             )
-            
+
             response.set_cookie(
                 key='refresh_token',
                 value=refresh_token,
@@ -270,17 +272,17 @@ def verify_code(request, user_id):
 
         except VerificationCode.DoesNotExist:
             return JsonResponse({"error": "Wrong authentication code"}, status=401)
-        
+
         except ValidationError as e:
             return JsonResponse({"error": "Wrong authentication code"}, status=401)
-        
+
         except PermissionDenied as e:
             return JsonResponse({"error": "Permission denied"}, status=403)
-        
+
         except DatabaseError as e:
             logger.error(f"Database error in verify_code: {str(e)}")
             return JsonResponse({"error": "Internal server error"}, status=500)
-        
+
         except Exception as e:
             logger.error(f"Unexpected error in verify_code: {str(e)}")
             return JsonResponse({"error": "Internal server error"}, status=500)
@@ -291,7 +293,7 @@ def verify_code(request, user_id):
         return render(request, 'base.html', {
             'content_template': 'verify_code.html'
         })
-    
+
 @login_required
 def friends_view(request):
     if request.method == "POST":

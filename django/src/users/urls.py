@@ -1,8 +1,8 @@
 from django.urls import path
-from .views import (create_user, list_users, user_detail, update_user, delete_user, 
-                   logout_action, RefreshTokenView, online_friends_view, 
-                   get_user_invitations, respond_to_invitation, cancel_game_invitation, 
-                   forfeit_match, forfeit_tournament) 
+from .views import (create_user, list_users, user_detail, update_user, delete_user,
+                   logout_action, RefreshTokenView, online_friends_view,
+                   get_user_invitations, respond_to_invitation, cancel_game_invitation,
+                   forfeit_match, forfeit_tournament)
 
 urlpatterns = [
     path('users/', list_users, name='list_users'),

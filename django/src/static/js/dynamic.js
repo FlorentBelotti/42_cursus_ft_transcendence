@@ -5,10 +5,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	updateAuthButtons();
 
 	window.loadContent = function(url, addToHistory = true) {
-		
+
 		window.isDynamicLoading = true;
 
-		console.log(`Navigation initiated to ${url}`);	
+		console.log(`Navigation initiated to ${url}`);
 		console.log("Starting cleanup before navigation");
 		cleanupScriptsAndEvents();
 
@@ -69,7 +69,10 @@ document.addEventListener('DOMContentLoaded', function () {
 							if (scriptUrl.includes('gameInvitations.js')) {
                                 initGameInvitations();
                             }
-						}, scriptUrl.includes('sphere-animation.js') || scriptUrl.includes('snake.js'));
+							if (scriptUrl.includes('cubeAnimation.js')){
+								initCubeAnimation();
+							}
+						}, scriptUrl.includes('sphere-animation.js') || scriptUrl.includes('snake.js') || scriptUrl.includes('cubeAnimation.js'));
 					}
 					updateAuthButtons();
 				});
@@ -79,6 +82,20 @@ document.addEventListener('DOMContentLoaded', function () {
 				}
 			});
 	}
+
+	function initCubeAnimation() {
+        console.log('Initializing cube animation...');
+        if (window.cubeAnimation) {
+            console.log('Cleaning up old cube animation...');
+            window.cubeAnimation.cleanup();
+        }
+        const container = document.getElementById('cube-container');
+        if (!container) {
+            console.error('Cube container not found!');
+            return;
+        }
+        window.cubeAnimation = new CubeAnimation(container);
+    }
 
     function initGameInvitations() {
         console.log('Initializing game invitations...');
@@ -144,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function cleanupScriptsAndEvents() {
-		
+
 		if (typeof window.declarePongForfeit === 'function') {
 			console.log("MATCH FORFEIT: Calling global forfeit declaration");
 			window.declarePongForfeit();
@@ -159,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			console.log("TOURNAMENT FORFEIT: Calling global forfeit declaration");
 			window.declarePongTournamentForfeit();
 		}
-	
+
 		if (window.pongServerGame && window.pongServerGame.socket) {
 			try {
 				console.log("Forcing socket close during cleanup");
@@ -179,19 +196,19 @@ document.addEventListener('DOMContentLoaded', function () {
 			console.log("Cleaning up pongServerGame");
 			try {
 				// Make sure the socket is closed
-				if (window.pongServerGame.socket && 
+				if (window.pongServerGame.socket &&
 					window.pongServerGame.socket.readyState === WebSocket.OPEN) {
 					console.log("Closing socket connection");
 					window.pongServerGame.socket.close();
 				}
-				
+
 				// Set flags to prevent further activity
 				window.pongServerGame.isPageUnloading = true;
 			} catch (error) {
 				console.error("Error during pongServerGame cleanup:", error);
 			}
 		}
-		
+
 		// Clean up gameInvitationsManager
 		if (window.gameInvitationsManager) {
 			console.log("Cleaning up gameInvitationsManager");
@@ -201,11 +218,11 @@ document.addEventListener('DOMContentLoaded', function () {
 				console.error("Error during gameInvitationsManager cleanup:", error);
 			}
 		}
-		
+
 		// Remove global instances to prevent conflicts on reload
 		window.pongServerGame = null;
 		window.pongGame = null;
-		
+
 		// Remove dynamic scripts
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic="true"]');
 		console.log(`Removing ${dynamicScripts.length} dynamic scripts`);
@@ -233,6 +250,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (window.gameInvitationsManager) {
 			window.gameInvitationsManager.cleanup();
 		}
+		if (window.cubeAnimation) {
+            console.log('Cleaning up cube animation...');
+            window.cubeAnimation.cleanup();
+            window.cubeAnimation = null;
+        }
 	}
 
 	function loadScript(url, callback, isModule = false) {
@@ -243,21 +265,21 @@ document.addEventListener('DOMContentLoaded', function () {
 			if (callback) callback();
 			return;
 		}
-		
+
 		const script = document.createElement('script');
 		script.setAttribute('data-dynamic', 'true');
 		script.setAttribute('data-src', url);  // Add this attribute to check for duplicates
-		
+
 		if (isModule) {
 			script.type = 'module';
 		}
-		
+
 		if (callback) {
 			script.onload = function() {
 				callback();
 			};
 		}
-		
+
 		script.src = url;
 		document.body.appendChild(script);
 	}
