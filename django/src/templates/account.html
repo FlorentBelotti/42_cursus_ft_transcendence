@@ -13,11 +13,7 @@
         <!-- Affichage des informations -->
         <div style="border: 1px solid #ccc; padding: 20px; margin-bottom: 20px;">
             <div>
-                {% if user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" style="max-width: 200px; margin-bottom: 10px;">
-                {% else %}
-                    <p>Aucune photo de profil.</p>
-                {% endif %}
+                <img src="{{ user.profile_picture.url }}" style="max-width: 200px; margin-bottom: 10px;">
                 <h5>{{ user.username }}</h5>
                 <p>Nickname: {{ user.nickname }}</p>
                 <p>Email: {{ user.email }}</p>

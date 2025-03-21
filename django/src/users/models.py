@@ -7,6 +7,7 @@ from django.db import models
 import time
 
 class customUser(AbstractUser):
+    email = models.EmailField(unique=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True, default='profile_pictures/arcane_from_arcane.png')
     elo = models.IntegerField(default=1000)
     wins = models.IntegerField(default=0)
