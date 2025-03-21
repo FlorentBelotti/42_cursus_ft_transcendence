@@ -29,6 +29,10 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import json
 import time
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework import status
 
 def protected_view(request):
     if not request.user.is_authenticated:
@@ -415,3 +419,4 @@ def forfeit_tournament(request):
             'success': False,
             'message': f'Error processing tournament forfeit: {str(e)}'
         }, status=500)
+
