@@ -415,18 +415,3 @@ def forfeit_tournament(request):
             'success': False,
             'message': f'Error processing tournament forfeit: {str(e)}'
         }, status=500)
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework import status
-
-class CheckAuthView(APIView):
-    def get(self, request):
-        # Cherche le token dans le cookie
-        token = request.COOKIES.get('access_token', '')
-        try:
-            AccessToken(token)
-            return Response({"connected": "oui"}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"connected": "non", "error": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
