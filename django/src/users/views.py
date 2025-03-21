@@ -134,17 +134,35 @@ def logout_view(request):
 
 @api_view(['GET'])
 def online_friends_view(request):
-    if request.user.is_authenticated:
-        all_friends = request.user.friends.all()
+    # Récupérer le token depuis le cookie
+    token = request.COOKIES.get('access_token', '')
+    
+    try:
+        # Valider le token
+        validated_token = AccessToken(token)
+        # Récupérer l'utilisateur à partir du token
+        user_id = validated_token['user_id']
+        user = customUser.objects.get(id=user_id)
+        
+        # Récupérer tous les amis de l'utilisateur
+        all_friends = user.friends.all()
+        # Filtrer les amis en ligne
         online_friends = [friend for friend in all_friends if friend.is_online()]
-    else:
-        online_friends = []
-
-    serializer = UserDataSerializer(online_friends, many=True)
-    return Response({
-        'online_friends': serializer.data,
-        'count': len(online_friends)
-    })
+        
+        # Sérialiser les données
+        serializer = UserDataSerializer(online_friends, many=True)
+        return Response({
+            'online_friends': serializer.data,
+            'count': len(online_friends)
+        }, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        # Si le token est invalide ou autre erreur
+        return Response({
+            'online_friends': [],
+            'count': 0,
+            'error': str(e)
+        }, status=status.HTTP_401_UNAUTHORIZED)
 
 @login_required
 def get_user_invitations(request):
@@ -397,3 +415,18 @@ def forfeit_tournament(request):
             'success': False,
             'message': f'Error processing tournament forfeit: {str(e)}'
         }, status=500)
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework import status
+
+class CheckAuthView(APIView):
+    def get(self, request):
+        # Cherche le token dans le cookie
+        token = request.COOKIES.get('access_token', '')
+        try:
+            AccessToken(token)
+            return Response({"connected": "oui"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"connected": "non", "error": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
