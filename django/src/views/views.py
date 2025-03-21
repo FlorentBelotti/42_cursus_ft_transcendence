@@ -82,13 +82,14 @@ def leaderboard(request):
             # Add opponent profile picture URLs
             enhanced_history = []
             for match in user_history:
-                match_copy = match.copy()  # Create a copy to avoid modifying original data
-                try:
-                    opponent = User.objects.get(username=match['opponent_username'])
-                    if opponent.profile_picture:
-                        match_copy['opponent_picture_url'] = opponent.profile_picture.url
-                except User.DoesNotExist:
-                    pass
+                match_copy = match.copy()
+                if 'opponent_username' in match:
+                    try:
+                        opponent = User.objects.get(username=match['opponent_username'])
+                        if opponent.profile_picture:
+                            match_copy['opponent_picture_url'] = opponent.profile_picture.url
+                    except User.DoesNotExist:
+                        pass
                 enhanced_history.append(match_copy)
 
             user_history = enhanced_history
