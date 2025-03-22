@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (create_user, list_users, user_detail, update_user, delete_user,
                    logout_action, RefreshTokenView, online_friends_view,
                    get_user_invitations, respond_to_invitation, cancel_game_invitation,
-                   forfeit_match, forfeit_tournament)
+                   forfeit_match, forfeit_tournament, friends_view)
 
 urlpatterns = [
     path('users/', list_users, name='list_users'),
@@ -18,4 +18,5 @@ urlpatterns = [
     path('invitations/cancel/', cancel_game_invitation, name='cancel_game_invitation'),
     path('match/forfeit/', forfeit_match, name='forfeit_match'),
     path('tournament/forfeit/', forfeit_tournament, name='forfeit_tournament'),
+    path('friends/', friends_view, name='friends_view'),
 ]
