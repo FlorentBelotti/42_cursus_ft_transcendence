@@ -7,9 +7,9 @@
         <h1>TRANSCENDENCE</h1>
         <ul>
             <li><button class="nav-button" data-url="{% url 'home' %}">Home</button></li>
-            <!-- Game buttons moved to auth-header.js -->
             <span id="game-buttons"></span>
             <span id="auth-buttons"></span>
+            <li><button id="friends-button">Amis</button></li>
         </ul>
     </nav>
 
@@ -21,17 +21,39 @@
             <button class="modal-button" data-url="{% url 'vsBot' %}">IA</button>
             <button class="modal-button" data-url="{% url 'match' %}">Match</button>
             <button class="modal-button" data-url="{% url 'tournament' %}">Tournament</button>
-			<h2>Other Game</h2>
-			<button class="modal-button" data-url="{% url 'snake' %}">Snake</button>
+            <h2>Other Game</h2>
+            <button class="modal-button" data-url="{% url 'snake' %}">Snake</button>
         </div>
     </div>
+
+    <div id="friends-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-friends-modal">&times;</span>
+			{% csrf_token %}
+            <div class="friends-section">
+                <h2>Mes Amis</h2>
+                <div id="add-friend-form">
+                    <input type="text" id="friend-username" placeholder="Add Friend" />
+                    <button id="add-friend-button">+</button>
+                </div>
+                <div id="friends-list">
+                    <!-- La liste sera remplie dynamiquement via JavaScript -->
+                </div>
+            </div>
+            <div class="invitations-section">
+                <h2>Invitations de jeu</h2>
+                <div id="game-invitations-container">
+                    <p>Chargement des invitations...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const pongModal = document.getElementById('pong-modal');
             const closeModalButton = document.querySelector('.close-modal');
-
-            // Pong button setup moved to updateAuthButtons
 
             closeModalButton.addEventListener('click', function () {
                 pongModal.style.display = 'none';
@@ -50,6 +72,108 @@
                     }
                 });
             });
+
+            // Friends Modal
+            const friendsModal = document.getElementById('friends-modal');
+            const friendsButton = document.getElementById('friends-button');
+            const closeFriendsModal = document.querySelector('.close-friends-modal');
+            const friendsList = document.getElementById('friends-list');
+            const addFriendButton = document.getElementById('add-friend-button');
+            const friendUsernameInput = document.getElementById('friend-username');
+
+            friendsButton.addEventListener('click', function () {
+                fetchFriends();
+                friendsModal.style.display = 'block';
+            });
+
+            closeFriendsModal.addEventListener('click', function () {
+                friendsModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', function (event) {
+                if (event.target === friendsModal) {
+                    friendsModal.style.display = 'none';
+                }
+            });
+
+            addFriendButton.addEventListener('click', function () {
+                const username = friendUsernameInput.value.trim();
+                if (username) {
+                    addFriend(username);
+                    friendUsernameInput.value = ''; // Réinitialiser l'input
+                }
+            });
+
+            function fetchFriends() {
+                fetch('/api/friends/', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            throw new Error('Non authentifié - veuillez vous reconnecter');
+                        }
+                        throw new Error('Erreur lors du chargement des amis');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.friends && data.friends.length > 0) {
+                        friendsList.innerHTML = data.friends.map(friend => `
+                            <div class="friend-item">
+                                <img src="${friend.profile_picture || '/media/profile_pictures/default.png'}"
+                                     alt="${friend.username}">
+                                <div>
+                                    <strong>${friend.nickname || friend.username}</strong>
+                                    <p>${friend.is_online ? 'En ligne' : 'Hors ligne'}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        friendsList.innerHTML = '<p>Vous n\'avez pas encore d\'amis</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    friendsList.innerHTML = `<p>Erreur: ${error.message}</p>`;
+                });
+            }
+
+            function addFriend(username) {
+                fetch('/api/friends/add/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username: username })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            throw new Error('Non authentifié - veuillez vous reconnecter');
+                        }
+                        if (response.status === 404) {
+                            throw new Error('Utilisateur non trouvé');
+                        }
+                        if (response.status === 400) {
+                            throw new Error('Cet utilisateur est déjà votre ami ou vous ne pouvez pas vous ajouter vous-même');
+                        }
+                        throw new Error('Erreur lors de l\'ajout de l\'ami');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Ami ajouté avec succès:', data);
+                    fetchFriends(); // Rafraîchir la liste des amis
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    friendsList.innerHTML = `<p>Erreur: ${error.message}</p>`;
+                });
+            }
         });
     </script>
 
@@ -62,11 +186,110 @@
         }
     </script>
 
+	<script src="{% static 'js/gameInvitations.js' %}"></script>
     <style>
         @font-face {
             font-family: 'PPNeueMontreal';
             src: url('{% static "fonts/PPNeueMontreal-Book.otf" %}') format('truetype');
         }
+
+        /* Styles existants */
+        #add-friend-form {
+            margin-bottom: 10px;
+        }
+        #friend-username {
+            padding: 5px;
+            margin-right: 5px;
+        }
+        #add-friend-button {
+            padding: 5px 10px;
+        }
+        .friend-item img {
+            height: 50px;
+            width: 50px;
+        }
+
+        /* Nouveaux styles pour la modale */
+        .modal-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .friends-section, .invitations-section {
+            flex: 1; /* Chaque section prend une part égale de l'espace */
+            overflow-y: auto; /* Permet le défilement si le contenu dépasse */
+            padding: 10px;
+            border-bottom: 1px solid #000; /* Séparation visuelle */
+        }
+
+        .friends-section {
+            border-bottom: 1px solid #000; /* Séparation entre amis et invitations */
+        }
+
+        .invitations-section {
+            border-bottom: none; /* Pas de bordure en bas pour la dernière section */
+        }
+
+        .friends-section h2, .invitations-section h2 {
+            font-family: 'Bebas Neue';
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        #friends-list, #game-invitations-container {
+            max-height: 100%; /* Limite la hauteur pour éviter le débordement */
+        }
+
+        #game-invitations-container p {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Style pour les éléments d'invitation (à personnaliser selon ton script gameInvitations) */
+        .invitation-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .invitation-item:last-child {
+            border-bottom: none;
+        }
+
+        .invitation-item img {
+            height: 40px;
+            width: 40px;
+            margin-right: 10px;
+        }
+
+        .invitation-item div {
+            flex-grow: 1;
+        }
+
+        .invitation-item button {
+            padding: 5px 10px;
+            margin-left: 5px;
+            background-color: #F7F7F7;
+            border: 1px solid #000;
+            cursor: pointer;
+        }
+
+        .invitation-item button:hover {
+            background-color: red;
+            color: white;
+        }
+
+		.invitation-avatar img,
+    	.invitation-avatar div {
+        height: 32px; /* Correspond à w-8 h-8 */
+        width: 32px;
+        margin-right: 10px;
+    }
     </style>
 </header>
 {% endblock %}

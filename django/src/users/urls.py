@@ -2,7 +2,10 @@ from django.urls import path
 from .views import (create_user, list_users, user_detail, update_user, delete_user,
                    logout_action, RefreshTokenView, online_friends_view,
                    get_user_invitations, respond_to_invitation, cancel_game_invitation,
-                   forfeit_match, forfeit_tournament)
+                   forfeit_match, forfeit_tournament, friends_view, add_friend_view)
+
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('users/', list_users, name='list_users'),
@@ -18,4 +21,11 @@ urlpatterns = [
     path('invitations/cancel/', cancel_game_invitation, name='cancel_game_invitation'),
     path('match/forfeit/', forfeit_match, name='forfeit_match'),
     path('tournament/forfeit/', forfeit_tournament, name='forfeit_tournament'),
+
+	path('friends/', friends_view, name='friends_view'),
+	path('friends/add/', add_friend_view, name='add_friend'),
+
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

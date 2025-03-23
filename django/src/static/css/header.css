@@ -121,3 +121,9 @@ nav ul li {
 .close-modal:hover {
     color: #ccc;
 }
+
+
+.friend-item img{
+	height: 50px;
+	width: 50px;
+}

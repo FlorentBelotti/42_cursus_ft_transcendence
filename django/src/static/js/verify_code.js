@@ -43,8 +43,3 @@ function verifyCodeFormEvent() {
         }
     });
 }
-
-document.addEventListener("DOMContentLoaded", function () {
-	console.log('DOM chargé, lancement de verifyCodeFormEvent');
-    verifyCodeFormEvent();
-});

@@ -29,6 +29,10 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import json
 import time
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework import status
 
 def protected_view(request):
     if not request.user.is_authenticated:
@@ -118,7 +122,8 @@ class RefreshTokenView(APIView):
                 key='access_token',
                 value=access_token,
                 httponly=True,
-                secure=True  # En production uniquement
+                secure=True,
+                # samesite='Lax' # En production uniquement
             )
             return response
 
@@ -134,17 +139,35 @@ def logout_view(request):
 
 @api_view(['GET'])
 def online_friends_view(request):
-    if request.user.is_authenticated:
-        all_friends = request.user.friends.all()
-        online_friends = [friend for friend in all_friends if friend.is_online()]
-    else:
-        online_friends = []
+    # Récupérer le token depuis le cookie
+    token = request.COOKIES.get('access_token', '')
 
-    serializer = UserDataSerializer(online_friends, many=True)
-    return Response({
-        'online_friends': serializer.data,
-        'count': len(online_friends)
-    })
+    try:
+        # Valider le token
+        validated_token = AccessToken(token)
+        # Récupérer l'utilisateur à partir du token
+        user_id = validated_token['user_id']
+        user = customUser.objects.get(id=user_id)
+
+        # Récupérer tous les amis de l'utilisateur
+        all_friends = user.friends.all()
+        # Filtrer les amis en ligne
+        online_friends = [friend for friend in all_friends if friend.is_online()]
+
+        # Sérialiser les données
+        serializer = UserDataSerializer(online_friends, many=True)
+        return Response({
+            'online_friends': serializer.data,
+            'count': len(online_friends)
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        # Si le token est invalide ou autre erreur
+        return Response({
+            'online_friends': [],
+            'count': 0,
+            'error': str(e)
+        }, status=status.HTTP_401_UNAUTHORIZED)
 
 @login_required
 def get_user_invitations(request):
@@ -397,3 +420,74 @@ def forfeit_tournament(request):
             'success': False,
             'message': f'Error processing tournament forfeit: {str(e)}'
         }, status=500)
+
+
+@api_view(['GET'])
+def friends_view(request):
+    # Récupérer le token depuis le cookie
+    token = request.COOKIES.get('access_token', '')
+
+    try:
+        # Valider le token
+        validated_token = AccessToken(token)
+        # Récupérer l'utilisateur à partir du token
+        user_id = validated_token['user_id']
+        user = customUser.objects.get(id=user_id)
+
+        # Récupérer tous les amis de l'utilisateur (sans filtre)
+        all_friends = user.friends.all()
+
+        # Sérialiser les données
+        serializer = UserDataSerializer(all_friends, many=True, context={'request': request})
+        return Response({
+            'friends': serializer.data,
+            'count': len(all_friends)
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        # Si le token est invalide ou autre erreur
+        return Response({
+            'friends': [],
+            'count': 0,
+            'error': str(e)
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['POST'])
+def add_friend_view(request):
+    token = request.COOKIES.get('access_token', '')
+
+    try:
+        # Valider le token
+        validated_token = AccessToken(token)
+        user_id = validated_token['user_id']
+        user = customUser.objects.get(id=user_id)
+
+        # Récupérer le nom d'utilisateur de l'ami à ajouter
+        friend_username = request.data.get('username')
+        if not friend_username:
+            return Response({'error': 'Nom d’utilisateur requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérifier si l'utilisateur existe
+        try:
+            friend = customUser.objects.get(username=friend_username)
+        except customUser.DoesNotExist:
+            return Response({'error': 'Utilisateur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Vérifier que l'utilisateur ne s'ajoute pas lui-même
+        if friend == user:
+            return Response({'error': 'Vous ne pouvez pas vous ajouter vous-même'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérifier si l'utilisateur est déjà un ami
+        if friend in user.friends.all():
+            return Response({'error': 'Cet utilisateur est déjà votre ami'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Ajouter l'ami (relation symétrique ou non selon ton choix)
+        user.friends.add(friend)
+        # Si tu veux une relation symétrique (les deux deviennent amis) :
+        # friend.friends.add(user)
+
+        return Response({'success': True, 'message': f'{friend_username} ajouté comme ami'}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
