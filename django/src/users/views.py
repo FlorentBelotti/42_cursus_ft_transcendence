@@ -491,3 +491,30 @@ def add_friend_view(request):
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['GET'])
+def user_me_detail(request):
+    token = request.COOKIES.get('access_token', '')
+
+    try:
+        validated_token = AccessToken(token)
+        user_id = validated_token['user_id']
+        user = customUser.objects.get(id=user_id)
+
+        serializer = UserDataSerializer(user)
+
+        response_data = serializer.data
+        response_data['is_online'] = user.is_online()
+
+        return Response({
+            'user': response_data,
+            'status': 'success'
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({
+            'user': None,
+            'status': 'error',
+            'error': str(e)
+        }, status=status.HTTP_401_UNAUTHORIZED)

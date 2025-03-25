@@ -1,18 +1,17 @@
 * {
     margin: 0;
     padding: 0;
-    font-family: 'PPNeueuMontreal', sans-serif;
-	font-weight: 300;
+    font-family: 'Noto Sans', sans-serif;
+	font-weight: 100;
 }
 
 nav {
     display: flex;
-    justify-content: space-between; /* Place le titre à gauche et les boutons à droite */
-    align-items: center; /* Centre verticalement les éléments */
-    padding: 10px 20px;
-    background-color: #F7F7F7;
-	border-bottom: solid 1px #000;
-
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    background-color: #181818;
+	border-bottom: solid 1px #424242;
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -20,74 +19,91 @@ nav {
 	z-index: 1000;
 }
 
-nav h1 {
-    margin: 0;
-	font-family: 'Bebas Neue';
-    font-size: 24px;
-    color: #000; /* Couleur du texte */
-}
-
 nav ul {
     display: flex;
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 0 20px;
     align-items: center;
+	width: 100%;
+	justify-content: space-between;
 }
 
 nav ul li {
-    margin-left: 20px;
+	flex: 1;
+	text-align: center;
+    margin: 0px;
 }
 
-.nav-button {
+.nav-button, .pong-button {
     background-color: transparent;
     border: solid 1px transparent;
     font-size: 16px;
     cursor: pointer;
     padding: 15px 10px;
-    color: #000;
+    color: #ffffff;
 	transition: border-color 0.3s ease;
-}
-
-.nav-button:hover{
-	border-color:#000;
-}
-
-.pong-button{
-	background-color: transparent;
-    border: solid 1px transparent;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 15px 10px;
-    color: #000;
-	transition: border-color 0.3s ease;
-}
-
-.pong-button:hover{
-	border-color:#000;
 }
 
 .modal {
-    display: none; /* Masqué par défaut */
+    display: none;
     position: fixed;
-    top: 0;
+    top: 66.5px;
     right: 0;
-    width: 400px; /* Largeur du modal */
-    height: 100%;
-    background-color: #F7F7F7; /* Fond semi-transparent */
-	border-left: solid 1px #000;
-    z-index: 1000; /* Au-dessus des autres éléments */
+    width: 400px;
+    height: calc(100% - 66.5px);
+    background-color: #181818;
+    z-index: 1000;
     overflow-x: hidden;
-    transition: 0.5s; /* Animation d'ouverture */
+    transition: 0.5s;
+	border-left: 1px solid #333;
 }
 
 /* Contenu du modal */
 .modal-content {
     position: relative;
-    top: 20%;
+    /* top: 20%; */
     padding: 20px;
-    color: #000;
-    text-align: center;
+    color: #ffffff;
+}
+
+.close-modal,
+.close-friends-modal {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #ffffff;
+    transition: color 0.3s ease;
+    z-index: 1; /* Assure que la croix est au-dessus */
+}
+
+.close-modal:hover, .close-friends-modal:hover {
+    color: #ccc;
+}
+
+/* Ajustement pour les titres des modales */
+.modal-content h2,
+.friends-section h2 {
+    display: block; /* Changé de inline-block à block */
+    margin: 0;
+    font-size: 24px;
+    padding: 20px 20px 0 20px; /* Unifié le padding */
+    position: relative; /* Ajouté pour le positionnement */
+}
+
+
+/* Style pour la section friends */
+.friends-section {
+    position: relative;
+	min-height: 100%;
+}
+
+.horizontal-line {
+    border-top: 1px solid #333;
+    margin: 15px 0;
 }
 
 /* Boutons du modal */
@@ -96,34 +112,270 @@ nav ul li {
     width: 100%;
     padding: 10px;
     margin: 10px 0;
-    background-color: #F7F7F7;
-    color: #000;
-    border: solid 1px #000;
+    background-color: #171717;
+	border: 1px solid #444;
+	border-radius: 10px;
+    color: #fff;
     cursor: pointer;
     font-size: 16px;
     transition: background-color 0.3s ease;
 }
 
 .modal-button:hover {
-    background-color: red;
+    /* background-color: red; */
 }
 
-/* Bouton pour fermer le modal */
-.close-modal {
-    position: absolute;
-    top: 10px;
-    right: 20px;
-    font-size: 24px;
+.friend-item img {
+    height: 50px;
+    width: 50px;
+}
+
+#add-friend-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+#friend-username {
+    flex-grow: 1;
+    padding: 8px;
+    background-color: #212121;
+    border: 1px solid #444;
+	border-radius: 10px;
     color: white;
+}
+
+#add-friend-button {
+    padding: 8px 15px;
+    background-color: #171717;
+    color: white;
+    border: 1px solid #444;
     cursor: pointer;
+	border-radius: 10px;
 }
 
-.close-modal:hover {
-    color: #ccc;
+#add-friend-button:hover {
+    background-color: #45a049;
+}
+
+.invitation-card {
+    background-color: #171717;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.invitation-header {
+    font-size: 18px;
+    font-weight: bold;
+    /* margin-bottom: 10px; */
+    text-align: center;
+}
+
+.invitation-timer {
+    font-size: 12px;
+    font-weight: thin;
+    margin-bottom: 15px;
+    text-align: center;
+    /* color: #4CAF50; */
+}
+
+.invitation-players {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.player-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 45%;
+}
+
+.player-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 8px;
+    border: 2px solid #444;
+}
+
+.player-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.player-elo {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.vs-separator {
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    margin: 0 10px;
+}
+
+.invitation-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.accept-btn, .decline-btn {
+    padding: 8px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.accept-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.accept-btn:hover {
+    background-color: #3e8e41;
+}
+
+.decline-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.decline-btn:hover {
+    background-color: #d32f2f;
+}
+
+.status-notification {
+    background-color: #333;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.default-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+    font-size: 24px;
+}
+
+.invitation-container {
+	padding-bottom: 5px;
+	border-bottom: solid 1px #333;
 }
 
 
-.friend-item img{
-	height: 50px;
+#friends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.friend-item {
+    display: flex;
+    align-items: center;
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 12px;
+    transition: all 0.3s ease;
+}
+
+.friend-item:hover {
+    background-color: #252525;
+}
+
+.friend-avatar-container {
+    position: relative;
+    margin-right: 15px;
 	width: 50px;
+    height: 50px;
+}
+
+.friend-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.status-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #1e1e1e;
+	z-index: 1;
+}
+
+.status-online {
+    background-color: #4CAF50;
+}
+
+.status-offline {
+    background-color: #777;
+}
+
+.friend-info {
+    flex-grow: 1;
+    padding-left: 15px;
+    min-width: 0;
+}
+
+.friend-name {
+    font-weight: bold;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-status {
+    font-size: 13px;
+    color: #aaa;
+    margin-top: 2px;
+}
+
+.friend-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.friend-action-btn {
+    background-color: #333;
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.friend-action-btn:hover {
+    background-color: #444;
 }

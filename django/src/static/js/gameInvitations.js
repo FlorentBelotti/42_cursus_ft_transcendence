@@ -180,63 +180,78 @@ class GameInvitationsManager {
     }
 
     displayInvitations(invitations) {
-        if (!this.invitationsContainer) return;
+		if (!this.invitationsContainer) return;
 
-        if (!invitations || invitations.length === 0) {
-            this.invitationsContainer.innerHTML = `
-                <p class="text-gray-500">Aucune invitation de jeu en attente.</p>
-            `;
-            return;
-        }
+		// if (!invitations || invitations.length === 0) {
+		// 	this.invitationsContainer.innerHTML = `
+		// 		<p class="text-gray-500">Aucune invitation de jeu en attente.</p>
+		// 	`;
+		// 	return;
+		// }
 
-        let html = `<div class="space-y-4">`;
+		let html = `<div class="invitations-list">`;
 
-        invitations.forEach(invitation => {
-            const minutes = Math.floor(invitation.time_remaining / 60);
-            const seconds = invitation.time_remaining % 60;
+		invitations.forEach(invitation => {
+			const minutes = Math.floor(invitation.time_remaining / 60);
+			const seconds = invitation.time_remaining % 60;
+			const currentUser = window.currentUser || {}; // Assurez-vous que currentUser est disponible globalement
 
-            html += `
-                <div class="invitation-card bg-gray-50 border rounded-md p-3 flex justify-between items-center" data-id="${invitation.id}">
-                    <div class="flex items-center">
-                        <div class="invitation-avatar mr-3">
-                            ${invitation.sender_profile_pic ?
-                                `<img src="${invitation.sender_profile_pic}" alt="${invitation.sender_display}" class="w-10 h-10 rounded-full object-cover">` :
-                                `<div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                                    ${invitation.sender_display.charAt(0).toUpperCase()}
-                                </div>`
-                            }
-                        </div>
-                        <div>
-                            <p class="font-medium">${invitation.sender_display} vous a invité à un ${invitation.match_type_display}</p>
-                            <p class="text-sm text-gray-500">Expire dans ${minutes}m ${seconds}s</p>
-                        </div>
-                    </div>
-                    <div class="invitation-actions space-x-2">
-                        <button class="accept-btn bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-sm transition-colors"
-                                data-id="${invitation.id}">
-                            Accepter
-                        </button>
-                        <button class="decline-btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm transition-colors"
-                                data-id="${invitation.id}">
-                            Refuser
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
+			html += `
+				<div class="invitation-container">
+					<div class="invitation-card" data-id="${invitation.id}">
+						<div class="invitation-header">${invitation.match_type_display}</div>
+						<div class="invitation-timer">
+							<p class="text-sm text-gray-500">Expire dans ${minutes}m ${seconds}s</p>
+						</div>
+						<div class="invitation-players">
+							<div class="player-card">
+								${invitation.sender_profile_pic ?
+									`<img src="${invitation.sender_profile_pic}" alt="${invitation.sender_display}" class="player-avatar">` :
+									`<div class="player-avatar default-avatar">${invitation.sender_display.charAt(0).toUpperCase()}</div>`
+								}
+								<div class="player-name">${invitation.sender_display}</div>
+								<div class="player-elo">ELO: ${invitation.sender_elo || 'N/A'}</div>
+							</div>
 
-        html += `</div>`;
-        this.invitationsContainer.innerHTML = html;
+							<div class="vs-separator">VS</div>
 
-        // Add event listeners
-        document.querySelectorAll('.accept-btn').forEach(btn => {
-            btn.addEventListener('click', () => this.respondToInvitation(btn.dataset.id, 'accept'));
-        });
+							<div class="player-card">
+								${currentUser.profile_picture ?
+									`<img src="${currentUser.profile_picture}" alt="${currentUser.username}" class="player-avatar">` :
+									`<div class="player-avatar default-avatar">${currentUser.username?.charAt(0).toUpperCase() || 'Moi'}</div>`
+								}
+								<div class="player-name">${currentUser.username || 'Moi'}</div>
+								<div class="player-elo">ELO: ${currentUser.elo || 'N/A'}</div>
+							</div>
+						</div>
 
-        document.querySelectorAll('.decline-btn').forEach(btn => {
-            btn.addEventListener('click', () => this.respondToInvitation(btn.dataset.id, 'decline'));
-        });
-    }
+
+
+						<div class="invitation-actions">
+							<button class="accept-btn" data-id="${invitation.id}">
+								Accepter
+							</button>
+							<button class="decline-btn" data-id="${invitation.id}">
+								Refuser
+							</button>
+						</div>
+					</div>
+				</div>
+			`;
+		});
+
+		html += `</div>`;
+		this.invitationsContainer.innerHTML = html;
+
+		// Add event listeners
+		document.querySelectorAll('.accept-btn').forEach(btn => {
+			btn.addEventListener('click', () => this.respondToInvitation(btn.dataset.id, 'accept'));
+		});
+
+		document.querySelectorAll('.decline-btn').forEach(btn => {
+			btn.addEventListener('click', () => this.respondToInvitation(btn.dataset.id, 'decline'));
+		});
+	}
 
     respondToInvitation(invitationId, action) {
         const card = document.querySelector(`.invitation-card[data-id="${invitationId}"]`);

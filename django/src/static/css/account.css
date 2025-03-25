@@ -1,3 +1,220 @@
-body{
-    padding:80px;
+body {
+    font-family: 'Noto Sans', sans-serif;
+	font-weight: 100;
+    background-color: #181818;
+    color: #ffffff;
+    margin: 0;
+    padding: 100px;
+    min-height: 100vh;
+}
+
+.account-container {
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.account-card {
+    background-color: #171717;
+	border: 1px solid #333;
+    border-radius: 12px;
+    padding: 40px;
+}
+
+.account-card h1 {
+    color: #fff;
+    font-size: 28px;
+    margin-bottom: 30px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.section {
+    margin-bottom: 40px;
+}
+
+.section h2 {
+    color: #ffffff;
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+.profile-picture-container {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.profile-picture {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.default-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    /* font-weight: bold; */
+}
+
+.profile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.dual-input {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: #aaa;
+    font-size: 14px;
+}
+
+input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    background-color: #171717;
+    border: 1px solid #444;
+    border-radius: 30px;
+    color: white;
+    /* font-size: 16px; */
+}
+
+input:read-only {
+    /* background-color: #222; */
+    color: #777;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    /* font-weight: 500; */
+    transition: all 0.2s;
+}
+
+
+.change-picture {
+    background-color: #171717;
+	border: 1px solid #444;
+	border-radius: 30px;
+    color: white;
+}
+
+.change-picture img{
+	position: relative;
+	width: 15px;
+	height: 15px;
+	margin-right: 10px;
+	top: 2px;
+}
+
+
+.remove-picture {
+	background-color: #171717;
+	border: 1px solid #444;
+	border-radius: 30px;
+	color: #fff;
+}
+
+.remove-picture img{
+	position: relative;
+	top: 2px;
+	width: 15px;
+	height: 15px;
+	margin-right: 10px;
+}
+
+.save-btn {
+    background-color: #171717;
+	border: 1px solid #444;
+	border-radius: 30px;
+    color: white;
+}
+
+
+.warning {
+    background-color: #171717;
+	border: 1px solid #444;
+	border-radius: 30px;
+    color: white;
+}
+
+
+.warning, .save-btn{
+	box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 4px, rgba(0, 0, 0, 0.3) 0px 7px 13px -3px, rgba(0, 0, 0, 0.2) 0px -3px 0px inset;
+}
+
+.warning:hover, .danger:hover,
+.remove-picture:hover, .save-btn:hover, .change-picture:hover{
+    transform: translateY(-2px);
+}
+
+.danger-zone {
+    border-left: 4px solid #f44336;
+    padding-left: 16px;
+}
+
+.danger-zone h2 {
+    color: #f44336;
+}
+
+.danger-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.danger {
+    background-color: #f44336;
+    color: white;
+	border-radius: 30px;
+
+}
+
+.danger:hover {
+    background-color: #d32f2f;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 20px;
+    }
+
+	.dual-input {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		gap: 20px;
+		width: 100%;
+	}
+
+    .profile-picture-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .danger-actions {
+        flex-direction: column;
+    }
 }
