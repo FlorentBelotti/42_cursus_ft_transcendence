@@ -424,28 +424,31 @@ def forfeit_tournament(request):
 
 @api_view(['GET'])
 def friends_view(request):
-    # Récupérer le token depuis le cookie
     token = request.COOKIES.get('access_token', '')
 
     try:
-        # Valider le token
         validated_token = AccessToken(token)
-        # Récupérer l'utilisateur à partir du token
         user_id = validated_token['user_id']
         user = customUser.objects.get(id=user_id)
 
-        # Récupérer tous les amis de l'utilisateur (sans filtre)
         all_friends = user.friends.all()
 
-        # Sérialiser les données
-        serializer = UserDataSerializer(all_friends, many=True, context={'request': request})
+        # Créez une liste avec les données nécessaires
+        friends_data = []
+        for friend in all_friends:
+            friends_data.append({
+                'username': friend.username,
+                'nickname': friend.nickname,
+                'profile_picture': friend.profile_picture.url if friend.profile_picture else None,
+                'is_online': friend.is_online()
+            })
+
         return Response({
-            'friends': serializer.data,
+            'friends': friends_data,
             'count': len(all_friends)
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
-        # Si le token est invalide ou autre erreur
         return Response({
             'friends': [],
             'count': 0,

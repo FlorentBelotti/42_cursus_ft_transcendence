@@ -74,50 +74,50 @@ async function updateAuthButtons() {
     }
 
     // Fetch Friends function
-    function fetchFriends() {
-        fetch('/api/friends/', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => {
-            if (!response.ok) {
-                if (response.status === 401) {
-                    throw new Error('Non authentifié - veuillez vous reconnecter');
-                }
-                throw new Error('Erreur lors du chargement des amis');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const friendsList = document.getElementById('friends-list');
-            if (data.friends && data.friends.length > 0) {
-                friendsList.innerHTML = data.friends.map(friend => `
-                    <div class="friend-item">
-                        <div class="friend-avatar-container">
-                            ${friend.profile_picture ?
-                                `<img src="${friend.profile_picture}" alt="${friend.username}" class="friend-avatar">` :
-                                `<div class="friend-avatar default-avatar">${(friend.nickname || friend.username).charAt(0).toUpperCase()}</div>`
-                            }
-                            <div class="status-indicator ${friend.is_online ? 'status-online' : 'status-offline'}"></div>
-                        </div>
-                        <div class="friend-info">
-                            <div class="friend-name">${friend.nickname || friend.username}</div>
-                            <div class="friend-status">${friend.is_online ? 'En ligne' : 'Hors ligne'}</div>
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                friendsList.innerHTML = '<p>Vous n\'avez pas encore d\'amis</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-            const friendsList = document.getElementById('friends-list');
-            friendsList.innerHTML = `<p>Erreur: ${error.message}</p>`;
-        });
-    }
+	function fetchFriends() {
+		fetch('/api/friends/', {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		})
+		.then(response => {
+			if (!response.ok) {
+				if (response.status === 401) {
+					throw new Error('Non authentifié - veuillez vous reconnecter');
+				}
+				throw new Error('Erreur lors du chargement des amis');
+			}
+			return response.json();
+		})
+		.then(data => {
+			const friendsList = document.getElementById('friends-list');
+			if (data.friends && data.friends.length > 0) {
+				friendsList.innerHTML = data.friends.map(friend => `
+					<div class="friend-item">
+						<div class="friend-avatar-container">
+							${friend.profile_picture ?
+								`<img src="${friend.profile_picture}" alt="${friend.username}" class="friend-avatar">` :
+								`<div class="friend-avatar default-avatar">${(friend.nickname || friend.username).charAt(0).toUpperCase()}</div>`
+							}
+							<div class="status-indicator ${friend.is_online ? 'status-online' : 'status-offline'}"></div>
+						</div>
+						<div class="friend-info">
+							<div class="friend-name">${friend.nickname || friend.username}</div>
+							<div class="friend-status">${friend.is_online ? 'En ligne' : 'Hors ligne'}</div>
+						</div>
+					</div>
+				`).join('');
+			} else {
+				friendsList.innerHTML = '<p>Vous n\'avez pas encore d\'amis</p>';
+			}
+		})
+		.catch(error => {
+			console.error('Erreur:', error);
+			const friendsList = document.getElementById('friends-list');
+			friendsList.innerHTML = `<p>Erreur: ${error.message}</p>`;
+		});
+	}
 
     // Add Friend function
     function addFriend(username) {
