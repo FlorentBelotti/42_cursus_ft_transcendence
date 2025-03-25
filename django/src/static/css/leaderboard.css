@@ -1,4 +1,13 @@
-/* Styles de base pour le tableau */
+body {
+    font-family: 'Noto Sans', sans-serif;
+    font-weight: 100;
+    background-color: #181818;
+    color: #ffffff;
+    margin: 0;
+    padding: 100px;
+    min-height: 100vh;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -7,12 +16,16 @@
 
 h1 {
     font-size: 24px;
-    font-weight: bold;
+    font-weight: thin;
     margin-bottom: 20px;
 }
 
+.horizontal-line{
+	border-bottom: 1px solid #333;
+}
+
 .table-container {
-    background-color: white;
+    background-color: #181818;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow-x: auto;
@@ -29,17 +42,14 @@ th, td {
 }
 
 th {
-    background-color: #f3f4f6;
-    font-weight: bold;
+    background-color: #181818;
+    font-weight: thin;
 }
 
 tr {
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid #333;
 }
 
-tr:hover {
-    background-color: #f9fafb;
-}
 
 /* Styles pour les informations du joueur */
 .player-info {
@@ -67,18 +77,13 @@ tr:hover {
     margin-right: 8px;
 }
 
-/* Styles pour la pastille */
-.status-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
+
+#leaderboard-table .result.win {
+	color: #55C15A;
+	font-weight: 400;
 }
 
-.status-dot.green {
-    background-color: #10b981; /* Couleur verte */
-}
-
-.status-dot.gray {
-    background-color: #9ca3af; /* Couleur grise */
+#leaderboard-table .result.loss {
+	color: #ef4444;
+	font-weight: 400;
 }

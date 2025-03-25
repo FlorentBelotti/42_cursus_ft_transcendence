@@ -2,15 +2,15 @@
 <link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
 
 <div class="container">
-    <h1>Classement</h1>
-    
+    <h1>Classement Pong</h1>
+	<div class="horizontal-line"></div>
     <div class="table-container">
         <table id="leaderboard-table">
             <thead>
                 <tr>
                     <th>Rang</th>
                     <th>Joueur</th>
-                    <th>ELO</th>
+                    <th>Elo</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,8 +27,8 @@
                         {% endif %}
                         <span class="username">{{ user.username }}</span>
                         <!-- Pastille verte -->
-                        <span class="status-dot {% if user.is_online %}green{% else %}gray{% endif %}"></span>                    </td>
-                    <td class="elo">{{ user.elo }} points</td>
+                  	</td>
+                    <td class="elo">{{ user.elo }} PP</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -37,65 +37,66 @@
 </div>
 
 <!-- Match History Section -->
-<div class="container mx-auto p-4 mt-8">
-    <h2 class="text-2xl font-bold mb-6">Votre historique de matchs</h2>
-    
-    {% if user_history %}
-    <div class="overflow-x-auto bg-white rounded-lg shadow">
-        <table class="w-full table-auto" id="history-table">
-            <thead>
-                <tr class="bg-gray-100">
-                    <th class="px-4 py-2 text-left">Date</th>
-                    <th class="px-4 py-2 text-left">Photo</th>
-                    <th class="px-4 py-2 text-left">Adversaire</th>
-                    <th class="px-4 py-2 text-left">Type de match</th>
-                    <th class="px-4 py-2 text-center">Résultat</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for match in user_history %}
-                <tr class="border-t hover:bg-gray-50 {% if match.result == 'win' %}bg-green-50{% elif match.result == 'loose' %}bg-red-50{% endif %}">
-                    <td class="px-4 py-3 text-left">{{ match.timestamp|slice:":19" }}</td>
-                    <td class="px-4 py-3 text-left">
-                        {% if match.opponent_picture_url %}
-                            <img src="{{ match.opponent_picture_url }}" alt="{{ match.opponent_username }}" class="profile-picture">
-                        {% else %}
-                            <div class="profile-picture bg-gray-300 flex items-center justify-center">
-                                <span>{{ match.opponent_username|first|upper }}</span>
-                            </div>
-                        {% endif %}
-                    </td>
-                    <td class="px-4 py-3 text-left">{{ match.opponent_username }}</td>
-                    <td class="px-4 py-3 text-left">
-                        {% if match.match_type == 'tournament_semifinal' %}
-                            Demi-finale de tournoi
-                        {% elif match.match_type == 'tournament_third_place' %}
-                            Match pour la 3ème place
-                        {% elif match.match_type == 'tournament_final' %}
-                            Finale de tournoi
-                        {% else %}
-                            Match classique
-                        {% endif %}
-                    </td>
-                    <td class="px-4 py-3 text-center font-bold {% if match.result == 'win' %}text-green-600{% elif match.result == 'loose' %}text-red-600{% endif %}">
-                        {% if match.result == 'win' %}
-                            Victoire
-                        {% elif match.result == 'loose' %}
-                            Défaite
-                        {% else %}
-                            {{ match.result }}
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="bg-white rounded-lg shadow p-6 text-center">
-        <p>Vous n'avez pas encore joué de match. Participez à un match ou à un tournoi pour voir votre historique ici.</p>
-    </div>
-    {% endif %}
+<div class="container">
+	<h1>Historique des parties</h1>
+
+	{% if user_history %}
+	<div class="table-container">
+		<table id="leaderboard-table">
+			<thead>
+				<tr>
+					<th>Date</th>
+					<th>Adversaire</th>
+					<th>Type de match</th>
+					<th>Résultat</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for match in user_history %}
+				<tr class="match-played {% if match.result == 'win' %}win{% elif match.result == 'loss' %}loss{% endif %}">
+					<td>{{ match.timestamp|slice:":19" }}</td>
+					<td class="player-info">
+						{% if match.opponent_picture_url %}
+							<img src="{{ match.opponent_picture_url }}" alt="{{ match.opponent_username }}" class="profile-picture">
+						{% else %}
+							<div class="profile-picture">
+								<span>{{ match.opponent_username|first|upper }}</span>
+							</div>
+						{% endif %}
+						<span class="username">{{ match.opponent_username }}</span>
+					</td>
+					<td>
+						{% if match.match_type == 'tournament_semifinal' %}
+							Demi-finale de tournoi
+						{% elif match.match_type == 'tournament_third_place' %}
+							Match pour la 3ème place
+						{% elif match.match_type == 'tournament_final' %}
+							Finale de tournoi
+						{% else %}
+							Match classique
+						{% endif %}
+					</td>
+					<td class="win-loose">
+						{% if match.result == 'win' %}
+							<span class="result win">Victoire</span>
+						{% elif match.result == 'loss' %}
+							<span class="result loss">Défaite</span>
+						{% elif match.result == 'forfeit' %}
+							<span class="result forfeit">Forfait</span>
+						{% else %}
+							{{ match.result }}
+						{% endif %}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	{% else %}
+	<div class="">
+		<p>Vous n'avez pas encore joué de match. Participez à un match ou à un tournoi pour voir votre historique ici.</p>
+	</div>
+	{% endif %}
 </div>
 
 <!-- Add this CSS to match your friends.html styling for profile pictures -->

@@ -63,7 +63,7 @@ nav ul li {
 .modal {
     display: none;
     position: fixed;
-    top: 66.5px;
+    top: 74.5px;
     right: 0;
     width: 400px;
     height: calc(100% - 66.5px);
