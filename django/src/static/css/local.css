@@ -1,5 +1,6 @@
 body{
     padding: 80px 40px 10px 40px;
+	background-color: #171717;
 }
 
 .pong-div{
@@ -7,9 +8,9 @@ body{
 	display: flex;
 	align-items: center;
 	justify-content: center;
-
 }
 
 canvas{
-	border: solid 1px #000;
+	border: solid 1px #333;
+	border-radius: 20px;
 }

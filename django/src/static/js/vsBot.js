@@ -87,11 +87,12 @@ class PongGame {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Draw Pad
-        this.ctx.fillStyle = 'black';
+        this.ctx.fillStyle = '#333333';
         this.ctx.fillRect(this.pad1.x, this.pad1.y, this.padWidth, this.padHeight);
         this.ctx.fillRect(this.pad2.x, this.pad2.y, this.padWidth, this.padHeight);
 
         // Draw Ball
+        this.ctx.fillStyle = 'white';
         this.ctx.fillRect(this.ball.x, this.ball.y, this.ballWidth, this.ballHeight);
     }
 
@@ -164,9 +165,9 @@ class PongGame {
     }
 
     displayScore() {
-        this.ctx.fillStyle = 'black';
+        this.ctx.fillStyle = 'white';
         this.ctx.textAlign = 'center';
-        this.ctx.font = '30px Arial';
+        this.ctx.font = '30px Noto';
         this.ctx.fillText(this.score.score1, this.canvas.width / 2 - 30, 30);
         this.ctx.fillText(":", this.canvas.width / 2, 30);
         this.ctx.fillText(this.score.score2, this.canvas.width / 2 + 30, 30);

@@ -11,7 +11,7 @@
             text-align: center;
             margin: 20px 0;
         }
-        
+
         .matchmaking-btn {
             padding: 12px 24px;
             font-size: 18px;
@@ -22,16 +22,16 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        
+
         .matchmaking-btn:hover {
             background-color: #45a049;
         }
-        
+
         .matchmaking-btn:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
         }
-        
+
         .invite-friends-btn {
             padding: 12px 24px;
             font-size: 18px;
@@ -43,16 +43,16 @@
             transition: background-color 0.3s;
             margin-right: 10px;
         }
-        
+
         .invite-friends-btn:hover {
             background-color: #0b7dda;
         }
-        
+
         .invite-friends-btn:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
         }
-        
+
         .friends-invite-dialog {
             position: fixed;
             top: 50%;
@@ -73,10 +73,10 @@
         <button id="matchmaking" class="matchmaking-btn">Search for a game</button>
     </div>
 
-    <div>
+    <div class="pong-div">
         <canvas class="pong" id="pongServer" width="800" height="550"></canvas>
     </div>
-        
+
     <script>
         const currentUser = {
             username: "{{ request.user.username }}",
