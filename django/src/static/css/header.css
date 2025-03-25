@@ -11,39 +11,54 @@ nav {
     align-items: center;
     padding: 10px 0;
     background-color: #181818;
-	border-bottom: solid 1px #424242;
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	z-index: 1000;
+    border-bottom: solid 1px #424242;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
 }
 
 nav ul {
-    display: flex;
+	display: flex;
     list-style: none;
     margin: 0;
     padding: 0 20px;
     align-items: center;
-	width: 100%;
-	justify-content: space-between;
+    width: 100%;
+    justify-content: space-between;
+	/* gap: 10px; */
 }
 
 nav ul li {
-	flex: 1;
-	text-align: center;
-    margin: 0px;
+    display: flex;
+    justify-content: center;
+    margin: 0;
 }
 
-.nav-button, .pong-button {
+#game-buttons,
+#auth-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    width: 100%;
+    display: contents;
+
+}
+
+
+.nav-button, .pong-button, #amis-button {
     background-color: transparent;
     border: solid 1px transparent;
     font-size: 16px;
     cursor: pointer;
     padding: 15px 10px;
     color: #ffffff;
-	transition: border-color 0.3s ease;
+    transition: border-color 0.3s ease;
+    white-space: nowrap;
+    text-align: center;
 }
+
 
 .modal {
     display: none;
@@ -379,3 +394,4 @@ nav ul li {
 .friend-action-btn:hover {
     background-color: #444;
 }
+

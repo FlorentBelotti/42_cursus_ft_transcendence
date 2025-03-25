@@ -5,93 +5,69 @@
     <title>Mon Compte</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/account.css' %}">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="account-container">
-        <div class="account-card">
-            <h1>Account Settings</h1>
+    <div class="account-page">
+        <div class="account-container">
+            <h1 class="account-title">Mon Compte</h1>
 
-            <!-- Section Photo de profil -->
-            <div class="section">
-                <h2>Profile Picture</h2>
-                <div class="profile-picture-container">
+            <!-- Affichage des informations -->
+            <div class="account-info">
+                <div class="profile-section">
                     {% if user.profile_picture %}
-                        <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
+                        <img src="{{ user.profile_picture.url }}" class="profile-image">
                     {% else %}
-                        <div class="default-avatar">
-                            {{ user.username|first|upper }}
-                        </div>
+                        <div class="default-avatar">{{ user.username.0|upper }}</div>
                     {% endif %}
-                    <div class="profile-actions">
-                        <button class="btn change-picture"><img src="{% static 'assets/upload.png' %}" alt="upload">Change Picture</button>
-                        <button class="btn remove-picture"><img src="{% static 'assets/trash.png' %}" alt="trash">Remove Picture</button>
+                    <div class="user-details">
+                        <h5 class="username">{{ user.username }}</h5>
+                        <p class="nickname">Nickname: {{ user.nickname }}</p>
+                        <p class="email">Email: {{ user.email }}</p>
+                        <p class="elo">Elo: {{ user.elo }}</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Section Identité -->
-            <div class="section">
-                <h2>Identity</h2>
-                <form id="updateForm" method="post">
-                    {% csrf_token %}
-                    <div class="form-group dual-input">
-                        <div>
-                            <label for="username">Username</label>
-                            <input type="text" id="username" name="username" value="{{ user.username }}" readonly>
-                        </div>
-                        <div>
-                            <label for="nickname">Nickname</label>
-                            <input type="text" id="nickname" name="nickname" value="{{ user.nickname|default:'' }}">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" value="{{ user.email }}">
-                    </div>
-                    <button type="submit" class="btn save-btn">Save Changes</button>
-                </form>
-            </div>
+            <!-- Formulaire de mise à jour -->
+            <form id="updateForm" class="account-form update-form" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <h3 class="form-title">Update Account</h3>
+                {{ user_form.as_p }}
+                <button type="submit" name="update_info" class="btn update-btn">Update account</button>
+            </form>
 
-            <!-- Section Mot de passe -->
-            <div class="section">
-                <h2>Change Password</h2>
-                <form id="passwordForm" method="post">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label for="current_password">Current Password</label>
-                        <input type="password" id="current_password" name="current_password" required>
-                    </div>
-                    <div class="form-group dual-input">
-                        <div>
-                            <label for="new_password1">New Password</label>
-                            <input type="password" id="new_password1" name="new_password1" required>
-                        </div>
-                        <div>
-                            <label for="new_password2">Confirm Password</label>
-                            <input type="password" id="new_password2" name="new_password2" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn warning">Update Password</button>
-                </form>
-            </div>
+            <!-- Formulaire de modification de pseudo -->
+            <form id="nicknameForm" class="account-form nickname-form" method="post">
+                {% csrf_token %}
+                <h3 class="form-title">Change Nickname</h3>
+                {{ nickname_form.as_p }}
+                <button type="submit" name="update_nickname" class="btn nickname-btn">Update Nickname</button>
+            </form>
 
-            <!-- Zone Danger -->
-            <div class="section danger-zone">
-                <h2>Danger Zone</h2>
-                <div class="danger-actions">
-                    <form id="disconnectForm" method="post">
-                        {% csrf_token %}
-                        <button type="submit" name="disconnect" class="btn danger">Disconnect</button>
-                    </form>
-                    <form id="deleteForm" method="post">
-                        {% csrf_token %}
-                        <button type="submit" name="delete_account" class="btn danger">Delete Account</button>
-                    </form>
-                </div>
-            </div>
+            <!-- Formulaire de changement de mot de passe -->
+            <form id="passwordForm" class="account-form password-form" method="post">
+                {% csrf_token %}
+                <h3 class="form-title">Change Password</h3>
+                {{ password_form.as_p }}
+                <button type="submit" name="change_password" class="btn password-btn">Change password</button>
+            </form>
+
+            <!-- Déconnexion -->
+            <form id="disconnectForm" class="account-form disconnect-form" method="post">
+                {% csrf_token %}
+                <h3 class="form-title">Account Actions</h3>
+                <button type="submit" name="disconnect" class="btn disconnect-btn">Disconnect</button>
+            </form>
+
+            <!-- Suppression du compte -->
+            <form id="deleteForm" class="account-form delete-form danger-zone" method="post">
+                {% csrf_token %}
+                <h3 class="form-title danger-title">Danger Zone</h3>
+                <button type="submit" name="delete_account" class="btn delete-btn danger">Delete account</button>
+            </form>
         </div>
+
+        <script src="{% static 'js/account.js' %}"></script>
     </div>
-    <script src="{% static 'js/account.js' %}"></script>
 </body>
 </html>

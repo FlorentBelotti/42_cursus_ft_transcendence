@@ -34,9 +34,25 @@ class UserUpdateForm(UserChangeForm):
         model = customUser
         fields = ['username', 'email', 'profile_picture']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Remove help texts
+        for field in self.fields:
+            self.fields[field].help_text = ''
+
+        # Add form-control class to inputs
+        for field_name, field in self.fields.items():
+            if isinstance(field.widget, forms.TextInput):
+                field.widget.attrs.update({'class': 'form-control'})
+
 class CustomPasswordChangeForm(PasswordChangeForm):
     class Meta:
         model = customUser
+    # Remove help texts
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].help_text = ''
 
 class NicknameUpdateForm(forms.ModelForm):
     class Meta:

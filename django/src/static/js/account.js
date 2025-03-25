@@ -3,7 +3,7 @@ function updateFormEvent() {
         event.preventDefault();
         let updateFormData = new FormData(event.target);
         updateFormData.append('update_info', 'true');
-        
+
         try {
             let response = await fetch('/account/', {
                 method: "post",
@@ -13,10 +13,10 @@ function updateFormEvent() {
                     "X-Requested-With": "XMLHttpRequest"
                 }
             });
-            
+
             let data = await response.json();
             console.log('Response data:', data);
-            
+
             if ('success' in data) {
                 console.log('Success:', data.success);
                 window.loadContent('/account/');
@@ -37,7 +37,7 @@ function passwordFormEvent() {
         event.preventDefault();
         let passwordFormData = new FormData(event.target);
         passwordFormData.append('change_password', 'true');
-        
+
         try {
             let response = await fetch('/account/', {
                 method: "post",
@@ -47,10 +47,10 @@ function passwordFormEvent() {
                     "X-Requested-With": "XMLHttpRequest"
                 }
             });
-            
+
             let data = await response.json();
             console.log('Response data:', data);
-            
+
             if ('success' in data) {
                 console.log('Success:', data.success);
                 window.loadContent('/account/');
@@ -69,14 +69,14 @@ function passwordFormEvent() {
 function deleteFormEvent() {
     document.getElementById("deleteForm").addEventListener("submit", async function (event) {
         event.preventDefault();
-        
+
         if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
             return;
         }
-        
+
         let deleteFormData = new FormData(event.target);
         deleteFormData.append('delete_account', 'true');
-        
+
         try {
             let response = await fetch('/account/', {
                 method: "post",
@@ -86,9 +86,9 @@ function deleteFormEvent() {
                     "X-Requested-With": "XMLHttpRequest"
                 }
             });
-            
+
             let data = await response.json();
-            
+
             if ('success' in data) {
                 console.log('Success:', data.success);
                 await updateAuthButtons();
@@ -107,14 +107,14 @@ function deleteFormEvent() {
 function disconnectFormEvent() {
     document.getElementById("disconnectForm").addEventListener("submit", async function (event) {
         event.preventDefault();
-        
+
         if (!confirm('Are you sure you want to disconnect?')) {
             return;
         }
-        
+
         let disconnectFormData = new FormData(event.target);
         disconnectFormData.append('disconnect', 'true');
-        
+
         try {
             let response = await fetch('/account/', {
                 method: "post",
@@ -124,9 +124,9 @@ function disconnectFormEvent() {
                     "X-Requested-With": "XMLHttpRequest"
                 }
             });
-            
+
             let data = await response.json();
-            
+
             if ('success' in data) {
                 console.log('Success:', data.success);
                 await updateAuthButtons();
@@ -147,7 +147,7 @@ function nicknameFormEvent() {
         event.preventDefault();
         let nicknameFormData = new FormData(event.target);
         nicknameFormData.append('update_nickname', 'true');
-        
+
         try {
             let response = await fetch('/account/', {
                 method: "post",
@@ -157,10 +157,10 @@ function nicknameFormEvent() {
                     "X-Requested-With": "XMLHttpRequest"
                 }
             });
-            
+
             let data = await response.json();
             console.log('Response data:', data);
-            
+
             if ('success' in data) {
                 console.log('Success:', data.success);
                 window.loadContent('/account/');
@@ -183,3 +183,4 @@ document.addEventListener("DOMContentLoaded", function () {
     disconnectFormEvent();
     nicknameFormEvent();
 });
+

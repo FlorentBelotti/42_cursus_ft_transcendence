@@ -91,7 +91,7 @@ function animate() {
 
     if (torus) {
         torus.rotation.x += 0.02;
-		torus.rotation.y += 0.02;
+		// torus.rotation.y += 0.02;
     }
 
     renderer.render(scene, camera);
