@@ -42,6 +42,7 @@ class VerificationCode(models.Model):
 
 def get_expiration_time():
     return timezone.now() + timezone.timedelta(minutes=5)
+
 class GameInvitation(models.Model):
     MATCH_TYPES = (
         ('regular', 'Regular Match'),

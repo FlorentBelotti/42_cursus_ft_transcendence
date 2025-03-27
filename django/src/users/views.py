@@ -75,6 +75,32 @@ def user_detail(request, pk):
     serializer = UserDataSerializer(user)
     return Response(serializer.data)
 
+@api_view(['GET'])
+def user_me_detail(request):
+    token = request.COOKIES.get('access_token', '')
+    
+    try:
+        validated_token = AccessToken(token)
+        user_id = validated_token['user_id']
+        user = customUser.objects.get(id=user_id)
+        
+        serializer = UserDataSerializer(user)
+        
+        response_data = serializer.data
+        response_data['is_online'] = user.is_online()
+        
+        return Response({
+            'user': response_data,
+            'status': 'success'
+        }, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        return Response({
+            'user': None,
+            'status': 'error',
+            'error': str(e)
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
 # Update
 @api_view(['PUT'])
 def update_user(request, pk):
@@ -167,6 +193,47 @@ def online_friends_view(request):
             'count': 0,
             'error': str(e)
         }, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['GET'])
+def friends_view(request):
+    # Récupérer le token depuis le cookie
+    token = request.COOKIES.get('access_token', '')
+    
+    try:
+        # Valider le token
+        validated_token = AccessToken(token)
+        # Récupérer l'utilisateur à partir du token
+        user_id = validated_token['user_id']
+        user = customUser.objects.get(id=user_id)
+        
+        # Récupérer tous les amis de l'utilisateur (sans filtre)
+        all_friends = user.friends.all()
+        
+        # Sérialiser les données
+        serializer = UserDataSerializer(all_friends, many=True)
+        return Response({
+            'friends': serializer.data,
+            'count': len(all_friends)
+        }, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        # Si le token est invalide ou autre erreur
+        return Response({
+            'friends': [],
+            'count': 0,
+            'error': str(e)
+        }, status=status.HTTP_401_UNAUTHORIZED)
+    
+
+########################################################################################################################################
+########################################################################################################################################
+########################################################################################################################################
+##                          PONG API                                                                                                 ###
+########################################################################################################################################
+########################################################################################################################################
+########################################################################################################################################
+
 
 @login_required
 def get_user_invitations(request):
@@ -419,33 +486,3 @@ def forfeit_tournament(request):
             'success': False,
             'message': f'Error processing tournament forfeit: {str(e)}'
         }, status=500)
-
-@api_view(['GET'])
-def friends_view(request):
-    # Récupérer le token depuis le cookie
-    token = request.COOKIES.get('access_token', '')
-    
-    try:
-        # Valider le token
-        validated_token = AccessToken(token)
-        # Récupérer l'utilisateur à partir du token
-        user_id = validated_token['user_id']
-        user = customUser.objects.get(id=user_id)
-        
-        # Récupérer tous les amis de l'utilisateur (sans filtre)
-        all_friends = user.friends.all()
-        
-        # Sérialiser les données
-        serializer = UserDataSerializer(all_friends, many=True)
-        return Response({
-            'friends': serializer.data,
-            'count': len(all_friends)
-        }, status=status.HTTP_200_OK)
-    
-    except Exception as e:
-        # Si le token est invalide ou autre erreur
-        return Response({
-            'friends': [],
-            'count': 0,
-            'error': str(e)
-        }, status=status.HTTP_401_UNAUTHORIZED)
