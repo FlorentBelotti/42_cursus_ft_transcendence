@@ -32,6 +32,7 @@
 							{{ form.password }}
 						</div>
 						<button type="submit" class="submit-button">Se connecter</button>
+						<p><a href="{% url 'password_reset_request' %}">Forgot password?</a></p>
 						<div class="social">
 							<p>ou se connecter avec</p>
 							<a href="{% url 'social:begin' '42' %}">
