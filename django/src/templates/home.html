@@ -1,79 +1,40 @@
 {% load static %}
 {% block content %}
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chivo:ital,wght@0,100..900;1,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Glass Torus</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000000;
+        }
 
+	#scene-container {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: 200;
+	}
+        @font-face {
+            font-family: 'PPNeueMontreal-Bold';
+            src: url('/static/fonts/PPNeueMontreal-Bold.otf') format('opentype');
+        }
+    </style>
+</head>
 <body>
-	<div class="first-block">
-		<div class="title-transcendence">
-			<h1>TRANSCEN</h1>
-			<h1>DENCE.</h1>
-		</div>
-		<div class="image-transcendence">
-			<div id="sphere-container"></div>
-		</div>
-	</div>
-	<div class="containers">
-		<div class="left-container">
-			<div class="pong">
-				<div class="pong-title">
-					<h1>Pong Game</h1>
-				</div>
-				<div class="pong-class">
-					<canvas class="pong-canvas" width="600" height="400"></canvas>
-				</div>
-			</div>
-			<div class="language">
-				<h1>Techno used</h1>
-				<div class="language-src">
-					<img class="image" src="{% static 'assets/html.svg' %}" alt="html">
-					<img class="image" src="{% static 'assets/css.svg' %}" alt="css">
-					<img class="image" src="{% static 'assets/javascript.svg' %}" alt="js">
-					<img class="image" src="{% static 'assets/python.svg' %}" alt="python">
-					<img class="image" src="{% static 'assets/django.svg' %}" alt="django">
-				</div>
-			</div>
-		</div>
-		<div class="right-container">
-			<div class="module">
-				<div class="module-title">
-					<h1>Les Modules</h1>
-				</div>
-				<div class="module-text">
-					<p>Text1</p>
-					<p>Text1</p>
-					<p>Text1</p>
-					<p>Text1</p>
-					<p>Text1</p>
-					<p>Text1</p>
-					<p>Text1</p>
-					<p>Text1</p>
-					<p>Text1</p>
-					<p>Text1</p>
-				</div>
-			</div>
-	</div>
-	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> -->
-	<script type="module" src="{% static 'js/sphere-animation.js' %}"></script>
-	<script src="{% static 'js/animationPong.js' %}"></script>
-	<script src="{% static 'js/dynamic.js' %}"></script>
-	<script>
-	document.addEventListener('DOMContentLoaded', function() {
-	const title = document.querySelector('.title-transcendence');
-	const sphere = document.querySelector('#sphere-container');
-
-	window.addEventListener('scroll', function() {
-		const moveAmount = Math.min(window.scrollY * 1.5, window.innerWidth);
-
-		title.style.transform = `translateX(-${moveAmount}px)`;
-		title.style.opacity = Math.max(1 - window.scrollY / 500, 0);
-
-		sphere.style.transform = `translateX(${moveAmount}px)`;
-		sphere.style.opacity = Math.max(1 - window.scrollY / 500, 0);
-	});
-});
-	</script>
+    <div id="scene-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="{% static 'js/app.js' %}"></script>
 </body>
+</html>
 {% endblock %}
-
-

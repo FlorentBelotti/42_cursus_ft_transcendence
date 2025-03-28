@@ -16,11 +16,12 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
 directionalLight.position.set(0, 2, 3);
 scene.add(directionalLight);
 
+
 // Environment (simplified version of city preset)
 scene.background = new THREE.Color(0x171717);
-scene.environment = new THREE.CubeTextureLoader()
-    .setPath('https://threejs.org/examples/textures/cube/pisa/')
-    .load(['px.png', 'nx.png', 'py.png', 'ny.png', 'pz.png', 'nz.png']);
+// scene.environment = new THREE.CubeTextureLoader()
+//     .setPath('https://threejs.org/examples/textures/cube/pisa/')
+//     .load(['px.png', 'nx.png', 'py.png', 'ny.png', 'pz.png', 'nz.png']);
 
 // Variables for our objects
 let torus = null;
@@ -28,25 +29,25 @@ let textMesh = null;
 
 // Create a glass-like material
 const material = new THREE.MeshPhysicalMaterial({
-    thickness: 0.2,
-    roughness: 0,
-    transmission: 1,
-    ior: 0.5,
-    chromaticAberration: 0.8,
-    clearcoat: 1,
-    clearcoatRoughness: 0,
-    envMapIntensity: 1,
-    color: 0xffffff
+    thickness: 1.5,            // Augmenter pour une réfraction plus prononcée
+    roughness: 0.05,          // Réduire pour plus de clarté
+    transmission: 1,          // Matériau transparent
+    ior: 1.5,                 // Indice de réfraction (verre-like)
+    chromaticAberration: 2.0, // Augmenter l'aberration chromatique
+    backside: false,
+    color: 0xffffff,
+    transparent: true,        // Ajouter pour gérer la transparence
+    opacity: 0.9              // Légère opacité pour réalisme
 });
 
 // Load the torus model
 const loader = new THREE.GLTFLoader();
 loader.load(
-    'path/to/your/torrus.glb',
+    '/media/torrus.glb',
     function (gltf) {
         torus = gltf.scene.children[0]; // Assuming the torus is the first child
         torus.material = material;
-        torus.scale.set(1, 1, 1);
+        torus.scale.set(4, 4, 4);
         scene.add(torus);
     },
     undefined,
@@ -61,22 +62,54 @@ loader.load(
 
 // Load font and create text
 const fontLoader = new THREE.FontLoader();
+const fontPath = '/static/fonts/Staatliches_Regular.json'
 fontLoader.load(
-    'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
+    fontPath,
     function (font) {
         const textGeometry = new THREE.TextGeometry('TRANSCENDENCE', {
             font: font,
-            size: 1,
-            height: 0.1
+            size: 1.5,
+            height: 0.1,
+            curveSegments: 12,
+            bevelEnabled: true,
+            bevelThickness: 0.03,
+            bevelSize: 0.02,
+            bevelOffset: 0,
+            bevelSegments: 5
         });
         textGeometry.center();
 
-        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        // Matériau plus élaboré pour un meilleur rendu
+        const textMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            specular: 0x111111,
+            shininess: 30,
+            flatShading: true
+        });
+
         textMesh = new THREE.Mesh(textGeometry, textMaterial);
         textMesh.position.z = -1;
+
+        // Ajout d'une ombre pour meilleure lisibilité
+        // textMesh.castShadow = true;
+
         scene.add(textMesh);
+
+        console.log('Texte créé avec PPNeueMontreal Bold');
+    },
+    undefined, // Callback de progression
+    function (error) {
+        console.error('Erreur de chargement de la police:', error);
+        // Solution de repli avec police par défaut
+        fontLoader.load(
+            'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
+            function (fallbackFont) {
+                // Créer le texte avec la police de repli
+            }
+        );
     }
 );
+
 
 // Handle window resize
 window.addEventListener('resize', () => {
@@ -91,7 +124,7 @@ function animate() {
 
     if (torus) {
         torus.rotation.x += 0.02;
-		// torus.rotation.y += 0.02;
+		// torus.rotation.y += 0.01;
     }
 
     renderer.render(scene, camera);
