@@ -9,7 +9,9 @@ camera.position.z = 5;
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x000000);
-document.body.appendChild(renderer.domElement);
+const sceneContainer = document.getElementById('scene-container');
+sceneContainer.appendChild(renderer.domElement);
+// document.body.appendChild(renderer.domElement);
 
 // Lighting
 const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
