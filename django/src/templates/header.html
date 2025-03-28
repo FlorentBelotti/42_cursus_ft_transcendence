@@ -39,6 +39,7 @@
 				<div id="add-friend-form">
 					<input type="text" id="friend-username" placeholder="Add Friend" />
 					<button id="add-friend-button">+</button>
+					<div id="error-message" class="error-message"></div>
 				</div>
 				<div class="horizontal-line"></div>
 				<div class="invitations-section">
@@ -153,7 +154,9 @@
 				});
 			}
 
-			function addFriend(username) {
+			function addFriend(username) {// Récupérer le conteneur d'erreur
+				errorMessageDiv.innerHTML = '';
+
 				fetch('/api/friends/add/', {
 					method: 'POST',
 					headers: {
@@ -178,11 +181,15 @@
 				})
 				.then(data => {
 					console.log('Ami ajouté avec succès:', data);
-					fetchFriends();
+					fetchFriends(); // Rafraîchir la liste des amis
+					errorMessageDiv.innerHTML = '<span style="color: green;">Ami ajouté avec succès !</span>'; // Message de succès (optionnel)
+					setTimeout(() => errorMessageDiv.innerHTML = '', 3000); // Effacer après 3 secondes (optionnel)
 				})
 				.catch(error => {
 					console.error('Erreur:', error);
-					friendsList.innerHTML = `<p>Erreur: ${error.message}</p>`;
+					// Afficher l'erreur sous l'input au lieu de remplacer la liste des amis
+					errorMessageDiv.innerHTML = `<span style="color: red;">${error.message}</span>`;
+					setTimeout(() => errorMessageDiv.innerHTML = '', 5000); // Effacer après 5 secondes (optionnel)
 				});
 			}
 		});
