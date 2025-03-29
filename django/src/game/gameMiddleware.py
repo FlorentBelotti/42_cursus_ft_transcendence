@@ -7,7 +7,6 @@ from users.models import customUser
 import jwt
 
 class JWTAuthMiddleware(BaseMiddleware):
-
     """
     ╔═══════════════════════════════════════════════════╗
     ║            JWTAuthMiddleware                      ║
@@ -29,19 +28,19 @@ class JWTAuthMiddleware(BaseMiddleware):
         and attaches the corresponding user to the connection scope.
         Falls back to AnonymousUser if authentication fails.
         """
-
-        # Try to get JWT from strings or cookies
-        query_params = dict((x.split('=') for x in scope['query_string'].decode().split('&') if x))
-        token = query_params.get('token', None)
-        
-        # Get headers
+        # Convert scope headers to a dict-like object similar to request.COOKIES
         headers = dict(scope['headers'])
-        if b'cookie' in headers:
-            cookies = headers[b'cookie'].decode()
-            for cookie in cookies.split('; '):
-                if cookie.startswith('access_token='):
-                    token = cookie.split('=')[1]
+        cookies = {}
         
+        # Parse cookies from headers if available
+        if b'cookie' in headers:
+            cookie_string = headers[b'cookie'].decode()
+            cookies = dict(pair.split('=', 1) for pair in cookie_string.split('; '))
+
+        # Get token from query params
+        query_params = dict((x.split('=') for x in scope['query_string'].decode().split('&') if x))
+        token = query_params.get('token') or cookies.get('access_token')
+
         scope['user'] = AnonymousUser()
         
         if token:
@@ -62,7 +61,6 @@ class JWTAuthMiddleware(BaseMiddleware):
         Decodes and validates the provided JWT access token,
         then retrieves the corresponding user from the database.
         """
-        
         try:
             access_token = AccessToken(token)
             user_id = access_token.payload.get('user_id')
