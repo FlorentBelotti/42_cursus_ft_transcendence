@@ -6,7 +6,7 @@ body {
 	align-items: center;
 	min-height: 100vh;
 	font-family: 'Bebas Neue', sans-serif;
-	background-color: #F7F7F7;
+	background-color: #171717;
 	/* overflow-x: hidden; */
 }
 
@@ -14,13 +14,14 @@ body {
 	display: flex;
 	width: 100%;
 	max-width: 900px;
-	border: solid 1px #000;
+	border: solid 1px #fff;
 	margin: 0 auto;
 }
 
 .left-box, .right-box{
 	flex: 1;
 	padding: 40px;
+	color: #fff;
 }
 
 .inscription-box h1{
@@ -43,12 +44,12 @@ body {
 	margin-top: 40px;
 	padding-bottom: 5px;
 	margin-left: 50px;
-	border-bottom: solid 1px #000;
+	border-bottom: solid 1px #fff;
 }
 
 .form-group input{
 	border: none;
-	background-color: #F7F7F7;
+	background-color: #171717;
 	width: 100%;
 	font-size: 16px;
 	padding: 0 20px 0 10px;
@@ -61,6 +62,7 @@ body {
 	border: solid 1px transparent;
 	background-color: #000;
 	color: #F7F7F7;
+	border: solid 1px #fff;
 	padding: 15px 30px;
 	display: block;
 	margin-left: 50px;
@@ -71,7 +73,7 @@ body {
 .submit-button:hover{
 	background-color: transparent;
 	border: solid 1px #000 ;
-	color: #000;
+	color: #fff;
 }
 
 .right-box{
@@ -93,7 +95,7 @@ body {
 }
 
 .connection a{
-	color: #323232;
+	color: #fff;
 	/* text-decoration: none; */
 }
 

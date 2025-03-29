@@ -20,7 +20,7 @@ export class CubeAnimation {
 
 		const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
 		const material = new THREE.MeshBasicMaterial({
-			color: 0x000000,
+			color: 0xffffff,
 			wireframe: true,
 			wireframeLinewidth: 2,
 			transparent: true,
