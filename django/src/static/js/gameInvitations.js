@@ -5,31 +5,91 @@ class GameInvitationsManager {
         this.lastFetchTime = 0;
         this.activeInvitationIds = new Set(); // Track active invitation IDs
         this.isInitialized = false;
+        this.isAuthenticated = false; // Track authentication state
     }
 
     init() {
         if (this.isInitialized) return;
 
+        console.log("Initializing game invitations manager");
         this.invitationsContainer = document.getElementById('game-invitations-container');
         if (!this.invitationsContainer) {
             console.error("Invitations container not found");
             return;
         }
 
-        console.log("Initializing game invitations manager");
-        this.isInitialized = true;
+        // First check authentication before starting any polling
+        this.checkAuthenticationStatus().then(isAuthenticated => {
+            if (isAuthenticated) {
+                this.isInitialized = true;
+                this.isAuthenticated = true;
+                
+                // Immediate initial fetch
+                this.fetchInvitationsWithForce();
+                
+                // Set up polling with authentication checks
+                this.pollingInterval = setInterval(() => {
+                    // Periodically verify authentication status (every 30 seconds)
+                    if (Date.now() % 30000 < 1500) {
+                        this.checkAuthenticationStatus();
+                    }
+                    
+                    if (this.isAuthenticated) {
+                        this.fetchInvitations();
+                    }
+                }, 1500);
+                
+                // Add visibility change listener to refresh when tab becomes active
+                document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+                
+                // Add storage event listener for cross-tab cancellation notifications
+                window.addEventListener('storage', this.handleStorageEvent.bind(this));
+            } else {
+                console.log("User not authenticated - skipping game invitations initialization");
+                if (this.invitationsContainer) {
+                    this.invitationsContainer.innerHTML = `
+                        <p>Connectez-vous pour voir vos invitations</p>
+                    `;
+                }
+            }
+        }).catch(error => {
+            console.error("Error checking authentication status:", error);
+        });
+    }
 
-        // Immediate initial fetch
-        this.fetchInvitationsWithForce();
-
-        // Set up aggressive polling (every 1.5 seconds)
-        this.pollingInterval = setInterval(() => this.fetchInvitations(), 1500);
-
-        // Add visibility change listener to refresh when tab becomes active
-        document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
-
-        // Add storage event listener for cross-tab cancellation notifications
-        window.addEventListener('storage', this.handleStorageEvent.bind(this));
+    // New method to check authentication status
+    async checkAuthenticationStatus() {
+        try {
+            const response = await fetch('/api/users/me/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                this.isAuthenticated = false;
+                return false;
+            }
+            
+            const data = await response.json();
+            
+            // Store user data for later use
+            if (data.user) {
+                window.currentUser = data.user;
+                this.isAuthenticated = true;
+                return true;
+            }
+            
+            this.isAuthenticated = data.status === 'success';
+            return this.isAuthenticated;
+        } catch (error) {
+            console.error('Error checking authentication:', error);
+            this.isAuthenticated = false;
+            return false;
+        }
     }
 
     handleVisibilityChange() {
