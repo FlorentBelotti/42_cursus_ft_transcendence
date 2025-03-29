@@ -1,49 +1,64 @@
 class GameInvitationsManager {
+
+    /**
+     * ╔══════════════════════════════════════════════════════════╗
+     * ║               GameInvitationsManager                     ║
+     * ╠══════════════════════════════════════════════════════════╣
+     * ║ Real-time game invitation management system              ║
+     * ║                                                          ║
+     * ║ • Handles authentication verification                    ║
+     * ║ • Polls for new game invitations from the server         ║
+     * ║ • Manages invitation display and user interaction        ║
+     * ║ • Processes invitation responses (accept/decline)        ║
+     * ║ • Tracks invitation state across page navigation         ║
+     * ║ • Provides cross-tab synchronization for invitations     ║
+     * ╚══════════════════════════════════════════════════════════╝
+     */
+
+    //==========================================================//
+    //                   INITIALIZATION                         //
+    //==========================================================//
+
     constructor() {
         this.invitationsContainer = document.getElementById('game-invitations-container');
         this.pollingInterval = null;
         this.lastFetchTime = 0;
-        this.activeInvitationIds = new Set(); // Track active invitation IDs
+        this.activeInvitationIds = new Set();
         this.isInitialized = false;
-        this.isAuthenticated = false; // Track authentication state
+        this.isAuthenticated = false;
     }
-
+    
     init() {
         if (this.isInitialized) return;
 
         console.log("Initializing game invitations manager");
+
+        // Is Friend's modal container available ?
         this.invitationsContainer = document.getElementById('game-invitations-container');
         if (!this.invitationsContainer) {
             console.error("Invitations container not found");
             return;
         }
 
-        // First check authentication before starting any polling
+        // Check authentication before any polling
         this.checkAuthenticationStatus().then(isAuthenticated => {
             if (isAuthenticated) {
                 this.isInitialized = true;
                 this.isAuthenticated = true;
-                
-                // Immediate initial fetch
                 this.fetchInvitationsWithForce();
-                
-                // Set up polling with authentication checks
                 this.pollingInterval = setInterval(() => {
-                    // Periodically verify authentication status (every 30 seconds)
                     if (Date.now() % 30000 < 1500) {
                         this.checkAuthenticationStatus();
                     }
-                    
                     if (this.isAuthenticated) {
                         this.fetchInvitations();
                     }
                 }, 1500);
                 
-                // Add visibility change listener to refresh when tab becomes active
+                // Friend's modal management
                 document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
-                
-                // Add storage event listener for cross-tab cancellation notifications
                 window.addEventListener('storage', this.handleStorageEvent.bind(this));
+                
             } else {
                 console.log("User not authenticated - skipping game invitations initialization");
                 if (this.invitationsContainer) {
@@ -57,7 +72,10 @@ class GameInvitationsManager {
         });
     }
 
-    // New method to check authentication status
+    //==========================================================//
+    //                  AUTHENTICATION                          //
+    //==========================================================//
+
     async checkAuthenticationStatus() {
         try {
             const response = await fetch('/api/users/me/', {
@@ -75,8 +93,6 @@ class GameInvitationsManager {
             }
             
             const data = await response.json();
-            
-            // Store user data for later use
             if (data.user) {
                 window.currentUser = data.user;
                 this.isAuthenticated = true;
@@ -91,6 +107,10 @@ class GameInvitationsManager {
             return false;
         }
     }
+
+    //==========================================================//
+    //                  UI RENDERING                            //
+    //==========================================================//
 
     handleVisibilityChange() {
         if (document.visibilityState === 'visible') {
@@ -107,147 +127,25 @@ class GameInvitationsManager {
     }
 
     showStatusNotification(message) {
-        // Show a temporary notification message
         const notification = document.createElement('div');
         notification.className = 'status-notification';
         notification.textContent = message;
 
-        // Add to DOM and remove after 3 seconds
         if (this.invitationsContainer) {
             this.invitationsContainer.prepend(notification);
             setTimeout(() => notification.remove(), 3000);
         }
     }
 
-    cleanup() {
-        console.log("Cleaning up game invitations manager");
-        // Clear the polling interval when navigating away
-        if (this.pollingInterval) {
-            clearInterval(this.pollingInterval);
-            this.pollingInterval = null;
-        }
-
-        // Remove event listeners
-        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
-        window.removeEventListener('storage', this.handleStorageEvent);
-
-        this.isInitialized = false;
-    }
-
-    // Regular polling fetch (less aggressive caching)
-    fetchInvitations() {
-        if (!this.invitationsContainer) return;
-
-        // Track the last fetch time (to prevent too frequent refreshes)
-        const now = Date.now();
-        if (now - this.lastFetchTime < 1000) {
-            // Don't fetch more than once per second
-            return;
-        }
-        this.lastFetchTime = now;
-
-        fetch('/api/invitations/', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || '',
-                'Cache-Control': 'no-cache'
-            },
-            credentials: 'include'
-        })
-        .then(response => {
-            if (response.redirected) {
-                return Promise.reject('Not authenticated');
-            }
-            return response.json();
-        })
-        .then(data => {
-            this.processInvitationUpdates(data.invitations || []);
-        })
-        .catch(error => {
-            if (error === 'Not authenticated') {
-                return;
-            }
-            console.error('Error fetching invitations:', error);
-        });
-    }
-
-    fetchInvitationsWithForce() {
-        console.log("🔄 Fetching invitations with forced refresh");
-        const cacheBuster = `?_=${new Date().getTime()}`;
-
-        // Log the current known invitation IDs for debugging
-        console.log("Current active invitations before refresh:", [...this.activeInvitationIds]);
-
-        // Use more aggressive cache prevention
-        fetch(`/api/invitations/${cacheBuster}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || '',
-                'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-                'Pragma': 'no-cache',
-                'Expires': '-1'
-            },
-            credentials: 'include'
-        })
-        .then(response => {
-            if (response.redirected) {
-                this.invitationsContainer.innerHTML = `
-                    <p class="text-amber-500">Vous devez être connecté pour voir les invitations.</p>
-                `;
-                return Promise.reject('Not authenticated');
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Invitation data received:", data.invitations ? data.invitations.length : 0, "invitations");
-
-            // Log the IDs of the received invitations
-            if (data.invitations && data.invitations.length > 0) {
-                console.log("Received invitation IDs:", data.invitations.map(inv => inv.id));
-            }
-
-            this.processInvitationUpdates(data.invitations || []);
-        })
-        .catch(error => {
-            if (error === 'Not authenticated') {
-                return;
-            }
-            console.error('Error fetching invitations:', error);
-        });
-    }
-
-    processInvitationUpdates(newInvitations) {
-        // Get current invitations
-        const currentIds = new Set(newInvitations.map(inv => inv.id));
-
-        // Check for cancellations (invitations that disappeared)
-        const cancelledInvitations = [...this.activeInvitationIds].filter(id => !currentIds.has(id));
-
-        if (cancelledInvitations.length > 0) {
-            console.log("Found cancelled invitations:", cancelledInvitations);
-            this.showStatusNotification("Une invitation a été annulée");
-        }
-
-        // Update active invitations tracking
-        this.activeInvitationIds = currentIds;
-
-        // Display all current invitations
-        this.displayInvitations(newInvitations);
-    }
-
     displayInvitations(invitations) {
 		if (!this.invitationsContainer) return;
 
-		// if (!invitations || invitations.length === 0) {
-		// 	this.invitationsContainer.innerHTML = `
-		// 		<p class="text-gray-500">Aucune invitation de jeu en attente.</p>
-		// 	`;
-		// 	return;
-		// }
+		if (!invitations || invitations.length === 0) {
+			this.invitationsContainer.innerHTML = `
+				<p class="text-gray-500">Aucune invitation de jeu en attente.</p>
+			`;
+			return;
+		}
 
 		let html = `<div class="invitations-list">`;
 
@@ -313,6 +211,129 @@ class GameInvitationsManager {
 		});
 	}
 
+    //==========================================================//
+    //                  CLASS DESTRUCTION                       //
+    //==========================================================//
+
+    cleanup() {
+        console.log("Cleaning up game invitations manager");
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+        }
+
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+        window.removeEventListener('storage', this.handleStorageEvent);
+
+        this.isInitialized = false;
+    }
+
+
+    //==========================================================//
+    //                 DATA FETCHING                            //
+    //==========================================================//
+
+    fetchInvitations() {
+        if (!this.invitationsContainer) return;
+
+        const now = Date.now();
+        if (now - this.lastFetchTime < 1000) {
+            return;
+        }
+        this.lastFetchTime = now;
+
+        fetch('/api/invitations/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || '',
+                'Cache-Control': 'no-cache'
+            },
+            credentials: 'include'
+        })
+        .then(response => {
+            if (response.redirected) {
+                return Promise.reject('Not authenticated');
+            }
+            return response.json();
+        })
+        .then(data => {
+            this.processInvitationUpdates(data.invitations || []);
+        })
+        .catch(error => {
+            if (error === 'Not authenticated') {
+                return;
+            }
+            console.error('Error fetching invitations:', error);
+        });
+    }
+
+    fetchInvitationsWithForce() {
+        console.log("🔄 Fetching invitations with forced refresh");
+        const cacheBuster = `?_=${new Date().getTime()}`;
+
+        // Log the current known invitation IDs for debugging
+        console.log("Current active invitations before refresh:", [...this.activeInvitationIds]);
+
+        // Use more aggressive cache prevention
+        fetch(`/api/invitations/${cacheBuster}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector("[name=csrfmiddlewaretoken]")?.value || '',
+                'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+                'Pragma': 'no-cache',
+                'Expires': '-1'
+            },
+            credentials: 'include'
+        })
+        .then(response => {
+            if (response.redirected) {
+                this.invitationsContainer.innerHTML = `
+                    <p class="text-amber-500">Vous devez être connecté pour voir les invitations.</p>
+                `;
+                return Promise.reject('Not authenticated');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Invitation data received:", data.invitations ? data.invitations.length : 0, "invitations");
+
+            if (data.invitations && data.invitations.length > 0) {
+                console.log("Received invitation IDs:", data.invitations.map(inv => inv.id));
+            }
+
+            this.processInvitationUpdates(data.invitations || []);
+        })
+        .catch(error => {
+            if (error === 'Not authenticated') {
+                return;
+            }
+            console.error('Error fetching invitations:', error);
+        });
+    }
+
+    processInvitationUpdates(newInvitations) {
+        // Get current invitations
+        const currentIds = new Set(newInvitations.map(inv => inv.id));
+
+        // Check for cancellations
+        const cancelledInvitations = [...this.activeInvitationIds].filter(id => !currentIds.has(id));
+
+        if (cancelledInvitations.length > 0) {
+            console.log("Found cancelled invitations:", cancelledInvitations);
+            this.showStatusNotification("Une invitation a été annulée");
+        }
+
+        // Update active invitations
+        this.activeInvitationIds = currentIds;
+
+        // Display all current invitations
+        this.displayInvitations(newInvitations);
+    }
+
     respondToInvitation(invitationId, action) {
         const card = document.querySelector(`.invitation-card[data-id="${invitationId}"]`);
         if (card) {
@@ -368,14 +389,11 @@ class GameInvitationsManager {
     startInvitedGame(gameId, opponentUsername) {
         console.log(`Starting invited game ${gameId} with ${opponentUsername}`);
 
-        // Create a custom event for invited game
         const invitedGameEvent = new CustomEvent('invitedGame', {
             detail: { gameId, opponentUsername }
         });
 
-        // Use SPA navigation to match page
         if (window.loadContent) {
-            // Save the game data to sessionStorage to retrieve after navigation
             sessionStorage.setItem('pendingGame', JSON.stringify({
                 gameId,
                 opponentUsername,
@@ -384,15 +402,12 @@ class GameInvitationsManager {
 
             window.loadContent('/match/');
 
-            // Set a small delay to ensure the page loads before connecting
             setTimeout(() => {
-                // The match page should have loaded pongServer.js which creates pongServerGame
                 if (window.pongServerGame) {
                     window.pongServerGame.joinInvitedGame(gameId, opponentUsername, false);
                     console.log("Successfully initiated game join");
                 } else {
                     console.error("Pong game not initialized!");
-                    // Try again with a longer delay as a fallback
                     setTimeout(() => {
                         if (window.pongServerGame) {
                             window.pongServerGame.joinInvitedGame(gameId, opponentUsername, false);
@@ -405,18 +420,14 @@ class GameInvitationsManager {
             }, 500);
         } else {
             console.error("SPA loadContent not available");
-            // Fallback to direct navigation with parameters
             window.location.href = `/match/?game=${gameId}&opponent=${opponentUsername}`;
         }
     }
 }
 
-// Create a global instance for dynamic.js to access
 window.gameInvitationsManager = window.gameInvitationsManager || new GameInvitationsManager();
 
-// Initialize when loaded directly (for backwards compatibility)
 document.addEventListener('DOMContentLoaded', function() {
-    // Only initialize if not being loaded by dynamic.js
     if (!window.isDynamicLoading) {
         window.gameInvitationsManager.init();
     }
