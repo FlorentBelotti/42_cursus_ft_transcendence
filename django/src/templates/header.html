@@ -36,11 +36,15 @@
 				<h2>Friends List</h2>
 				<span class="close-friends-modal">&times;</span>
 				<div class="horizontal-line"></div>
+
 				<div id="add-friend-form">
-					<input type="text" id="friend-username" placeholder="Add Friend" />
-					<button id="add-friend-button">+</button>
-					<div id="error-message" class="error-message"></div>
+					<div id="add-friend-form">
+						<input type="text" id="friend-username" placeholder="Add Friend" />
+						<button id="add-friend-button">+</button>
+					</div>
+					<div id="add-friend-message" class="add-friend-message"></div>
 				</div>
+
 				<div class="horizontal-line"></div>
 				<div class="invitations-section">
 					<div id="game-invitations-container">
@@ -85,6 +89,7 @@
 			const friendsList = document.getElementById('friends-list');
 			const addFriendButton = document.getElementById('add-friend-button');
 			const friendUsernameInput = document.getElementById('friend-username');
+			const errorMessageDiv = document.getElementById('error-message');
 
 			friendsButton.addEventListener('click', function () {
 				fetchFriends();
@@ -143,18 +148,18 @@
 							</div>
 						`).join('');
 
-						// Ajoutez ici les event listeners pour les boutons d'action si nécessaire
+
 					} else {
 						friendsList.innerHTML = '<p>Vous n\'avez pas encore d\'amis</p>';
 					}
 				})
 				.catch(error => {
 					console.error('Erreur:', error);
-					friendsList.innerHTML = `<p>Erreur: ${error.message}</p>`;
+					errorMessageDiv.innerHTML = `<p>Erreur: ${error.message}</p>`;
 				});
 			}
 
-			function addFriend(username) {// Récupérer le conteneur d'erreur
+			function addFriend(username) {
 				errorMessageDiv.innerHTML = '';
 
 				fetch('/api/friends/add/', {
@@ -181,15 +186,19 @@
 				})
 				.then(data => {
 					console.log('Ami ajouté avec succès:', data);
-					fetchFriends(); // Rafraîchir la liste des amis
-					errorMessageDiv.innerHTML = '<span style="color: green;">Ami ajouté avec succès !</span>'; // Message de succès (optionnel)
-					setTimeout(() => errorMessageDiv.innerHTML = '', 3000); // Effacer après 3 secondes (optionnel)
+					errorMessageDiv.innerHTML = '<span style="color: green;">Ami ajouté avec succès !</span>';
+					setTimeout(() => {
+            			errorMessageDiv.innerHTML = '';
+            			fetchFriends();
+       				}, 2000);
 				})
 				.catch(error => {
 					console.error('Erreur:', error);
-					// Afficher l'erreur sous l'input au lieu de remplacer la liste des amis
 					errorMessageDiv.innerHTML = `<span style="color: red;">${error.message}</span>`;
-					setTimeout(() => errorMessageDiv.innerHTML = '', 5000); // Effacer après 5 secondes (optionnel)
+					setTimeout(() => {
+						errorMessageDiv.innerHTML = '',
+						fetchFriends()
+					},5000);
 				});
 			}
 		});

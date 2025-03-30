@@ -17,6 +17,15 @@ nav {
     left: 0;
     right: 0;
     z-index: 1000;
+	border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-image: linear-gradient(
+        to right,
+        transparent 0%,
+        #424242 30%,
+		#424242 70%,
+        transparent 100%
+    ) 1;
 }
 
 nav ul {
@@ -50,9 +59,9 @@ nav ul li {
 .nav-button, .pong-button, #amis-button {
     background-color: transparent;
     border: solid 1px transparent;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
-    padding: 15px 10px;
+    padding: 10px 10px;
     color: #ffffff;
     transition: border-color 0.3s ease;
     white-space: nowrap;
@@ -63,7 +72,7 @@ nav ul li {
 .modal {
     display: none;
     position: fixed;
-    top: 74.5px;
+    top: 62px;
     right: 0;
     width: 400px;
     height: calc(100% - 66.5px);
@@ -117,7 +126,7 @@ nav ul li {
 }
 
 .horizontal-line {
-    border-top: 1px solid #333;
+    border-top: 1px solid #fff;
     margin: 15px 0;
 }
 
@@ -171,6 +180,19 @@ nav ul li {
 
 #add-friend-button:hover {
     background-color: #45a049;
+}
+
+#error-message {
+    margin-top: 5px;
+    font-size: 14px;
+    min-height: 20px; /* Pour éviter que le contenu saute */
+}
+
+.error-message {
+    color: red;
+    font-size: 14px;
+    margin: 5px 0;
+    min-height: 20px;
 }
 
 .invitation-card {

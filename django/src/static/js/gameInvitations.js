@@ -27,7 +27,7 @@ class GameInvitationsManager {
         this.isInitialized = false;
         this.isAuthenticated = false;
     }
-    
+
     init() {
         if (this.isInitialized) return;
 
@@ -54,11 +54,11 @@ class GameInvitationsManager {
                         this.fetchInvitations();
                     }
                 }, 1500);
-                
+
                 // Friend's modal management
                 document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
                 window.addEventListener('storage', this.handleStorageEvent.bind(this));
-                
+
             } else {
                 console.log("User not authenticated - skipping game invitations initialization");
                 if (this.invitationsContainer) {
@@ -86,19 +86,19 @@ class GameInvitationsManager {
                 },
                 credentials: 'include'
             });
-            
+
             if (!response.ok) {
                 this.isAuthenticated = false;
                 return false;
             }
-            
+
             const data = await response.json();
             if (data.user) {
                 window.currentUser = data.user;
                 this.isAuthenticated = true;
                 return true;
             }
-            
+
             this.isAuthenticated = data.status === 'success';
             return this.isAuthenticated;
         } catch (error) {
@@ -141,9 +141,7 @@ class GameInvitationsManager {
 		if (!this.invitationsContainer) return;
 
 		if (!invitations || invitations.length === 0) {
-			this.invitationsContainer.innerHTML = `
-				<p class="text-gray-500">Aucune invitation de jeu en attente.</p>
-			`;
+			this.invitationsContainer.innerHTML = ``;
 			return;
 		}
 
@@ -152,7 +150,7 @@ class GameInvitationsManager {
 		invitations.forEach(invitation => {
 			const minutes = Math.floor(invitation.time_remaining / 60);
 			const seconds = invitation.time_remaining % 60;
-			const currentUser = window.currentUser || {}; // Assurez-vous que currentUser est disponible globalement
+			const currentUser = window.currentUser || {}; //
 
 			html += `
 				<div class="invitation-container">
