@@ -121,6 +121,9 @@ async function updateAuthButtons() {
 
     // Add Friend function
     function addFriend(username) {
+		const addFriendMessage = document.getElementById('add-friend-message');
+    	addFriendMessage.innerHTML = '';
+
         fetch('/api/friends/add/', {
             method: 'POST',
             headers: {
@@ -143,15 +146,30 @@ async function updateAuthButtons() {
             }
             return response.json();
         })
-        .then(data => {
-            console.log('Ami ajouté avec succès:', data);
-            fetchFriends();
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-            const friendsList = document.getElementById('friends-list');
-            friendsList.innerHTML = `<p>Erreur: ${error.message}</p>`;
-        });
+		.then(data => {
+			console.log('Ami ajouté avec succès:', data);
+			addFriendMessage.innerHTML = '<span style="color: green;">Ami ajouté avec succès !</span>';
+			setTimeout(() => {
+				addFriendMessage.classList.add('fade-out');
+				setTimeout(() => {
+					addFriendMessage.innerHTML = '';
+					addFriendMessage.classList.remove('fade-out');
+					fetchFriends();
+				}, 300);
+			}, 2000);
+		})
+		.catch(error => {
+			console.error('Erreur:', error);
+			addFriendMessage.innerHTML = `<span style="color: red;">${error.message}</span>`;
+			setTimeout(() => {
+				addFriendMessage.classList.add('fade-out');
+				setTimeout(() => {
+					addFriendMessage.innerHTML = '';
+					addFriendMessage.classList.remove('fade-out');
+					fetchFriends();
+				}, 300);
+			}, 2000);
+		});
     }
 
     // Add event listener for adding friends

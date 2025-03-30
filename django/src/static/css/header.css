@@ -182,6 +182,29 @@ nav ul li {
     background-color: #45a049;
 }
 
+.add-friend-message {
+    margin-top: 5px;
+    font-size: 14px;
+    min-height: 0;
+    height: 0;
+    overflow: hidden;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.add-friend-message:not(:empty) {
+    min-height: 20px;
+    height: auto;
+    margin-bottom: 10px;
+}
+
+.add-friend-message {
+    transition: opacity 0.3s ease;
+}
+.fade-out {
+    opacity: 0;
+}
+
 #error-message {
     margin-top: 5px;
     font-size: 14px;
