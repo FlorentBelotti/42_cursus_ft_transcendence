@@ -1,135 +1,174 @@
-// Initialize the scene
-const scene = new THREE.Scene();
+class PongAnimation {
+    constructor() {
+        this.canvas = document.createElement('canvas');
+        this.canvas.className = 'pong-canvas';
+        this.canvas.style.position = 'absolute';
+        this.canvas.style.top = '0';
+        this.canvas.style.left = '0';
+        document.querySelector('.pong-container').appendChild(this.canvas);
 
-// Camera
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 5;
+        this.ctx = this.canvas.getContext('2d');
 
-// Renderer
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x000000);
-const sceneContainer = document.getElementById('scene-container');
-sceneContainer.appendChild(renderer.domElement);
-// document.body.appendChild(renderer.domElement);
+        this.state = {
+            leftPaddle: { y: 0 },
+            rightPaddle: { y: 0 },
+            ball: {
+                x: 0,
+                y: 0,
+                speedX: 0,
+                speedY: 0
+            },
+            lastTime: performance.now()
+        };
 
-// Lighting
-const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-directionalLight.position.set(0, 2, 3);
-scene.add(directionalLight);
-
-
-// Environment (simplified version of city preset)
-scene.background = new THREE.Color(0x171717);
-// scene.environment = new THREE.CubeTextureLoader()
-//     .setPath('https://threejs.org/examples/textures/cube/pisa/')
-//     .load(['px.png', 'nx.png', 'py.png', 'ny.png', 'pz.png', 'nz.png']);
-
-// Variables for our objects
-let torus = null;
-let textMesh = null;
-
-// Create a glass-like material
-const material = new THREE.MeshPhysicalMaterial({
-    thickness: 1.5,            // Augmenter pour une réfraction plus prononcée
-    roughness: 0.05,          // Réduire pour plus de clarté
-    transmission: 1,          // Matériau transparent
-    ior: 1.5,                 // Indice de réfraction (verre-like)
-    chromaticAberration: 2.0, // Augmenter l'aberration chromatique
-    backside: false,
-    color: 0xffffff,
-    transparent: true,        // Ajouter pour gérer la transparence
-    opacity: 0.9              // Légère opacité pour réalisme
-});
-
-// Load the torus model
-const loader = new THREE.GLTFLoader();
-loader.load(
-    '/media/torrus.glb',
-    function (gltf) {
-        torus = gltf.scene.children[0]; // Assuming the torus is the first child
-        torus.material = material;
-        torus.scale.set(4, 4, 4);
-        scene.add(torus);
-    },
-    undefined,
-    function (error) {
-        console.error('Error loading GLTF model:', error);
-        // Fallback: create a torus geometry if model fails to load
-        const geometry = new THREE.TorusGeometry(1.5, 0.8, 20, 200);
-        torus = new THREE.Mesh(geometry, material);
-        scene.add(torus);
-    }
-);
-
-// Load font and create text
-const fontLoader = new THREE.FontLoader();
-const fontPath = '/static/fonts/Staatliches_Regular.json'
-fontLoader.load(
-    fontPath,
-    function (font) {
-        const textGeometry = new THREE.TextGeometry('TRANSCENDENCE', {
-            font: font,
-            size: 1.5,
-            height: 0.1,
-            curveSegments: 12,
-            bevelEnabled: true,
-            bevelThickness: 0.03,
-            bevelSize: 0.02,
-            bevelOffset: 0,
-            bevelSegments: 5
-        });
-        textGeometry.center();
-
-        // Matériau plus élaboré pour un meilleur rendu
-        const textMaterial = new THREE.MeshPhongMaterial({
-            color: 0xffffff,
-            specular: 0x111111,
-            shininess: 30,
-            flatShading: true
-        });
-
-        textMesh = new THREE.Mesh(textGeometry, textMaterial);
-        textMesh.position.z = -1;
-
-        // Ajout d'une ombre pour meilleure lisibilité
-        // textMesh.castShadow = true;
-
-        scene.add(textMesh);
-
-        console.log('Texte créé avec PPNeueMontreal Bold');
-    },
-    undefined, // Callback de progression
-    function (error) {
-        console.error('Erreur de chargement de la police:', error);
-        // Solution de repli avec police par défaut
-        fontLoader.load(
-            'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
-            function (fallbackFont) {
-                // Créer le texte avec la police de repli
+        this.config = {
+            ball: {
+                radius: 10,
+                baseSpeed: 4,
+                color: 'white'
+            },
+            paddles: {
+                width: 20,
+                height: 100,
+                speed: 8,
+                color: 'white',
+                reactionTime: 0.05
             }
-        );
-    }
-);
+        };
 
-
-// Handle window resize
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-// Animation loop
-function animate() {
-    requestAnimationFrame(animate);
-
-    if (torus) {
-        torus.rotation.x += 0.02;
-		// torus.rotation.y += 0.01;
+        this.resizeCanvas(); // Maintenant this.state existe
+        this.resetGame(); // Initialise les positions correctement
+        window.addEventListener('resize', () => this.resizeCanvas());
+        this.animate();
     }
 
-    renderer.render(scene, camera);
+    resizeCanvas() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        // Réinitialiser les positions sans accéder à state.ball directement
+        if (this.state) {
+            this.resetBall();
+        }
+    }
+
+    resetGame() {
+        this.state.leftPaddle.y = this.canvas.height / 2 - this.config.paddles.height / 2;
+        this.state.rightPaddle.y = this.canvas.height / 2 - this.config.paddles.height / 2;
+        this.resetBall();
+    }
+
+    resetBall() {
+        this.state.ball = {
+            x: this.canvas.width / 2,
+            y: this.canvas.height / 2,
+            speedX: this.config.ball.baseSpeed * (Math.random() > 0.5 ? 1 : -1),
+            speedY: this.config.ball.baseSpeed * (Math.random() - 0.5)
+        };
+    }
+
+    predictImpact(paddleX) {
+        const { ball } = this.state;
+        if (ball.speedX === 0) return this.canvas.height / 2;
+
+        const timeToReach = (paddleX - ball.x) / ball.speedX;
+        let predictedY = ball.y + ball.speedY * timeToReach;
+
+        // Gestion des rebonds
+        while (predictedY < 0 || predictedY > this.canvas.height) {
+            predictedY = predictedY < 0 ? -predictedY : 2 * this.canvas.height - predictedY;
+        }
+
+        return predictedY - this.config.paddles.height / 2;
+    }
+
+    updatePaddles() {
+        const { paddles } = this.config;
+        const { ball, leftPaddle, rightPaddle } = this.state;
+
+        // Raquette gauche
+        const leftTarget = this.predictImpact(paddles.width + 30);
+        leftPaddle.y += (leftTarget - leftPaddle.y) * paddles.reactionTime;
+        leftPaddle.y = Math.max(0, Math.min(leftPaddle.y, this.canvas.height - paddles.height));
+
+        // Raquette droite
+        const rightTarget = this.predictImpact(this.canvas.width - paddles.width - 30);
+        rightPaddle.y += (rightTarget - rightPaddle.y) * paddles.reactionTime;
+        rightPaddle.y = Math.max(0, Math.min(rightPaddle.y, this.canvas.height - paddles.height));
+    }
+
+    updateBall() {
+        const { ball } = this.state;
+        const { paddles } = this.config;
+
+        ball.x += ball.speedX;
+        ball.y += ball.speedY;
+
+        // Rebonds haut/bas
+        if (ball.y - ball.radius < 0 || ball.y + ball.radius > this.canvas.height) {
+            ball.speedY = -ball.speedY;
+            ball.y = ball.y < ball.radius ? ball.radius : this.canvas.height - ball.radius;
+        }
+
+        // Collisions avec les raquettes
+        const checkCollision = (paddle, isLeft) => {
+            const paddleX = isLeft ? 30 + paddles.width : this.canvas.width - 30 - paddles.width;
+            if ((isLeft && ball.x - ball.radius < paddleX + paddles.width && ball.x + ball.radius > paddleX) ||
+                (!isLeft && ball.x + ball.radius > paddleX && ball.x - ball.radius < paddleX + paddles.width)) {
+
+                if (ball.y + ball.radius > paddle.y && ball.y - ball.radius < paddle.y + paddles.height) {
+                    const hitPos = ((ball.y - paddle.y) / paddles.height) * 2 - 1;
+                    ball.speedY = hitPos * this.config.ball.baseSpeed * 1.5;
+                    ball.speedX = (isLeft ? 1 : -1) * Math.abs(ball.speedX) * 1.05;
+                    ball.x = isLeft ? paddleX + paddles.width + ball.radius : paddleX - ball.radius;
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        if (!checkCollision(this.state.leftPaddle, true) && !checkCollision(this.state.rightPaddle, false)) {
+            if (ball.x < 0 || ball.x > this.canvas.width) {
+                this.resetBall();
+            }
+        }
+    }
+
+    draw() {
+        const { ball, paddles } = this.config;
+        const { leftPaddle, rightPaddle, ball: ballState } = this.state;
+
+        // Fond
+        this.ctx.fillStyle = '#0d0d0d';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Raquettes
+        this.ctx.fillStyle = paddles.color;
+        this.ctx.fillRect(30, leftPaddle.y, paddles.width, paddles.height);
+        this.ctx.fillRect(this.canvas.width - 50, rightPaddle.y, paddles.width, paddles.height);
+
+        // Balle
+        this.ctx.fillStyle = ball.color;
+        this.ctx.beginPath();
+        this.ctx.arc(ballState.x, ballState.y, ball.radius, 0, Math.PI * 2);
+        this.ctx.fill();
+    }
+
+    animate(currentTime = 0) {
+        const deltaTime = Math.min(currentTime - this.state.lastTime, 100) / 16;
+        this.state.lastTime = currentTime;
+
+        this.updatePaddles();
+        this.updateBall();
+        this.draw();
+        requestAnimationFrame((t) => this.animate(t));
+    }
 }
 
-animate();
+// Initialisation sécurisée
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.querySelector('.pong-container')) {
+        new PongAnimation();
+    } else {
+        console.error('Le conteneur .pong-container est introuvable');
+    }
+});

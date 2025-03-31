@@ -6,10 +6,14 @@
 	<link rel="stylesheet" href="{% static 'css/header.css' %}">
 	<nav>
 		<ul>
-			<li><button class="nav-button" data-url="{% url 'home' %}">Home</button></li>
-			<li id="game-buttons"></li>
-			<li id="auth-buttons"></li>
-			<!-- <li><button id="friends-button">Amis</button></li> -->
+			<div class="left-header-button">
+				<li><button class="nav-button" data-url="{% url 'home' %}">Home</button></li>
+				<li id="game-buttons"></li>
+			</div>
+			<div class="right-header-button">
+				<li id="auth-buttons"></li>
+			</div>
+			<div class="menu-item-slider"></div>
 		</ul>
 	</nav>
 

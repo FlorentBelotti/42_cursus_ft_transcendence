@@ -2,7 +2,7 @@
     margin: 0;
     padding: 0;
     font-family: 'Noto Sans', sans-serif;
-	font-weight: 100;
+	/* font-weight: 100; */
 }
 
 nav {
@@ -10,63 +10,87 @@ nav {
     justify-content: space-between;
     align-items: center;
     padding: 10px 0;
-    background-color: #181818;
-    border-bottom: solid 1px #424242;
+    background-color: transparent;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 1000;
-	border-bottom-width: 1px;
-    border-bottom-style: solid;
-    border-image: linear-gradient(
-        to right,
-        transparent 0%,
-        #424242 30%,
-		#424242 70%,
-        transparent 100%
-    ) 1;
 }
 
 nav ul {
-	display: flex;
+    display: flex;
     list-style: none;
     margin: 0;
     padding: 0 20px;
     align-items: center;
     width: 100%;
     justify-content: space-between;
-	/* gap: 10px; */
+	position: relative;
+}
+
+.nav-button.active {
+    color: white; /* Style pour l'élément actif */
+	font-weight: 700;
+}
+
+nav ul > div {
+    display: flex;
+    align-items: center;
+
+}
+
+nav ul > div:first-child {
+	margin-right: auto; /* Pousse vers la gauche */
+}
+
+nav ul > div:last-child {
+    margin-left: auto; /* Pousse vers la droite */
 }
 
 nav ul li {
     display: flex;
-    justify-content: center;
     margin: 0;
+    padding: 0;
 }
 
-#game-buttons,
+
 #auth-buttons {
     display: flex;
-    align-items: center;
-    justify-content: space-around;
-    width: 100%;
-    display: contents;
-
 }
 
-
-.nav-button, .pong-button, #amis-button {
-    background-color: transparent;
-    border: solid 1px transparent;
-    font-size: 14px;
-    cursor: pointer;
-    padding: 10px 10px;
-    color: #ffffff;
-    transition: border-color 0.3s ease;
-    white-space: nowrap;
-    text-align: center;
+.left-header-button, .right-header-button{
+	padding: 2px;
+	background: var(--project-color-35);
+	backdrop-filter: blur(12px) brightness(2);
+	border-radius: 50px;
 }
+
+.nav-button, .pong-button, #amis-button{
+	padding: 10px;
+	background: var(--project-color-35);
+	backdrop-filter: blur(12px) brightness(2);
+	border-radius: 50px;
+	border: none;
+	color: white;
+}
+
+.nav-button:hover, .pong-button:hover{
+	/* font-weight: bold; */
+}
+
+.menu-item-slider {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    transition: all 0.3s cubic-bezier(0.68, -0.10, 0.265, 1);
+    z-index: 0;
+    /* box-shadow: 0 0 10px rgba(255, 255, 255, 0.2); */
+    /* border: 1px solid rgba(255, 255, 255, 0.3); */
+    pointer-events: none;
+    height: 90%;
+}
+
 
 
 .modal {
