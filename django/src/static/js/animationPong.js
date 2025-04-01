@@ -1,212 +1,223 @@
 class PongAnimation {
-    constructor() {
-        this.canvas = document.querySelector('.pong-canvas');
-        this.ctx = this.canvas.getContext('2d');
+	constructor() {
+		this.canvas = document.createElement('canvas');
+		this.canvas.className = 'pong-canvas';
+		this.canvas.style.position = 'absolute';
+		this.canvas.style.top = '0';
+		this.canvas.style.left = '0';
+		document.querySelector('.pong-container').appendChild(this.canvas);
 
-        // Dimensions du canvas
-        this.canvasWidth = this.canvas.width;
-        this.canvasHeight = this.canvas.height;
+		this.ctx = this.canvas.getContext('2d');
 
-        // Configuration de la balle
-        this.ballConfig = {
-            radius: 10,
-            x: this.canvasWidth / 2,
-            y: this.canvasHeight / 2,
-            speedX: 2,
-            speedY: 2,
-            color: '#000'
-        };
+		this.noiseCanvas = document.querySelector('.noise-canvas');
+        this.noiseCtx = this.noiseCanvas.getContext('2d');
+        this.noiseCanvas.style.position = 'absolute';
+        this.noiseCanvas.style.top = '0';
+        this.noiseCanvas.style.left = '0';
+        this.noiseCanvas.style.opacity = '0.07';
 
-        // Configuration des raquettes
-        this.paddleConfig = {
-            width: 15,
-            height: 80,
-            speed: 3, // Vitesse réduite pour un mouvement plus fluide
-            color: '#000'
-        };
+		this.state = {
+			leftPaddle: { y: 0, targetY: 0, lastTargetUpdate: 0 },
+			rightPaddle: { y: 0, targetY: 0, lastTargetUpdate: 0 },
+			ball: {
+				x: 0,
+				y: 0,
+				speedX: 0,
+				speedY: 0
+			},
+			lastTime: performance.now()
+		};
 
-        // Position des raquettes
-        this.leftPaddle = {
-            y: (this.canvasHeight - this.paddleConfig.height) / 2,
-            targetY: (this.canvasHeight - this.paddleConfig.height) / 2
-        };
+		this.config = {
+			ball: {
+				radius: 10,
+				baseSpeed: 4,
+				color: 'white'
+			},
+			paddles: {
+				width: 20,
+				height: 100,
+				speed: 8,
+				color: 'white',
+				reactionTime: 0.05,
+				maxOffset: 40,
+				targetUpdateInterval: 500
+			}
+		};
+		this.titleElement = document.querySelector('.main-title');
 
-        this.rightPaddle = {
-            y: (this.canvasHeight - this.paddleConfig.height) / 2,
-            targetY: (this.canvasHeight - this.paddleConfig.height) / 2
-        };
+		this.resizeCanvas();
+		this.resetGame();
+		window.addEventListener('resize', () => this.resizeCanvas());
+		this.animate();
+	}
 
-        // ID de l'animation
-        this.animationId = null;
+	resizeCanvas() {
+		this.canvas.width = window.innerWidth;
+		this.canvas.height = window.innerHeight;
+		this.noiseCanvas.width = window.innerWidth;
+        this.noiseCanvas.height = window.innerHeight;
+		if (this.state) {
+			this.resetBall();
+		}
+	}
 
-        // Démarrer l'animation
-        this.animate();
-    }
+	resetGame() {
+		this.state.leftPaddle.y = this.canvas.height / 2 - this.config.paddles.height / 2;
+		this.state.rightPaddle.y = this.canvas.height / 2 - this.config.paddles.height / 2;
+		this.state.leftPaddle.targetY = this.state.leftPaddle.y;
+		this.state.rightPaddle.targetY = this.state.rightPaddle.y;
+		this.resetBall();
+	}
 
-    // Prédire la position Y de la balle
-    predictBallPosition(paddle, isLeft) {
-        const distanceX = isLeft ?
-            (this.paddleConfig.width - this.ballConfig.x) :
-            (this.canvasWidth - this.paddleConfig.width - this.ballConfig.x);
+	resetBall() {
+		this.state.ball = {
+			x: this.canvas.width / 2,
+			y: this.canvas.height / 2,
+			speedX: this.config.ball.baseSpeed * (Math.random() > 0.5 ? 1 : -1),
+			speedY: this.config.ball.baseSpeed * (Math.random() - 0.5) * 2
+		};
+	}
 
-        if ((isLeft && this.ballConfig.speedX > 0) || (!isLeft && this.ballConfig.speedX < 0)) {
-            // Si la balle s'éloigne de la raquette, viser le centre
-            return this.canvasHeight / 2 - this.paddleConfig.height / 2;
+	predictImpact(paddleX) {
+		const { ball } = this.state;
+		if (ball.speedX === 0) return this.canvas.height / 2;
+
+		const timeToReach = (paddleX - ball.x) / ball.speedX;
+		let predictedY = ball.y + ball.speedY * timeToReach;
+
+		while (predictedY < 0 || predictedY > this.canvas.height) {
+			predictedY = predictedY < 0 ? -predictedY : 2 * this.canvas.height - predictedY;
+		}
+
+		return predictedY;
+	}
+
+	updatePaddles(currentTime) {
+		const { paddles } = this.config;
+		const { leftPaddle, rightPaddle } = this.state;
+
+		const updateTargetIfNeeded = (paddle, paddleX) => {
+			if (currentTime - paddle.lastTargetUpdate >= paddles.targetUpdateInterval) {
+				const predictedY = this.predictImpact(paddleX);
+				const offset = (Math.random() - 0.5) * 2 * paddles.maxOffset;
+				paddle.targetY = predictedY - paddles.height / 2 + offset;
+				paddle.lastTargetUpdate = currentTime;
+			}
+		};
+
+		updateTargetIfNeeded(leftPaddle, 30 + paddles.width);
+		leftPaddle.y += (leftPaddle.targetY - leftPaddle.y) * paddles.reactionTime;
+		leftPaddle.y = Math.max(0, Math.min(leftPaddle.y, this.canvas.height - paddles.height));
+
+		updateTargetIfNeeded(rightPaddle, this.canvas.width - 50);
+		rightPaddle.y += (rightPaddle.targetY - rightPaddle.y) * paddles.reactionTime;
+		rightPaddle.y = Math.max(0, Math.min(rightPaddle.y, this.canvas.height - paddles.height));
+	}
+
+	updateBall() {
+		const { ball } = this.state;
+		const { paddles, ball: ballConfig } = this.config;
+
+		ball.x += ball.speedX;
+		ball.y += ball.speedY;
+
+		if (ball.y - ballConfig.radius < 0) {
+			ball.speedY = -ball.speedY;
+			ball.y = ballConfig.radius;
+		} else if (ball.y + ballConfig.radius > this.canvas.height) {
+			ball.speedY = -ball.speedY;
+			ball.y = this.canvas.height - ballConfig.radius;
+		}
+
+		const checkCollision = (paddle, isLeft) => {
+			const paddleX = isLeft ? 30 : this.canvas.width - 50;
+			const paddleRight = paddleX + paddles.width;
+			const ballLeft = ball.x - ballConfig.radius;
+			const ballRight = ball.x + ballConfig.radius;
+			const ballTop = ball.y - ballConfig.radius;
+			const ballBottom = ball.y + ballConfig.radius;
+			const paddleTop = paddle.y;
+			const paddleBottom = paddle.y + paddles.height;
+
+			if (
+				(isLeft && ballLeft <= paddleRight && ballRight >= paddleX) ||
+				(!isLeft && ballRight >= paddleX && ballLeft <= paddleRight)
+			) {
+				if (ballBottom >= paddleTop && ballTop <= paddleBottom) {
+					const impact = ball.y - (paddle.y + paddles.height / 2);
+					const normalizeImpact = impact / (paddles.height / 2);
+					const bounceAngle = normalizeImpact * (Math.PI / 3);
+
+					const direction = isLeft ? 1 : -1;
+					const speed = ballConfig.baseSpeed + Math.abs(ball.speedX) * 0.1;
+					ball.speedX = direction * Math.cos(bounceAngle) * speed;
+					ball.speedY = Math.sin(bounceAngle) * speed;
+
+					ball.x = isLeft ? paddleRight + ballConfig.radius : paddleX - ballConfig.radius;
+					return true;
+				}
+			}
+			return false;
+		};
+
+		if (!checkCollision(this.state.leftPaddle, true) && !checkCollision(this.state.rightPaddle, false)) {
+			if (ball.x < 0 || ball.x > this.canvas.width) {
+				this.resetBall();
+			}
+		}
+	}
+
+	generateNoise() {
+        const width = this.noiseCanvas.width;
+        const height = this.noiseCanvas.height;
+        const imageData = this.noiseCtx.createImageData(width, height);
+        const data = imageData.data;
+
+        for (let i = 0; i < data.length; i += 4) {
+            const value = Math.random() * 255; // Valeur aléatoire entre 0 et 255
+            data[i] = value;     // Rouge
+            data[i + 1] = value; // Vert
+            data[i + 2] = value; // Bleu
+            data[i + 3] = 255;   // Alpha (opacité complète, contrôlée par CSS)
         }
 
-        // Calculer le temps que mettra la balle pour atteindre la raquette
-        const timeToReach = Math.abs(distanceX / this.ballConfig.speedX);
-
-        // Calculer la position Y future de la balle
-        let futureY = this.ballConfig.y + (this.ballConfig.speedY * timeToReach);
-
-        // Tenir compte des rebonds sur les bords
-        const bounces = Math.floor(futureY / this.canvasHeight);
-        if (bounces % 2 === 0) {
-            futureY = futureY % this.canvasHeight;
-        } else {
-            futureY = this.canvasHeight - (futureY % this.canvasHeight);
-        }
-
-        // Ajout d'une petite anticipation pour être légèrement en avance
-        return futureY - this.paddleConfig.height / 2;
+        this.noiseCtx.putImageData(imageData, 0, 0);
     }
 
-    // Mettre à jour la position des raquettes
-    updatePaddles() {
-        // Mettre à jour les positions cibles
-        this.leftPaddle.targetY = this.predictBallPosition(this.leftPaddle, true);
-        this.rightPaddle.targetY = this.predictBallPosition(this.rightPaddle, false);
+	draw() {
+		const { ball, paddles } = this.config;
+		const { leftPaddle, rightPaddle, ball: ballState } = this.state;
 
-        // Mouvement fluide vers les positions cibles
-        const moveToTarget = (paddle, targetY) => {
-            const diff = targetY - paddle.y;
-            if (Math.abs(diff) > this.paddleConfig.speed) {
-                paddle.y += Math.sign(diff) * this.paddleConfig.speed;
-            } else {
-                paddle.y = targetY;
-            }
+		this.ctx.fillStyle = '#0d0d0d';
+		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-            // Garder les raquettes dans les limites du canvas
-            paddle.y = Math.max(0, Math.min(paddle.y, this.canvasHeight - this.paddleConfig.height));
-        };
+		this.ctx.fillStyle = paddles.color;
+		this.ctx.fillRect(30, leftPaddle.y, paddles.width, paddles.height);
+		this.ctx.fillRect(this.canvas.width - 50, rightPaddle.y, paddles.width, paddles.height);
 
-        moveToTarget(this.leftPaddle, this.leftPaddle.targetY);
-        moveToTarget(this.rightPaddle, this.rightPaddle.targetY);
-    }
+		this.ctx.fillStyle = ball.color;
+		this.ctx.beginPath();
+		this.ctx.arc(ballState.x, ballState.y, ball.radius, 0, Math.PI * 2);
+		this.ctx.fill();
+	}
 
-    drawBall() {
-        this.ctx.beginPath();
-		this.ctx.fillRect(
-			this.ballConfig.x,
-			this.ballConfig.y,
-			this.ballConfig.radius,
-			this.ballConfig.radius,
-		);
-        this.ctx.fillStyle = this.ballConfig.color;
-        this.ctx.fill();
-        this.ctx.closePath();
-    }
+	animate(currentTime = 0) {
+		const deltaTime = Math.min(currentTime - this.state.lastTime, 100) / 16;
+		this.state.lastTime = currentTime;
 
-    drawPaddles() {
-        this.ctx.fillStyle = this.paddleConfig.color;
-
-        // Raquette gauche
-        this.ctx.fillRect(
-            10,
-            this.leftPaddle.y,
-            this.paddleConfig.width,
-            this.paddleConfig.height
-        );
-
-        // Raquette droite
-        this.ctx.fillRect(
-            this.canvasWidth - this.paddleConfig.width - 10,
-            this.rightPaddle.y,
-            this.paddleConfig.width,
-            this.paddleConfig.height
-        );
-    }
-
-    updateBall() {
-        this.ballConfig.x += this.ballConfig.speedX;
-        this.ballConfig.y += this.ballConfig.speedY;
-
-        // Collision avec les bords haut et bas
-        if (
-            this.ballConfig.y + this.ballConfig.radius > this.canvasHeight ||
-            this.ballConfig.y - this.ballConfig.radius < 0
-        ) {
-            this.ballConfig.speedY = -this.ballConfig.speedY;
-        }
-
-        // Collision avec les raquettes
-        if (
-            (this.ballConfig.x - this.ballConfig.radius < this.paddleConfig.width &&
-             this.ballConfig.y > this.leftPaddle.y &&
-             this.ballConfig.y < this.leftPaddle.y + this.paddleConfig.height) ||
-            (this.ballConfig.x + this.ballConfig.radius > this.canvasWidth - this.paddleConfig.width &&
-             this.ballConfig.y > this.rightPaddle.y &&
-             this.ballConfig.y < this.rightPaddle.y + this.paddleConfig.height)
-        ) {
-            this.ballConfig.speedX = -this.ballConfig.speedX;
-
-            // Ajout d'un effet aléatoire léger lors des rebonds
-            this.ballConfig.speedY += (Math.random() - 0.5) * 2;
-
-            // Limiter la vitesse verticale
-            this.ballConfig.speedY = Math.max(Math.min(this.ballConfig.speedY, 8), -8);
-        }
-
-        // Réinitialisation si la balle sort du canvas
-        if (
-            this.ballConfig.x - this.ballConfig.radius < 0 ||
-            this.ballConfig.x + this.ballConfig.radius > this.canvasWidth
-        ) {
-            this.resetBall();
-        }
-    }
-
-    resetBall() {
-        this.ballConfig.x = this.canvasWidth / 2;
-        this.ballConfig.y = this.canvasHeight / 2;
-        this.ballConfig.speedX = -this.ballConfig.speedX;
-        this.ballConfig.speedY = 4 * (Math.random() - 0.5); // Direction aléatoire
-    }
-
-    animate() {
-        // Effacer le canvas
-        this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-
-        // Mettre à jour les positions des raquettes
-        this.updatePaddles();
-
-        // Dessiner les éléments
-        this.drawBall();
-        this.drawPaddles();
-
-        // Mettre à jour la position de la balle
-        this.updateBall();
-
-        // Boucler l'animation
-        this.animationId = requestAnimationFrame(() => this.animate());
-    }
-
-    // Méthode pour arrêter l'animation
-    stopAnimation() {
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-            this.animationId = null; // Réinitialiser l'ID
-        }
-    }
+		this.updatePaddles(currentTime);
+		this.updateBall();
+		this.generateNoise();
+		this.draw();
+		requestAnimationFrame((t) => this.animate(t));
+	}
 }
 
-// Initialiser l'animation
-let pongAnimation;
-
-function initPongAnimation() {
-    pongAnimation = new PongAnimation();
-}
-
-// Démarrer l'animation quand la page est chargée
-document.addEventListener('DOMContentLoaded', initPongAnimation);
+document.addEventListener('DOMContentLoaded', () => {
+	if (document.querySelector('.pong-container')) {
+		new PongAnimation();
+	} else {
+		console.error('Le conteneur .pong-container est introuvable');
+	}
+});

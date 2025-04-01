@@ -1,7 +1,7 @@
 body {
     font-family: 'Noto Sans', sans-serif;
     font-weight: 100;
-    background-color: #181818;
+    background-color: #0d0d0d;
     color: #ffffff;
     margin: 0;
     padding: 100px;
@@ -12,6 +12,7 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+
 }
 
 h1 {
@@ -25,7 +26,7 @@ h1 {
 }
 
 .table-container {
-    background-color: #181818;
+    background-color: #0d0d0d;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow-x: auto;
@@ -42,7 +43,7 @@ th, td {
 }
 
 th {
-    background-color: #181818;
+    background-color: #0d0d0d;
     font-weight: thin;
 }
 

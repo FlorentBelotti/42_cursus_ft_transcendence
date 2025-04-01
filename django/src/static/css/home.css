@@ -1,171 +1,32 @@
 body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Bebas Neue', sans-serif;
-    background-color: #171717;
-	overflow-x: hidden;
-}
-
-.first-block {
-    display: flex;
-    justify-content: space-between; /* Espace entre le titre et l'image */
-    align-items: center; /* Centre verticalement les éléments */
-    padding: 80px 40px 10px 40px;
-    /* max-width: 1200px; Limite la largeur du conteneur */
-    margin: 0 auto; /* Centre le conteneur horizontalement */
-}
-
-
-.title-transcendence h1 {
-    margin: 0;
-    font-size: 300px;
-    line-height: 1.2;
-    color: #000;
-	font-family: 'Bebas Neue', sans-serif;
-}
-
-.image-transcendence {
-    padding-top: 250px;
-    padding-right: 40px;
-    animation: slideInFromRight 1s ease-out forwards;
-	opacity: 0;
-}
-
-#sphere-container {
-    height: 500px;
-    width: 500px;
-    position: relative;
-}
-
-@keyframes slideInFromRight {
-	from{
-		transform: translateX(100%);
-		opacity: 0;
-	}
-	to{
-		transform: translateX(0);
-		opacity: 1;
-	}
-}
-
-@keyframes slideInFromLeft {
-    from {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.title-transcendence h1 {
-    margin: 0;
-    font-size: 300px;
-    line-height: 1.2;
-    color: #000;
-    font-family: 'Bebas Neue', sans-serif;
-    opacity: 0;
-    animation: slideInFromLeft 1s ease-out forwards;
-}
-
-/* Différer l'animation du deuxième H1 */
-.title-transcendence h1:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-@keyframes slideOutToRight {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-
-@keyframes slideOutToLeft {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-}
-
-/* Classe qui sera ajoutée via JavaScript lors du défilement */
-.title-scroll-out {
-    animation: slideOutToLeft 0.6s ease-in forwards;
-}
-
-
-.containers{
+	margin: 0;
+	height: 100vh;
+	overflow: hidden;
+	background: #0d0d0d;
 	display: flex;
-	justify-content: space-between;
-	align-items: stretch;
-	gap: 20px;
-	padding: 20px;
-	margin: 0 auto;
-	max-width: 1500px;
+	justify-content: center;
+	align-items: center;
+	position: relative;
 }
 
-.left-container{
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	gap: 20px;
-	padding-left: 20px;
-
+.main-title {
+	color: white;
+	font-size: 8vw;
+	font-family: 'QuarionBold';
+	letter-spacing: 0.1em;
+	position: relative;
+	z-index: 10;
+	pointer-events: none;
 }
 
-.right-container{
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	padding-right: 20px;
+.pong-container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
 }
 
-.pong, .language, .module {
-    padding: 20px;
+.noise-canvas{
+	z-index: 5;
 }
-
-
-.pong-title h1, .module-title h1, .language h1 {
-    margin: 0;
-	padding-bottom: 20px;
-	font-family: 'Bebas Neue', sans-serif;
-    font-size: 42px;
-    color: #000;
-}
-
-
-.language-src {
-    display: flex;
-}
-
-.image{
-	height: 40px;
-	width: 40px;
-	filter: brightness(0);
-}
-
-.pong-canvas {
-	color: #fff;
-	border: solid 1px #000;
-}
-
-.module{
-	padding: 20px;
-	margin-left: 150px;
-}
-
-/* Style pour le texte des modules */
-.module-text p {
-    margin: 5px 0; /* Espace entre les paragraphes */
-    font-size: 16px;
-    color: #333;
-}
-

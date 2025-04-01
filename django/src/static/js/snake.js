@@ -227,7 +227,7 @@ class Snake3D {
 
 			// Matériau plus simple pour la performance
 			const textMaterial = new THREE.MeshStandardMaterial({
-				color: 0x090909,
+				color: 0xffffff,
 				roughness: 0.3
 			});
 
@@ -260,9 +260,9 @@ class Snake3D {
 
 		// Créer un dégradé linéaire
 		const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
-		gradient.addColorStop(0, '#939090'); // Couleur du haut (bleu ciel)
-		gradient.addColorStop(0.3, '#F7F7F7'); // Couleur du bas (blanc)
-		gradient.addColorStop(1, '#FFFFFF'); // Couleur du bas (blanc)
+		gradient.addColorStop(0, '#0a0a0a'); // Couleur du haut (bleu ciel)
+		gradient.addColorStop(0.3, '#0d0d0d'); // Couleur du bas (blanc)
+		gradient.addColorStop(1, '#181818'); // Couleur du bas (blanc)
 
 		// Remplir le canvas avec le dégradé
 		context.fillStyle = gradient;
