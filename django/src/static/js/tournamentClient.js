@@ -69,16 +69,7 @@ class TournamentClient {
     }
 
     connectWebSocket() {
-        // Get token from cookie
-        const token = document.cookie
-            .split('; ')
-            .find(cookie => cookie.startsWith('access_token='))
-            ?.split('=')[1];
-            
-        console.log("Token found:", token ? "Yes" : "No");
-            
-        // Include token in URL as query parameter
-        this.socket = new WebSocket(`ws://${window.location.host}/ws/tournament/?token=${token}`);
+        this.socket = new WebSocket(`ws://${window.location.host}/ws/tournament/`);
         
         this.socket.onopen = () => {
             console.log('Tournament WebSocket connection established.');
