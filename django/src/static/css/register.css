@@ -101,3 +101,11 @@ body {
 	color:red;
 	/* border-bottom: solid 1px #949494; */
 }
+
+.error-message {
+    color: red;
+    font-size: 14px;
+    font-family: 'Chivo', sans-serif;
+    margin-top: 5px;
+    display: block;
+}

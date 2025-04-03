@@ -1,62 +1,60 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chivo:ital,wght@0,100..900;1,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
-	{% load static %}
-	<link rel="stylesheet" href="{% static 'css/register.css' %}">
-	<title>Register</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/register.css' %}">
+    <title>Register</title>
 </head>
 <body>
-	<div class="box">
-		<div class="left-box">
-			<div class="inscription-box">
-				<h1>Sign Up</h1>
-			</div>
-			<div id="errorMessage" style="color: red; display: none;"></div>
-			<form id="registerForm">
-				{% csrf_token %}
+    <div class="box">
+        <div class="left-box">
+            <div class="inscription-box">
+                <h1>Sign Up</h1>
+            </div>
+            <form id="registerForm">
+                {% csrf_token %}
 
-				<div class="form-group">
-					<img src="{% static 'assets/username.png' %}">
-					<!-- <label class="username-label-input" for="{{ form.username.id_for_label }}">Username</label> -->
-					{{ form.username }}
-				</div>
+                <div class="form-group">
+                    <img src="{% static 'assets/username.png' %}">
+                    {{ form.username }}
+                    <span id="username-error" class="error-message"></span>
+                </div>
 
-				<div class="form-group">
-					<img src="{% static 'assets/mail.png' %}">
-					<!-- <label class="email-label-input" for="{{ form.email.id_for_label }}">Email</label> -->
-					{{ form.email }}
-				</div>
+                <div class="form-group">
+                    <img src="{% static 'assets/mail.png' %}">
+                    {{ form.email }}
+                    <span id="email-error" class="error-message"></span>
+                </div>
 
-				<div class="form-group">
-					<img src="{% static 'assets/password1.png' %}" alt="password">
-					<!-- <label class="password-label-input" for="{{ form.password1.id_for_label }}">Password</label> -->
-					{{ form.password1 }}
-				</div>
+                <div class="form-group">
+                    <img src="{% static 'assets/password1.png' %}" alt="password">
+                    {{ form.password1 }}
+                    <span id="password1-error" class="error-message"></span>
+                </div>
 
-				<div class="form-group">
-					<img src="{% static 'assets/password2.png' %}" alt="password">
-					<!-- <label class="password-label-input" or="{{ form.password2.id_for_label }}">Confirm Password</label> -->
-					{{ form.password2 }}
-				</div>
+                <div class="form-group">
+                    <img src="{% static 'assets/password2.png' %}" alt="password">
+                    {{ form.password2 }}
+                    <span id="password2-error" class="error-message"></span>
+                </div>
 
-				<button type="submit" class="submit-button">Register</button>
-			</form>
-		</div>
-		<div class="right-box">
-			<div class="cube">
-				<div id="cube-container"></div>
-			</div>
-			<div class="connection">
-				<a href="{% url 'login' %}">I'm already a TRNSCDNC member</a>
-			</div>
-		</div>
-
-	</div>
-	<script src="{% static 'js/dynamic.js' %}"></script>
-	<script src="{% static 'js/register.js' %}"></script>
-	<script type="module" src="{% static 'js/cubeAnimation.js'%}"></script>
+                <button type="submit" class="submit-button">Register</button>
+            </form>
+        </div>
+        <div class="right-box">
+            <div class="cube">
+                <div id="cube-container"></div>
+            </div>
+            <div class="connection">
+                <a href="{% url 'login' %}">I'm already a TRNSCDNC member</a>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/dynamic.js' %}"></script>
+    <script src="{% static 'js/register.js' %}"></script>
+    <script type="module" src="{% static 'js/cubeAnimation.js'%}"></script>
 </body>
 </html>
