@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Politique de Protection des Données</title>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'css/account.css' %}">
+    <link rel="stylesheet" href="{% static 'css/legal_rgpd.css' %}">
 </head>
 <body>
     <div style="margin: 20px;">
@@ -53,8 +53,7 @@
                 <li><strong>Droit d’opposition</strong> : Vous opposer au traitement de vos données.</li>
                 <li><strong>Droit à la portabilité</strong> : Récupérer vos données dans un format lisible.</li>
             </ul>
-            <p>Pour exercer ces droits, rendez-vous sur la page "Mon Compte" de notre site et utilisez l’option "Delete account" pour effacer vos données. Pour toute autre demande, contactez-nous à <a href="mailto:contact@pong.ovh">contact@pong.ovh</a>.</p>
-
+            <p>Pour exercer ces droits, rendez-vous sur la page <a href="{% url 'account' %}">Mon Compte</a> et utilisez l’option "Delete account" pour effacer vos données. Pour toute autre demande, contactez-nous à <a href="mailto:contact@pong.ovh">contact@pong.ovh</a>.</p>
             <h3>6. Sécurité des données</h3>
             <p>Nous mettons en place des mesures techniques pour protéger vos données contre tout accès non autorisé ou perte accidentelle. Cependant, aucun système n’est infaillible, et nous ne pouvons garantir une sécurité absolue.</p>
 
@@ -68,7 +67,6 @@
             <p>Si vous estimez que vos droits ne sont pas respectés, vous pouvez contacter la Commission Nationale de l’Informatique et des Libertés (CNIL) : <a href="https://www.cnil.fr" target="_blank">www.cnil.fr</a>.</p>
         </div>
 
-        <script src="{% static 'js/account.js' %}"></script>
     </div>
 </body>
 </html>

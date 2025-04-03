@@ -31,6 +31,10 @@ urlpatterns = [
     path('tournament/', views.define_render, name='tournament'),
     path('friends/', views.friends_view, name='friends'),
 
+    path('legal_rgpd/', views.define_render, name='rgpd'),
+    path('legal_mentions_legales/', views.define_render, name='mentions_legales'),
+    path('legal_cgu/', views.define_render, name='regles'),
+
     path('', include('django_prometheus.urls')),
 ]
 
