@@ -18,7 +18,7 @@ COPY ./src /app/src
 # Définir les variables d’environnement
 ENV DJANGO_SETTINGS_MODULE=transcendence.settings
 ENV PYTHONPATH=/app/src
-ENV PYTHONUNBUFFERED=1  # Pour voir les logs en temps réel
+ENV PYTHONUNBUFFERED=1
 
 # Collecter les fichiers statiques pour Nginx
 RUN python src/manage.py collectstatic --noinput
