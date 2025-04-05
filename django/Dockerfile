@@ -21,7 +21,7 @@ ENV PYTHONPATH=/django/src
 ENV PYTHONUNBUFFERED=1
 
 # Collecter les fichiers statiques pour Nginx
-RUN python src/manage.py collectstatic --noinput
+RUN python src/main.py collectstatic --noinput
 
 # Exposer le port pour Daphne (Nginx y accédera en interne)
 EXPOSE 8000
