@@ -9,3 +9,4 @@ Pillow
 social-auth-app-django
 channels-redis==4.1.0
 django-prometheus
+django-cors-headers==4.3.1
