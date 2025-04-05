@@ -31,13 +31,7 @@
                 <tr class="border-t hover:bg-gray-50">
                     <td class="px-4 py-3 text-left">{{ friend.username }}</td>
                     <td class="px-4 py-3 text-left flex items-center">
-                        {% if friend.profile_picture %}
-                            <img src="{{ friend.profile_picture.url }}" alt="{{ friend.username }}" class="profile-picture mr-3">
-                        {% else %}
-                            <div class="profile-picture bg-gray-300 mr-3 flex items-center justify-center">
-                                <span>{{ friend.username|first|upper }}</span>
-                            </div>
-                        {% endif %}
+                        <img src="{{ friend.profile_picture.url }}" alt="{{ friend.username }}" class="profile-picture mr-3">
                     </td>
                 </tr>
                 {% endfor %}

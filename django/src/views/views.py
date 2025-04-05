@@ -183,7 +183,10 @@ def register(request):
             form.save()
             return JsonResponse({"success": "User registered"}, status=201)
         else:
-            return JsonResponse({"error": "User failed to register"}, status=401)
+            return JsonResponse({
+                "error": "User failed to register",
+                "errors": form.errors
+            }, status=400)
     else:
         form = RegisterForm()
         return define_render(request, {'form': form})

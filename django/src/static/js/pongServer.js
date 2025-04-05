@@ -75,15 +75,8 @@ class PongServerGame {
     }
 
     setupNotificationSocket() {
-        // Get token from cookie
-        const token = document.cookie
-            .split('; ')
-            .find(cookie => cookie.startsWith('access_token='))
-            ?.split('=')[1];
-
-        // Create WebSocket connection for notifications
-        this.notificationSocket = new WebSocket(`ws://${window.location.host}/ws/notifications/?token=${token}`);
-
+        this.notificationSocket = new WebSocket(`ws://${window.location.host}/ws/notifications/`);
+        
         this.notificationSocket.onopen = () => {
             console.log('Notification WebSocket connected');
         };
@@ -255,16 +248,9 @@ class PongServerGame {
     // Store as instance property for access in callbacks
         this.useForMatchmaking = useForMatchmaking;
         console.log(`Connecting WebSocket (useForMatchmaking: ${useForMatchmaking})`);
-
-        // Get token from cookie
-        const token = document.cookie
-            .split('; ')
-            .find(cookie => cookie.startsWith('access_token='))
-            ?.split('=')[1];
-
-        // Include token in URL as query parameter
-        this.socket = new WebSocket(`ws://${window.location.host}/ws/match/?token=${token}`);
-
+        
+        this.socket = new WebSocket(`ws://${window.location.host}/ws/match/`);
+        
         this.socket.onopen = () => {
             console.log('WebSocket connected for pong game');
 

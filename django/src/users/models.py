@@ -7,6 +7,7 @@ from django.db import models
 import time
 
 class customUser(AbstractUser):
+    email = models.EmailField(unique=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True, default='profile_pictures/arcane_from_arcane.png')
     elo = models.IntegerField(default=1000)
     wins = models.IntegerField(default=0)
@@ -41,6 +42,7 @@ class VerificationCode(models.Model):
 
 def get_expiration_time():
     return timezone.now() + timezone.timedelta(minutes=5)
+
 class GameInvitation(models.Model):
     MATCH_TYPES = (
         ('regular', 'Regular Match'),

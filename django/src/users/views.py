@@ -34,6 +34,12 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import status
 
+from views.views import define_render
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework import status
+
 def protected_view(request):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Non authentifié"}, status=401)
@@ -74,6 +80,32 @@ def user_detail(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
     serializer = UserDataSerializer(user)
     return Response(serializer.data)
+
+@api_view(['GET'])
+def user_me_detail(request):
+    token = request.COOKIES.get('access_token', '')
+    
+    try:
+        validated_token = AccessToken(token)
+        user_id = validated_token['user_id']
+        user = customUser.objects.get(id=user_id)
+        
+        serializer = UserDataSerializer(user)
+        
+        response_data = serializer.data
+        response_data['is_online'] = user.is_online()
+        
+        return Response({
+            'user': response_data,
+            'status': 'success'
+        }, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        return Response({
+            'user': None,
+            'status': 'error',
+            'error': str(e)
+        }, status=status.HTTP_401_UNAUTHORIZED)
 
 # Update
 @api_view(['PUT'])
@@ -141,26 +173,26 @@ def logout_view(request):
 def online_friends_view(request):
     # Récupérer le token depuis le cookie
     token = request.COOKIES.get('access_token', '')
-
+    
     try:
         # Valider le token
         validated_token = AccessToken(token)
         # Récupérer l'utilisateur à partir du token
         user_id = validated_token['user_id']
         user = customUser.objects.get(id=user_id)
-
+        
         # Récupérer tous les amis de l'utilisateur
         all_friends = user.friends.all()
         # Filtrer les amis en ligne
         online_friends = [friend for friend in all_friends if friend.is_online()]
-
+        
         # Sérialiser les données
         serializer = UserDataSerializer(online_friends, many=True)
         return Response({
             'online_friends': serializer.data,
             'count': len(online_friends)
         }, status=status.HTTP_200_OK)
-
+    
     except Exception as e:
         # Si le token est invalide ou autre erreur
         return Response({
@@ -168,6 +200,121 @@ def online_friends_view(request):
             'count': 0,
             'error': str(e)
         }, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['GET'])
+def friends_view(request):
+    # Récupérer le token depuis le cookie
+    token = request.COOKIES.get('access_token', '')
+    
+    try:
+        # Valider le token
+        validated_token = AccessToken(token)
+        # Récupérer l'utilisateur à partir du token
+        user_id = validated_token['user_id']
+        user = customUser.objects.get(id=user_id)
+        
+        # Récupérer tous les amis de l'utilisateur (sans filtre)
+        all_friends = user.friends.all()
+        
+        # Sérialiser les données
+        serializer = UserDataSerializer(all_friends, many=True)
+        return Response({
+            'friends': serializer.data,
+            'count': len(all_friends)
+        }, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        # Si le token est invalide ou autre erreur
+        return Response({
+            'friends': [],
+            'count': 0,
+            'error': str(e)
+        }, status=status.HTTP_401_UNAUTHORIZED)
+    
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.http import JsonResponse
+from users.models import customUser
+
+def password_reset_request(request):
+    if request.method == "POST":
+        email = request.POST.get('email')
+        if not email:
+            return JsonResponse({"error": "Email requis"}, status=400)
+
+        try:
+            user = customUser.objects.get(email=email)
+            # Générer un token et un UID
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+            # Générer le lien
+            reset_link = f"{request.scheme}://{request.get_host()}/password_reset_confirm/{uid}/{token}/"
+
+            # Envoyer l'email avec le lien
+            html_message = render_to_string('password_reset_email.html', {
+                'reset_link': reset_link,
+                'user': user,
+            })
+            plain_message = f"Voici votre lien pour réinitialiser votre mot de passe : {reset_link}"
+
+            send_mail(
+                'Réinitialisation de mot de passe',
+                plain_message,
+                settings.EMAIL_HOST_USER,
+                [user.email],
+                fail_silently=False,
+                html_message=html_message,
+            )
+
+            return JsonResponse({"success": "Lien envoyé à votre email"}, status=200)
+
+        except customUser.DoesNotExist:
+            return JsonResponse({"success": "Si l'email existe, un lien a été envoyé"}, status=200)
+
+        except Exception as e:
+            logger.error(f"Erreur dans password_reset_request : {str(e)}")
+            return JsonResponse({"error": "Erreur interne"}, status=500)
+
+    return define_render(request, {'content_template': 'password_reset_request.html'})
+
+def password_reset_confirm(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = customUser.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, customUser.DoesNotExist):
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        if request.method == "POST":
+            new_password = request.POST.get('new_password')
+            if not new_password:
+                return JsonResponse({"error": "Nouveau mot de passe requis"}, status=400)
+
+            user.set_password(new_password)
+            user.save()
+            return JsonResponse({
+                "success": "Mot de passe réinitialisé avec succès",
+                "redirect_url": "/login/"
+            }, status=200)
+
+        return define_render(request, {'content_template': 'password_reset_confirm.html'})
+    else:
+        return JsonResponse({"error": "Lien invalide ou expiré"}, status=400)
+    
+
+########################################################################################################################################
+########################################################################################################################################
+########################################################################################################################################
+##                          PONG API                                                                                                 ###
+########################################################################################################################################
+########################################################################################################################################
+########################################################################################################################################
+
 
 @login_required
 def get_user_invitations(request):

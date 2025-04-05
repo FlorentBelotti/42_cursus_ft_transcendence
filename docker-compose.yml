@@ -34,7 +34,7 @@ services:
       - .env
 
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:8
     env_file:
       - .env
     ports:
@@ -46,20 +46,20 @@ services:
       - pgadmin_data:/var/lib/pgadmin
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.51.0
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml # Fichier de configuration
-      - prometheus_data:/prometheus # Stockage persistant des données
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     ports:
-      - "9090:9090" # Interface de Prometheus
+      - "9090:9090"
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.4.0
     ports:
-      - "3000:3000" # Interface de Grafana
+      - "3000:3000"
     volumes:
-      - grafana_data:/var/lib/grafana # Stockage persistant des données Grafana
+      - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
     restart: unless-stopped

@@ -1,10 +1,9 @@
-# filepath: /C:/Users/theog/Documents/GitHub/42_cursus_ft_transcendence/django/src/users/backends.py
 from social_core.backends.oauth import BaseOAuth2
 
 from base64 import b64encode
 
 class fortytwoOAuth2(BaseOAuth2):
-    name = '42'  # Assurez-vous que le nom correspond à celui utilisé dans les URLs
+    name = '42'
     AUTHORIZATION_URL = 'https://api.intra.42.fr/oauth/authorize'
     ACCESS_TOKEN_URL = 'https://api.intra.42.fr/oauth/token'
     ACCESS_TOKEN_METHOD = 'POST'

@@ -19,15 +19,27 @@ class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
 
     class Meta:
-        model = User
+        model = customUser
         fields = ["username", "email", "password1", "password2"]
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].widget.attrs.update({'placeholder': 'Username'})
         self.fields['email'].widget.attrs.update({'placeholder': 'Email'})
         self.fields['password1'].widget.attrs.update({'placeholder': 'Password'})
         self.fields['password2'].widget.attrs.update({'placeholder': 'Confirm Password'})
+
+    def clean_username(self):
+        username = self.cleaned_data.get("username")
+        if customUser.objects.filter(username=username).exists():
+            raise forms.ValidationError("Ce nom d'utilisateur est déjà pris.")
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if customUser.objects.filter(email=email).exists():
+            raise forms.ValidationError("Cet email est déjà utilisé.")
+        return email
 
 class UserUpdateForm(UserChangeForm):
     class Meta:

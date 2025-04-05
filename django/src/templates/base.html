@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +13,11 @@
         {% include content_template %}
         {% endblock %}
     </div>
+    <footer style="margin: 20px; text-align: center;">
+        <a href="{% url 'rgpd' %}" style="margin: 0 10px;">Politique de confidentialité</a> |
+        <a href="{% url 'mentions_legales' %}" style="margin: 0 10px;">Mentions légales</a> |
+        <a href="{% url 'regles' %}" style="margin: 0 10px;">Règles du site</a>
+    </footer>
 
     <script src="{% static 'js/auth-header.js' %}"></script>
     <script src="{% static 'js/dynamic.js' %}"></script>

@@ -3,7 +3,7 @@ from django.views.generic import RedirectView
 from views import views
 from django.conf import settings
 from django.conf.urls.static import static
-from users.views import logout_view
+from users.views import logout_view, password_reset_confirm, password_reset_request
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/home/', permanent=True)),
@@ -17,6 +17,8 @@ urlpatterns = [
     path('api/auth-status/', views.check_auth_status, name='auth_status'),
     path('account/', views.account, name='account'),
     path('friends/', views.friends_view, name='friends'),
+    path('password_reset/', password_reset_request, name='password_reset_request'),
+    path('password_reset_confirm/<uidb64>/<token>/', password_reset_confirm, name='password_reset_confirm'),
 
     path('leaderboard/', views.leaderboard, name='leaderboard'),
     path('logout/', logout_view, name='logout'),
@@ -28,6 +30,10 @@ urlpatterns = [
     path('match/', views.define_render, name='match'),
     path('tournament/', views.define_render, name='tournament'),
     path('friends/', views.friends_view, name='friends'),
+
+    path('legal_rgpd/', views.define_render, name='rgpd'),
+    path('legal_mentions_legales/', views.define_render, name='mentions_legales'),
+    path('legal_cgu/', views.define_render, name='regles'),
 
     path('', include('django_prometheus.urls')),
 ]
