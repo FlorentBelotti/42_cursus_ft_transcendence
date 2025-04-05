@@ -9,15 +9,15 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copier et installer les dépendances Python
-COPY ./requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+COPY ./requirements.txt /django/requirements.txt
+RUN pip install --no-cache-dir -r /django/requirements.txt
 
 # Copier le code source
-COPY ./src /app/src
+COPY ./src /django/src
 
 # Définir les variables d’environnement
 ENV DJANGO_SETTINGS_MODULE=transcendence.settings
-ENV PYTHONPATH=/app/src
+ENV PYTHONPATH=/django/src
 ENV PYTHONUNBUFFERED=1
 
 # Collecter les fichiers statiques pour Nginx

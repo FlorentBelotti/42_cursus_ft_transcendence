@@ -24,7 +24,7 @@ services:
     build:
       context: ./django
     volumes:
-      - ./django/src/static:/app/src/static  # Pour que Nginx accède aux fichiers statiques
+      - ./django/src/static:/django/src/static  # Pour que Nginx accède aux fichiers statiques
     expose:
       - "8000"
     depends_on:
