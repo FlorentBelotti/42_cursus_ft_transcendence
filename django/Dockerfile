@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Définir le répertoire de travail
-WORKDIR /app
+WORKDIR /django
 
 # Copier et installer les dépendances Python
 COPY ./requirements.txt /django/requirements.txt
