@@ -29,7 +29,7 @@ nav ul {
 }
 
 .nav-button.active {
-    color: white; /* Style pour l'élément actif */
+    color: white;
 	font-weight: 700;
 }
 
@@ -40,11 +40,11 @@ nav ul > div {
 }
 
 nav ul > div:first-child {
-	margin-right: auto; /* Pousse vers la gauche */
+	margin-right: auto;
 }
 
 nav ul > div:last-child {
-    margin-left: auto; /* Pousse vers la droite */
+    margin-left: auto;
 }
 
 nav ul li {
@@ -78,7 +78,7 @@ nav ul li {
     position: absolute;
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 50px;
-    transition: all 0.3s cubic-bezier(0.68, -0.10, 0.265, 1);
+    transition: all 0.3s cubic-bezier(0.68, -0.05, 0.265, 1);
     z-index: 0;
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);

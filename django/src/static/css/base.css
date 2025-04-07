@@ -1,0 +1,23 @@
+.main-footer {
+    color: white;
+    text-align: center;
+    padding: 20px;
+    position: relative;
+    z-index: 15;
+    flex-shrink: 0;
+}
+
+.footer-links {
+    margin-top: 10px;
+}
+
+.footer-links a {
+    color: white;
+    text-decoration: none;
+    margin: 0 15px;
+    font-size: 14px;
+}
+
+.footer-links a:hover {
+    text-decoration: underline;
+}

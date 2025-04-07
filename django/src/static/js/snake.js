@@ -5,10 +5,16 @@ import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 class Snake3D {
     constructor() {
         this.initSnake();
-     }
+        this.cameraStartPosition = new THREE.Vector3(0, 5, 10);
+        this.cameraStartLookAt = new THREE.Vector3(0, 0, 0);
+        this.cameraGamePosition = new THREE.Vector3(-15, 25, 35);
+        this.cameraGameLookAt = new THREE.Vector3(0, 0, 0);
+        this.cameraTransitionDuration = 2000; // 2 seconds
+        this.cameraTransitionStartTime = 0;
+        this.isTransitioning = false;
+    }
 
     initSnake() {
-        // Configuration du jeu (reste inchangée)
         this.gridSize = 20;
         this.tileCount = 20;
         this.gameStarted = false;
@@ -277,19 +283,18 @@ class Snake3D {
 	setupThreeJS() {
 		// Créer la scène, la caméra et le rendu
 		this.scene = new THREE.Scene();
-		this.scene.background = this.createGradientTexture(); // Appliquer le dégradé
-		// this.scene.background = new THREE.Color(0xffffff)
+		this.scene.background = this.createGradientTexture();
+
 		this.camera = new THREE.PerspectiveCamera(
-			35, // Champ de vision (FOV)
-			window.innerWidth / window.innerHeight, // Ratio d'aspect
-			0.1, // Plan proche
-			1000 // Plan éloigné
+			35,
+			window.innerWidth / window.innerHeight,
+			0.1,
+			1000
 		);
 
-		// Positionner la caméra pour une vue presque isométrique
-		this.camera.position.set(-15, 25, 35);
-		// this.camera.position.set(0, 25, 0);
-		this.camera.lookAt(0, 0, 0);
+		// Position initiale de la caméra (vue de départ)
+		this.camera.position.copy(this.cameraStartPosition);
+		this.camera.lookAt(this.cameraStartLookAt);
 
 		// Créer le rendu
 		this.renderer = new THREE.WebGLRenderer({
@@ -321,7 +326,89 @@ class Snake3D {
         this.plane.position.y = -0.1;
         this.plane.receiveShadow = true;
         this.scene.add(this.plane);
+
+        // Créer le texte de démarrage
+        this.createStartScreen();
 	}
+
+    createStartScreen() {
+        // Créer un groupe pour le texte de démarrage
+        this.startScreenGroup = new THREE.Group();
+        this.scene.add(this.startScreenGroup);
+
+        // Créer un texte temporaire pendant le chargement de la police
+        const tempGeometry = new THREE.BoxGeometry(8, 1, 0.5);
+        const tempMaterial = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
+        const tempMesh = new THREE.Mesh(tempGeometry, tempMaterial);
+        tempMesh.position.set(0, 2, 0);
+        this.startScreenGroup.add(tempMesh);
+
+        // Charger la police pour le texte de démarrage
+        const loader = new FontLoader();
+        loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (font) => {
+            const textGeometry = new TextGeometry('Appuyez sur ESPACE pour commencer', {
+                font: font,
+                size: 0.5,
+                height: 0.1,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 0.02,
+                bevelSize: 0.02,
+                bevelOffset: 0,
+                bevelSegments: 5
+            });
+            textGeometry.computeBoundingBox();
+            const textMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+            const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+            textMesh.position.set(-4, 2, 0);
+            this.startScreenGroup.add(textMesh);
+        });
+    }
+
+    startCameraTransition() {
+        this.isTransitioning = true;
+        this.cameraTransitionStartTime = Date.now();
+    }
+
+    updateCameraTransition() {
+        if (!this.isTransitioning) return;
+
+        const elapsed = Date.now() - this.cameraTransitionStartTime;
+        const progress = Math.min(elapsed / this.cameraTransitionDuration, 1);
+
+        // Interpolation linéaire pour la position
+        this.camera.position.lerpVectors(
+            this.cameraStartPosition,
+            this.cameraGamePosition,
+            progress
+        );
+
+        // Interpolation linéaire pour le point de vue
+        const currentLookAt = new THREE.Vector3();
+        currentLookAt.lerpVectors(
+            this.cameraStartLookAt,
+            this.cameraGameLookAt,
+            progress
+        );
+        this.camera.lookAt(currentLookAt);
+
+        if (progress >= 1) {
+            this.isTransitioning = false;
+            this.startScreenGroup.visible = false;
+        }
+    }
+
+    animate() {
+        if (!this.renderer) return;
+
+        this.animationFrameId = requestAnimationFrame(() => this.animate());
+
+        if (this.isTransitioning) {
+            this.updateCameraTransition();
+        }
+
+        this.renderer.render(this.scene, this.camera);
+    }
 
     createGrid() {
         // Créer une grille pour le fond
@@ -635,8 +722,8 @@ class Snake3D {
 
     startGame() {
         if (!this.gameLoop) {
-            // Démarrer la boucle de jeu
-            this.gameLoop = setInterval(() => this.update(), 200); // Mettre à jour le jeu toutes les 200 ms
+            this.startCameraTransition();
+            this.gameLoop = setInterval(() => this.update(), 200);
         }
     }
 
@@ -794,14 +881,6 @@ class Snake3D {
 		this.createSnake();
 		this.updateScore3D();
 		this.startGame();
-	}
-
-	animate() {
-		// Vérifier si le renderer existe avant de poursuivre
-		if (!this.renderer) return;
-
-		this.animationFrameId = requestAnimationFrame(() => this.animate());
-		this.renderer.render(this.scene, this.camera);
 	}
 
 	cleanup() {

@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	let snakeGame = null;
 	updateAuthButtons();
 
+
+
 	window.loadContent = function(url, addToHistory = true) {
 
 		window.isDynamicLoading = true;
@@ -304,4 +306,12 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.loadContent(event.state.url, false);
 		}
 	});
+
+	document.querySelectorAll('footer a').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            event.preventDefault();
+            const url = this.getAttribute('href');
+            window.loadContent(url);
+        });
+    });
 });

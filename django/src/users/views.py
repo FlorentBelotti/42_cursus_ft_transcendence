@@ -84,22 +84,22 @@ def user_detail(request, pk):
 @api_view(['GET'])
 def user_me_detail(request):
     token = request.COOKIES.get('access_token', '')
-    
+
     try:
         validated_token = AccessToken(token)
         user_id = validated_token['user_id']
         user = customUser.objects.get(id=user_id)
-        
+
         serializer = UserDataSerializer(user)
-        
+
         response_data = serializer.data
         response_data['is_online'] = user.is_online()
-        
+
         return Response({
             'user': response_data,
             'status': 'success'
         }, status=status.HTTP_200_OK)
-    
+
     except Exception as e:
         return Response({
             'user': None,
@@ -173,26 +173,26 @@ def logout_view(request):
 def online_friends_view(request):
     # Récupérer le token depuis le cookie
     token = request.COOKIES.get('access_token', '')
-    
+
     try:
         # Valider le token
         validated_token = AccessToken(token)
         # Récupérer l'utilisateur à partir du token
         user_id = validated_token['user_id']
         user = customUser.objects.get(id=user_id)
-        
+
         # Récupérer tous les amis de l'utilisateur
         all_friends = user.friends.all()
         # Filtrer les amis en ligne
         online_friends = [friend for friend in all_friends if friend.is_online()]
-        
+
         # Sérialiser les données
         serializer = UserDataSerializer(online_friends, many=True)
         return Response({
             'online_friends': serializer.data,
             'count': len(online_friends)
         }, status=status.HTTP_200_OK)
-    
+
     except Exception as e:
         # Si le token est invalide ou autre erreur
         return Response({
@@ -206,24 +206,24 @@ def online_friends_view(request):
 def friends_view(request):
     # Récupérer le token depuis le cookie
     token = request.COOKIES.get('access_token', '')
-    
+
     try:
         # Valider le token
         validated_token = AccessToken(token)
         # Récupérer l'utilisateur à partir du token
         user_id = validated_token['user_id']
         user = customUser.objects.get(id=user_id)
-        
+
         # Récupérer tous les amis de l'utilisateur (sans filtre)
         all_friends = user.friends.all()
-        
+
         # Sérialiser les données
         serializer = UserDataSerializer(all_friends, many=True)
         return Response({
             'friends': serializer.data,
             'count': len(all_friends)
         }, status=status.HTTP_200_OK)
-    
+
     except Exception as e:
         # Si le token est invalide ou autre erreur
         return Response({
@@ -231,7 +231,7 @@ def friends_view(request):
             'count': 0,
             'error': str(e)
         }, status=status.HTTP_401_UNAUTHORIZED)
-    
+
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -305,7 +305,7 @@ def password_reset_confirm(request, uidb64, token):
         return define_render(request, {'content_template': 'password_reset_confirm.html'})
     else:
         return JsonResponse({"error": "Lien invalide ou expiré"}, status=400)
-    
+
 
 ########################################################################################################################################
 ########################################################################################################################################
