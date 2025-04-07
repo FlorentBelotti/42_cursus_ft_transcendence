@@ -69,11 +69,11 @@ class TournamentClient {
     }
 
     connectWebSocket() {
-        this.socket = new WebSocket(`ws://${window.location.host}/ws/tournament/`);
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        this.socket = new WebSocket(`${wsProtocol}${window.location.host}/ws/tournament/`);
         
         this.socket.onopen = () => {
             console.log('Tournament WebSocket connection established.');
-            // Send create_tournament message ONCE
             this.socket.send(JSON.stringify({
                 type: 'create_tournament'
             }));
@@ -81,20 +81,19 @@ class TournamentClient {
         };
     
         this.socket.onmessage = (event) => {
-            console.log('⚡ Tournament WebSocket message received:', event.data);
+            console.log('Tournament WebSocket message received:', event.data);
             try {
                 const data = JSON.parse(event.data);
-                console.log('📥 Parsed message type:', data.type);
+                console.log('Parsed message type:', data.type);
                 
-                // Skip game updates for cancelled tournaments
                 if (this.isTournamentCancelled && data.type === 'game_update') {
-                    console.log('✂️ Skipping game update for cancelled tournament');
+                    console.log('Skipping game update for cancelled tournament');
                     return;
                 }
                 
                 this.handleMessage(data);
             } catch (e) {
-                console.error("❌ Error parsing message:", e);
+                console.error("Error parsing message:", e);
             }
         };
     
