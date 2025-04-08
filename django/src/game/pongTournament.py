@@ -615,6 +615,11 @@ class TournamentManager:
         """
         Update ELO for all participants when tournament is complete.
         """
+        
+        if tournament.get("cancelled", False):
+            print(f"Skipping ELO updates for cancelled tournament {tournament_id}")
+            return
+
         tournament = self.tournaments[tournament_id]
         players = tournament["players"]
         rankings = tournament["rankings"]
@@ -658,7 +663,7 @@ class TournamentManager:
         forfeiter_username = player.user.username
         forfeiter_display = get_display_name(player.user)
     
-        if tournament.get("started", False):
+        if tournament.get("started", False) and not tournament.get("complete", False):
             # Tournament has already started, cancel it and penalize the player
             print(f"Player {forfeiter_username} disconnected from active tournament {tournament_id}. Cancelling tournament.")
             
@@ -706,19 +711,20 @@ class TournamentManager:
         else:
             # Tournament hasn't started yet, just remove player
             print(f"Player {forfeiter_username} disconnected from waiting tournament {tournament_id}.")
-            tournament["players"] = [p for p in players if p != player]
-    
-            # Notify remaining players
-            if len(tournament["players"]) > 0:
-                for p in tournament["players"]:
-                    try:
-                        state = await self.get_tournament_state(tournament_id)
-                        state["your_position"] = p.player_position
-                        await p.send(text_data=json.dumps(state))
-                    except Exception:
-                        pass
-                    
-            return True
+            if not tournament.get("started", False):
+                tournament["players"] = [p for p in players if p != player]
+
+                # Notify remaining players
+                if len(tournament["players"]) > 0:
+                    for p in tournament["players"]:
+                        try:
+                            state = await self.get_tournament_state(tournament_id)
+                            state["your_position"] = p.player_position
+                            await p.send(text_data=json.dumps(state))
+                        except Exception:
+                            pass
+
+                return True
     
     async def handle_player_input(self, player, input_value):
         """

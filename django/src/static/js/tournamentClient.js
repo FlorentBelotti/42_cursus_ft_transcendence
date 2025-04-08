@@ -148,11 +148,11 @@ class TournamentClient {
             this.displayTournamentCancelled(data);
             
             // Re-enable buttons
-            const createTournamentBtn = document.getElementById('createTournamentBtn');
-            if (createTournamentBtn) {
-                createTournamentBtn.disabled = false;
-                createTournamentBtn.textContent = 'Create Tournament';
-            }
+            // const createTournamentBtn = document.getElementById('createTournamentBtn');
+            // if (createTournamentBtn) {
+            //     createTournamentBtn.disabled = false;
+            //     createTournamentBtn.textContent = 'Create Tournament';
+            // }
             
             return; // Exit early
         }
@@ -297,8 +297,8 @@ class TournamentClient {
             // Draw try again message
             this.ctx.fillStyle = '#4CAF50';
             this.ctx.font = '24px Arial';
-            this.ctx.fillText("You can join a new tournament", 
-                             this.canvas.width / 2, 380);
+            // this.ctx.fillText("You can join a new tournament", 
+            //                  this.canvas.width / 2, 380);
             
             console.log("✅ Cancellation screen drawn successfully");
         } catch (err) {
@@ -307,11 +307,11 @@ class TournamentClient {
         
         // Always update UI elements outside of try/catch
         // Re-enable the create tournament button
-        const createTournamentBtn = document.getElementById('createTournamentBtn');
-        if (createTournamentBtn) {
-            createTournamentBtn.disabled = false;
-            createTournamentBtn.textContent = 'Create Tournament';
-        }
+        // const createTournamentBtn = document.getElementById('createTournamentBtn');
+        // if (createTournamentBtn) {
+        //     createTournamentBtn.disabled = false;
+        //     createTournamentBtn.textContent = 'Create Tournament';
+        // }
         
         // Information div update
         const infoDiv = document.getElementById('tournamentInfo');
@@ -711,31 +711,31 @@ class TournamentClient {
         });
     }
 
-    // In your TournamentClient class in tournamentClient.js
     declareForfeit() {
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-            console.log("No active tournament connection to forfeit");
-            return;
+            return false;
         }
-
-        console.log("Declaring tournament forfeit before navigation");
-
+    
+        const isTournamentComplete = document.querySelector('#tournamentInfo')?.innerText.includes('Classement final');
+        
+        console.log("Declaring tournament forfeit before navigation, tournament complete:", isTournamentComplete);
+    
         try {
-            // Send leave tournament message
-            this.socket.send(JSON.stringify({
-                type: 'leave_tournament'
-            }));
-
-            // Force close the socket
-            this.socket.onclose = null; // Remove reconnect handler
-            this.socket.close(1000, "User forfeited tournament");
-
-            console.log("Tournament forfeit signal sent and socket closed");
-
-            // Set flags to prevent reconnection
-            this.isPageUnloading = true;
+            if (!isTournamentComplete) {
+                this.socket.send(JSON.stringify({
+                    type: 'leave_tournament'
+                }));
+            } else {
+                console.log("Tournament already complete, no need to declare forfeit");
+            }
+            
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                this.socket.close();
+            }
+            return true;
         } catch (e) {
-            console.error("Error sending tournament forfeit:", e);
+            console.error("Error in declareForfeit:", e);
+            return false;
         }
     }
 
