@@ -1,7 +1,10 @@
 global:
-  scrape_interval: 15s # Intervalle de récupération des métriques
+  scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'django_app'
+  - job_name: 'django'
     static_configs:
-      - targets: ['web:8000'] # Cible votre service Django (à adapter si vous exposez un endpoint /metrics)
+      - targets: ['web:8000']
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

@@ -195,13 +195,19 @@ class TournamentManager:
         tournament["rankings"][1] = winner.user.username
         tournament["rankings"][2] = runner_up.user.username
 
-        # Broadcast rankings
+        # Broadcast partial rankings (not yet marking as complete)
         await self.broadcast_tournament_rankings(tournament_id)
 
         # Check if third-place match is also complete
         if 3 in tournament["rankings"]:
             print(f"Tournament {tournament_id}: Both final and third-place matches complete")
+
+            # Give players time to see their match result first
+            await asyncio.sleep(2)
+
+            # Now mark as complete and broadcast final rankings
             tournament["complete"] = True  # Explicitly mark as complete
+            await self.broadcast_tournament_rankings(tournament_id)
             await self.update_all_elo_ratings(tournament_id)
             await self.cleanup_tournament(tournament_id)
         else:
@@ -212,34 +218,40 @@ class TournamentManager:
         """
         Handle the third-place winner.
         """
-
+    
         print(f"Handling third place winner: {winner_username}")
         tournament = self.tournaments[tournament_id]
         players = tournament["players"]
-
+    
         # Find third-place winner and loser
         winner = next((player for player in players if player.user.username == winner_username), None)
         if not winner:
             return
-
+    
         # Find the loser (fourth place)
         loser = next((player for player in players 
                     if player in [tournament["semifinal_losers"].get("semifinal1"),
                                  tournament["semifinal_losers"].get("semifinal2")]
                     and player.user.username != winner_username), None)
-
+    
         # Update rankings
         tournament["rankings"][3] = winner_username
         if loser:
             tournament["rankings"][4] = loser.user.username
-
-        # Broadcast rankings
+    
+        # Broadcast partial rankings
         await self.broadcast_tournament_rankings(tournament_id)
-
+    
         # Check if finals are also complete
         if 1 in tournament["rankings"]:
             print(f"Tournament {tournament_id}: Both final and third-place matches complete")
+            
+            # Give players time to see their match result first
+            await asyncio.sleep(2)
+            
+            # Now mark as complete and broadcast final rankings
             tournament["complete"] = True
+            await self.broadcast_tournament_rankings(tournament_id)
             await self.update_all_elo_ratings(tournament_id)
             await self.cleanup_tournament(tournament_id)
         else:
@@ -249,43 +261,49 @@ class TournamentManager:
         """
         Send current tournament rankings to all players.
         """
-
         tournament = self.tournaments[tournament_id]
         players = tournament["players"]
         rankings = tournament["rankings"]
         is_complete = tournament.get("complete", False)
-        
+
         print(f"Broadcasting rankings for tournament {tournament_id}")
         print(f"Current rankings: {rankings}")
         print(f"Tournament complete: {is_complete}")
-        
+
         # Convert rankings to list
         ranking_list = []
         for position in range(1, 5):
             if position in rankings:
                 username = rankings[position]
                 player = next((p for p in players if p.user.username == username), None)
-                
+
                 nickname = None
                 if player and hasattr(player.user, 'nickname') and player.user.nickname:
                     nickname = player.user.nickname
-                    
+
                 ranking_list.append({
                     "position": position,
                     "username": username,
                     "nickname": nickname,
                     "medal": "🥇" if position == 1 else "🥈" if position == 2 else "🥉" if position == 3 else ""
                 })
-        
-        # Send to all players
+
+        # Send to all players, but with different logic based on tournament state
         for player in players:
             try:
-                await player.send(text_data=json.dumps({
-                    "type": "tournament_rankings",
-                    "rankings": ranking_list,
-                    "complete": is_complete,
-                    "message": "Classement final du tournoi" if is_complete else "Classement du tournoi"
-                }))
+                # Check if player is in an active match
+                is_in_match = hasattr(player, 'match_id') and player.match_id
+
+                # ONLY send rankings in these conditions:
+                # 1. Tournament is complete - send to everyone 
+                # 2. Player is NOT in a match - can see partial rankings
+                if is_complete or not is_in_match:
+                    await player.send(text_data=json.dumps({
+                        "type": "tournament_rankings",
+                        "rankings": ranking_list,
+                        "complete": is_complete,
+                        "message": "Classement final du tournoi" if is_complete else "Classement du tournoi"
+                    }))
             except Exception as e:
                 print(f"Error sending rankings to player: {str(e)}")
 
@@ -449,6 +467,7 @@ class TournamentManager:
             if player:
                 player.match_id = None
                 player.player_number = None
+
 
         # Check tournament progress
         await self.check_tournament_progress(tournament_id)

@@ -19,6 +19,10 @@ class TournamentClient {
         this.authenticated = false;
         this.isTournamentCancelled = false; // Add this flag
         this.cancelledMatchIds = []; // Add this array
+        this.isShowingMatchResult = false;
+        this.finalMatchCompleted = false;
+        this.rankingsCheckInterval = null;
+        this.rankingsCheckCount = 0;
         this.init();
     }
 
@@ -147,13 +151,6 @@ class TournamentClient {
             // Display cancellation screen
             this.displayTournamentCancelled(data);
             
-            // Re-enable buttons
-            // const createTournamentBtn = document.getElementById('createTournamentBtn');
-            // if (createTournamentBtn) {
-            //     createTournamentBtn.disabled = false;
-            //     createTournamentBtn.textContent = 'Create Tournament';
-            // }
-            
             return; // Exit early
         }
 
@@ -170,23 +167,58 @@ class TournamentClient {
             }
         }
 
+        // Tournament rankings message handling
         if (data.type === 'tournament_rankings') {
-            console.log('Tournament rankings received:', data);
+            console.log('Received tournament rankings:', data.complete ? 'FINAL' : 'PARTIAL');
             
-            // If tournament is complete, update UI accordingly
-            if (data.complete) {
-                this.isInMatch = false;
-                this.matchId = null;
+            // Store rankings regardless
+            this.pendingRankings = data;
+            
+            // Special case: If this player just completed a final match, always show complete rankings
+            if (data.complete && this.finalMatchCompleted) {
+                console.log('Final player receiving complete rankings - displaying immediately');
+                
+                // Clear any existing interval check
+                if (this.rankingsCheckInterval) {
+                    clearInterval(this.rankingsCheckInterval);
+                }
+                
+                // Small delay to ensure the match result is seen
+                setTimeout(() => {
+                    this.isShowingMatchResult = false;
+                    this.clearCanvas();
+                    this.displayTournamentRankings(data);
+                }, 1500);
+                return;
             }
             
-            // Display rankings (this should work regardless of if we're in a match)
-            this.clearCanvas();
-            this.displayTournamentRankings(data);
+            // Normal display logic for other cases
+            if (!this.isInMatch && !this.isShowingMatchResult && this.matchId === null) {
+                console.log('Player not in match - displaying rankings immediately');
+                if (data.complete || (data.rankings && data.rankings.length > 0)) {
+                    this.clearCanvas();
+                    this.displayTournamentRankings(data);
+                }
+            } else {
+                console.log('Player in active match or showing result - storing rankings for later');
+            }
             return;
         }
-        // Don't interrupt an ongoing match with other messages
+        // Match handling - check specifically for match_result
+        if (data.type === 'match_result' && data.match_id === this.matchId) {
+            console.log('Match ended:', data.match_id);
+
+            // Immediately reset match state to prevent game freeze
+            this.isInMatch = false;
+            this.matchId = null;
+
+            // Then display result
+            this.clearCanvas();
+            this.displayMatchResult(data);
+            return; // Exit early to prevent other processing
+        }
+
         if (this.isInMatch) {
-            // Only process match-related messages for THIS specific match
             if (data.type === 'game_update' && 
                 this.gameState && 
                 data.game_state && 
@@ -195,21 +227,6 @@ class TournamentClient {
                 this.gameState = data.game_state;
                 this.renderGame(this.gameState);
             }
-            else if (data.type === 'match_result' && data.match_id === this.matchId) {
-                // Only handle match result if it's for our current match
-                this.isInMatch = false; 
-                this.matchId = null;    
-                this.clearCanvas();
-                this.displayMatchResult(data);
-            }
-            // Strictly ignore ALL other messages while in a match
-            return;
-        }
-        
-        // Always process tournament rankings even if they arrive while in other states
-        if (data.type === 'tournament_rankings') {
-            console.log('Received tournament rankings:', data);
-            this.displayTournamentRankings(data);
             return;
         }
         
@@ -242,8 +259,6 @@ class TournamentClient {
                 infoDiv.innerHTML = '';
             }        
             this.renderGame(this.gameState);
-        } else if (data.type === 'match_result') {
-            this.displayMatchResult(data);
         } else if (data.type === 'finals_starting') {
             this.displayFinalsAnnouncement(data);
         } else if (data.type === 'third_place_starting') {
@@ -477,6 +492,12 @@ class TournamentClient {
     displayMatchResult(data) {
         this.clearCanvas();
         
+        // Set a flag to indicate we're in transition, still showing match result
+        this.isShowingMatchResult = true;
+        
+        // Force reset game state to ensure clean exit from game
+        this.gameState = null;
+        
         // Draw result message
         this.ctx.fillStyle = 'black';
         this.ctx.font = '30px Arial';
@@ -491,9 +512,28 @@ class TournamentClient {
         if (isFinalMatch) {
             this.ctx.fillText("Le classement final sera bientôt affiché...", 
                         this.canvas.width / 2, this.canvas.height / 2 + 50);
+            
+            // For final/third-place matches, set a longer timeout to ensure we see final rankings
+            setTimeout(() => {
+                console.log('Final match result screen timeout complete - checking for rankings');
+                this.isShowingMatchResult = false;
+                
+                // If there are pending final rankings, show them
+                if (this.pendingRankings && this.pendingRankings.complete) {
+                    console.log('Found pending final rankings, displaying now');
+                    this.clearCanvas();
+                    this.displayTournamentRankings(this.pendingRankings);
+                    this.pendingRankings = null;
+                }
+            }, 5000);  // 5 seconds for finals
         } else {
             this.ctx.fillText("Attendez la prochaine phase du tournoi...", 
                         this.canvas.width / 2, this.canvas.height / 2 + 50);
+                        
+            // For regular matches, use shorter timeout
+            setTimeout(() => {
+                this.isShowingMatchResult = false;
+            }, 3000);
         }
     }
 

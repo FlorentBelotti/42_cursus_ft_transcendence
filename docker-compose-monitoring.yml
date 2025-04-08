@@ -1,0 +1,74 @@
+services:
+  pgadmin:
+    image: dpage/pgadmin4:8
+    env_file:
+      - .env
+    expose:
+      - "80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+      - PGADMIN_LISTEN_PORT=80
+      - PGADMIN_CONFIG_SERVER_MODE=True
+      - PGADMIN_CONFIG_PROXY_X_HEADERS=True
+      - PGADMIN_CONFIG_ENABLE_PWD_COMPLEXITY_CHECK=False
+    networks:
+      - transcendence_network
+      - monitoring_network
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    expose:
+      - "9090"
+    restart: unless-stopped
+    networks:
+      - monitoring_network
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    expose:
+      - "3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+    networks:
+      - monitoring_network
+
+  nginx-monitoring:
+    image: nginx:latest
+    ports:
+      - "5050:5050"
+      - "9090:9090"
+      - "3000:3000"
+    volumes:
+      - ./nginx/monitoring.conf:/etc/nginx/conf.d/monitoring.conf
+      - ./certbot/conf:/etc/letsencrypt
+    depends_on:
+      - pgadmin
+      - prometheus
+      - grafana
+    networks:
+      - transcendence_network
+      - monitoring_network
+
+volumes:
+  pgadmin_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  transcendence_network:
+    external: true
+    name: 42_cursus_ft_transcendence_transcendence_network
+  monitoring_network:
+    driver: bridge
