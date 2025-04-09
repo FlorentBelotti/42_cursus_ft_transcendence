@@ -552,13 +552,13 @@ class TournamentManager:
         user.elo = max(0, user.elo - penalty)  # Ensure ELO doesn't go below 0
         user.losses += 1
 
-        # Add to history
+        now = now_str()
         user.history.append({
+            'opponent_id': "NaN",
+            'opponent_username': "NaN",
             'result': 'forfeit',
-            'timestamp': now_str(),
-            'match_type': 'tournament',
-            'elo_change': -penalty,
-            'reason': 'Tournament forfeit penalty'
+            'timestamp': now,
+            'match_type': 'canceled_tournament',
         })
 
         # Save changes
@@ -634,12 +634,12 @@ class TournamentManager:
         """
         Update ELO for all participants when tournament is complete.
         """
+        tournament = self.tournaments[tournament_id] 
         
         if tournament.get("cancelled", False):
             print(f"Skipping ELO updates for cancelled tournament {tournament_id}")
             return
 
-        tournament = self.tournaments[tournament_id]
         players = tournament["players"]
         rankings = tournament["rankings"]
         
@@ -659,6 +659,42 @@ class TournamentManager:
     #                PLAYER MANAGEMENT                          #
     #===========================================================#
 
+    @database_sync_to_async
+    def update_players_history_for_cancelled_tournament(self, tournament_id, forfeiter_username):
+        """
+        Add a forfeit entry to all players' history when a tournament is cancelled.
+        """
+        tournament = self.tournaments[tournament_id]
+        players = tournament["players"]
+        now = now_str()
+
+        print(f"Updating history for {len(players)} players in cancelled tournament {tournament_id}")
+        
+        # Get already penalized players to avoid duplicate records
+        penalized_players = tournament.get("penalized_players", set())
+
+        for player in players:
+            # Skip the forfeiter as they already got a penalty entry
+            # And skip any other players who might have already been penalized
+            if player.user.username == forfeiter_username or player.user.username in penalized_players:
+                continue
+
+            # Add forfeit record to player history
+            player.user.history.append({
+                'opponent_id': "NaN",
+                'opponent_username': "NaN",
+                'result': 'cancel',
+                'timestamp': now,
+                'match_type': 'canceled_tournament',
+                'forfeiter': forfeiter_username  # Track who caused the cancellation
+            })
+
+            # Save the user model
+            player.user.save()
+
+        print(f"Successfully updated history for all players in tournament {tournament_id}")
+        return True
+
     async def handle_player_disconnect(self, player):
         """
         Handle player disconnection from tournament.
@@ -667,33 +703,49 @@ class TournamentManager:
         """
         if not hasattr(player, 'tournament_id') or player.tournament_id is None:
             return False
-    
+
         tournament_id = player.tournament_id
         if tournament_id not in self.tournaments:
             return False
-    
+
         tournament = self.tournaments[tournament_id]
         players = tournament["players"]
-    
+
         if player not in players:
             return False
-    
+
         # Get forfeiter info for notifications
         forfeiter_username = player.user.username
         forfeiter_display = get_display_name(player.user)
-    
+
         if tournament.get("started", False) and not tournament.get("complete", False):
-            # Tournament has already started, cancel it and penalize the player
+            # Check if tournament is already cancelled to avoid duplicate processing
+            if tournament.get("cancelled", False):
+                print(f"Tournament {tournament_id} is already cancelled, skipping duplicate cancellation.")
+                return True
+
             print(f"Player {forfeiter_username} disconnected from active tournament {tournament_id}. Cancelling tournament.")
             
-            # Apply ELO penalty to forfeiting player
-            await self.apply_forfeit_penalty(player.user)
-            
-            # Mark tournament as cancelled
+            # Mark tournament as cancelled FIRST to prevent duplicate processing
             tournament["cancelled"] = True
             tournament["cancelled_by"] = forfeiter_username
             tournament["cancelled_at"] = now_str()
             
+            # Track players who received penalties to avoid duplicates
+            if "penalized_players" not in tournament:
+                tournament["penalized_players"] = set()
+                
+            # Only apply ELO penalty if not already penalized
+            if forfeiter_username not in tournament.get("penalized_players", set()):
+                # Apply ELO penalty to forfeiting player
+                await self.apply_forfeit_penalty(player.user)
+                tournament["penalized_players"].add(forfeiter_username)
+                
+            # Only update history ONCE per tournament
+            if not tournament.get("history_updated", False):
+                await self.update_players_history_for_cancelled_tournament(tournament_id, forfeiter_username)
+                tournament["history_updated"] = True
+
             # IMPORTANT: Cancel any ongoing match tasks first
             active_match_ids = []
             for match_id in list(tournament.get("match_states", {}).keys()):
@@ -708,9 +760,13 @@ class TournamentManager:
                 p.match_id = None
                 p.player_number = None
             
+            # Track players who have already been notified
+            if "notified_players" not in tournament:
+                tournament["notified_players"] = set()
+                
             # Notify all players about cancellation
             for p in players:
-                if p != player:  # Don't need to notify the player who left
+                if p != player and p.user.username not in tournament.get("notified_players", set()):
                     try:
                         print(f"Sending cancellation notice to {p.user.username}")
                         await p.send(text_data=json.dumps({
@@ -720,15 +776,15 @@ class TournamentManager:
                             "forfeiter_display": forfeiter_display,
                             "active_match_ids": active_match_ids  # Include this so frontend knows which matches to ignore
                         }))
+                        tournament["notified_players"].add(p.user.username)
                     except Exception as e:
                         print(f"Error notifying player of cancellation: {e}")
             
-            # Keep the tournament record for a while but mark as inactive
+            # Keep the tournament record but mark as inactive
             tournament["active"] = False
             
             return True
         else:
-            # Tournament hasn't started yet, just remove player
             print(f"Player {forfeiter_username} disconnected from waiting tournament {tournament_id}.")
             if not tournament.get("started", False):
                 tournament["players"] = [p for p in players if p != player]

@@ -70,9 +70,24 @@ class TournamentConsumer(BaseGameConsumer):
         """
         Handle player disconnection from tournament.
         """
-
-        if hasattr(self, 'user'):
-            await self.tournament_manager.handle_player_disconnect(self)
+        if hasattr(self, 'user') and self.user.is_authenticated:
+            # Check if player is in a tournament
+            if hasattr(self, 'tournament_id') and self.tournament_id is not None:
+                # Get tournament info to check if already cancelled
+                tournament = self.tournament_manager.tournaments.get(self.tournament_id)
+                
+                # Only process disconnect if tournament exists and isn't already cancelled or completed
+                if tournament and not tournament.get("complete", False):
+                    # Even if tournament is cancelled, we still want to process the disconnect
+                    # to properly clean up player state, but with a different message
+                    if tournament.get("cancelled", False):
+                        print(f"Processing disconnect for {self.user.username} from already cancelled tournament {self.tournament_id}")
+                    else:
+                        print(f"Processing tournament disconnect for {self.user.username}")
+                    
+                    await self.tournament_manager.handle_player_disconnect(self)
+                else:
+                    print(f"Skipping tournament disconnect for {self.user.username} - tournament not found or completed")
 
     #===========================================================#
     #                MESSAGE MANAGEMENT                         #

@@ -68,22 +68,26 @@
 					</td>
 					<td>
 						{% if match.match_type == 'tournament_semifinal' %}
-							Demi-finale de tournoi
+							Semi-finals
 						{% elif match.match_type == 'tournament_third_place' %}
-							Match pour la 3ème place
+							Match for the third place
 						{% elif match.match_type == 'tournament_final' %}
-							Finale de tournoi
+							Tournament final
+						{% elif match.match_type == 'canceled_tournament' %}
+							Canceled tournament
 						{% else %}
-							Match classique
+							Regular match
 						{% endif %}
 					</td>
 					<td class="win-loose">
 						{% if match.result == 'win' %}
-							<span class="result win">Victoire</span>
+							<span class="result win">Victory</span>
 						{% elif match.result == 'loss' %}
-							<span class="result loss">Défaite</span>
+							<span class="result loss">Defeat</span>
+						{% elif match.result == 'cancel' %}
+							<span class="result loss">Canceled</span>
 						{% elif match.result == 'forfeit' %}
-							<span class="result forfeit">Forfait</span>
+							<span class="result forfeit">Forfeit</span>
 						{% else %}
 							{{ match.result }}
 						{% endif %}
