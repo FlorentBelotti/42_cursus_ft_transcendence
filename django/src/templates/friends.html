@@ -2,12 +2,12 @@
 <link rel="stylesheet" href="{% static 'css/friends.css' %}">
 
 <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-6">Mes amis</h1>
+    <h1 class="text-2xl font-bold mb-6">Friends</h1>
 
     <form method="post">
         {% csrf_token %}
         <input type="text" name="username" placeholder="Chercher un pseudo" required>
-        <button type="submit">Ajouter</button>
+        <button type="submit">Add friend</button>
     </form>
 
     {% if messages %}
@@ -22,8 +22,8 @@
         <table class="w-full table-auto" id="friends-table">
             <thead>
                 <tr class="bg-gray-100">
-                    <th class="px-4 py-2 text-left">Pseudo</th>
-                    <th class="px-4 py-2 text-left">Photo de profil</th>
+                    <th class="px-4 py-2 text-left">Username</th>
+                    <th class="px-4 py-2 text-left">Profile picture</th>
                 </tr>
             </thead>
             <tbody>
@@ -41,9 +41,9 @@
 
     {% csrf_token %}
     <div class="bg-white rounded-lg shadow mb-6 p-4">
-        <h2 class="text-xl font-bold mb-4">Invitations de jeu</h2>
+        <h2 class="text-xl font-bold mb-4">Game incitation</h2>
         <div id="game-invitations-container">
-            <p class="text-gray-500">Chargement des invitations...</p>
+            <p class="text-gray-500">Invitations loading...</p>
         </div>
     </div>
 

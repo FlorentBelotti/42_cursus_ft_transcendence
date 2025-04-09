@@ -11,6 +11,7 @@ urlpatterns = [
     path('home/', views.define_render, name='home'),
     path('authentication/', views.define_render, name='authentication'),
     path('register/', views.register, name='register'),
+    path('oauth/', include('social_django.urls', namespace='social')),
 
     path('login/', views.user_login, name='login'),
     path('verify_code/<int:user_id>/', views.verify_code, name='verify_code'),

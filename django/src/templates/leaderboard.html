@@ -3,14 +3,14 @@
 <link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
 
 <div class="container">
-    <h1>Classement Pong</h1>
+    <h1>Leaderboard</h1>
 	<div class="horizontal-line"></div>
     <div class="table-container">
         <table id="leaderboard-table">
             <thead>
                 <tr>
-                    <th>Rang</th>
-                    <th>Joueur</th>
+                    <th>Rank</th>
+                    <th>Player</th>
                     <th>Elo</th>
                 </tr>
             </thead>
@@ -39,7 +39,7 @@
 
 <!-- Match History Section -->
 <div class="container">
-	<h1>Historique des parties</h1>
+	<h1>Game history</h1>
 
 	{% if user_history %}
 	<div class="table-container">
@@ -47,9 +47,9 @@
 			<thead>
 				<tr>
 					<th>Date</th>
-					<th>Adversaire</th>
-					<th>Type de match</th>
-					<th>Résultat</th>
+					<th>Opponent</th>
+					<th>Game mode</th>
+					<th>Result</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -81,9 +81,9 @@
 					</td>
 					<td class="win-loose">
 						{% if match.result == 'win' %}
-							<span class="result win">Victory</span>
+							<span class="result win">Win</span>
 						{% elif match.result == 'loss' %}
-							<span class="result loss">Defeat</span>
+							<span class="result loss">Loss</span>
 						{% elif match.result == 'cancel' %}
 							<span class="result loss">Canceled</span>
 						{% elif match.result == 'forfeit' %}
@@ -99,7 +99,7 @@
 	</div>
 	{% else %}
 	<div class="">
-		<p>Vous n'avez pas encore joué de match. Participez à un match ou à un tournoi pour voir votre historique ici.</p>
+		<p>Nos history yet.</p>
 	</div>
 	{% endif %}
 </div>

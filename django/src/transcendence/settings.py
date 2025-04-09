@@ -33,7 +33,9 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.open_id.OpenIdAuth',
-    'users.42auth.fortytwoOAuth2',
+    'social_core.backends.oauth.OAuth2',
+    'social_core.backends.intra42.Intra42OAuth2',
+    'users.42auth.Intra42OAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -63,7 +65,7 @@ MIDDLEWARE = [
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'social_django.middleware.SocialAuthExceptionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -88,9 +90,7 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
 SOCIAL_AUTH_42_KEY = os.getenv("SOCIAL_AUTH_42_KEY")
 SOCIAL_AUTH_42_SECRET = os.getenv("SOCIAL_AUTH_42_SECRET")
-SOCIAL_AUTH_42_SCOPE = os.getenv("SOCIAL_AUTH_42_SCOPE", "public,profile").split(",")
-SOCIAL_AUTH_LOGIN_REDIRECT_URL = os.getenv("SOCIAL_AUTH_LOGIN_REDIRECT_URL")
-SOCIAL_AUTH_URL_NAMESPACE = os.getenv("SOCIAL_AUTH_URL_NAMESPACE", "social")
+SOCIAL_AUTH_INTRA42_SCOPE = ['public']
 
 ROOT_URLCONF = 'transcendence.urls'
 
@@ -143,7 +143,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Paris'
 
 USE_I18N = True
 

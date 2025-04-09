@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Mon Compte</title>
+    <title>Account</title>
     {% load static %}
 	<link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/account.css' %}">
@@ -11,19 +11,19 @@
     <div class="account-page">
         <!-- Barre latérale -->
         <div class="sidebar">
-            <button class="sidebar-btn" data-section="info-section">Mon Profil</button>
-            <button class="sidebar-btn" data-section="update-section">Mettre à jour</button>
-            <button class="sidebar-btn" data-section="nickname-section">Pseudo</button>
-            <button class="sidebar-btn" data-section="password-section">Mot de passe</button>
-            <button class="sidebar-btn danger" data-section="danger-section">Account Actions</button>
+            <button class="sidebar-btn" data-section="info-section">Profile</button>
+            <button class="sidebar-btn" data-section="update-section">Update</button>
+            <button class="sidebar-btn" data-section="nickname-section">Nickname</button>
+            <button class="sidebar-btn" data-section="password-section">Password</button>
+            <button class="sidebar-btn danger" data-section="danger-section">Logout / Delete account</button>
         </div>
 
         <!-- Conteneur principal -->
         <div class="account-container">
-            <h1 class="account-title">Mon Compte</h1>
+            <h1 class="account-title">Account</h1>
             <!-- Section Infos -->
             <div id="info-section" class="account-section account-info">
-                <h3 class="form-title">Mon Profil</h3>
+                <h3 class="form-title">Profile</h3>
                 <div class="profile-section">
                     {% if user.profile_picture %}
                         <img src="{{ user.profile_picture.url }}" class="profile-image">
@@ -65,17 +65,17 @@
                     {% csrf_token %}
                     <h3 class="form-title">Change Password</h3>
                     {{ password_form.as_p }}
-                    <button type="submit" name="change_password" class="btn password-btn">Change password</button>
+                    <button type="submit" name="change_password" class="btn password-btn">Update password</button>
                 </form>
             </div>
 
             <!-- Section Account Actions -->
             <div id="danger-section" class="account-section account-form danger-zone">
-                <h3 class="form-title">Account Actions</h3>
+                <h3 class="form-title">Logout / Delete account</h3>
                 <div class="button-group">
                     <form id="disconnectForm" method="post" class="inline-form">
                         {% csrf_token %}
-                        <button type="submit" name="disconnect" class="btn disconnect-btn">Disconnect</button>
+                        <button type="submit" name="disconnect" class="btn disconnect-btn">Logout</button>
                     </form>
                     <form id="deleteForm" method="post" class="inline-form">
                         {% csrf_token %}

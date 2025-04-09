@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,11 +15,11 @@
 					<div id="cube-container"></div>
 				</div>
 				<div class="signup">
-					<a href="{% url 'register' %}">I'm not a TRNSCNDNC member</a>
+					<a href="{% url 'register' %}">I'm not a Transcendence member</a>
 				</div>
 			</div>
 			<div class="right-box">
-				<h1>Connexion</h1>
+				<h1>Connection</h1>
 				<div id="errorMessage" style="color: red; display: none;"></div>
 				<div>
 					<form id="loginForm">
@@ -32,11 +32,11 @@
 							<img src="{% static 'assets/password1.png' %}">
 							{{ form.password }}
 						</div>
-						<button type="submit" class="submit-button">Se connecter</button>
+						<button type="submit" class="submit-button">Login</button>
 						<p><a href="{% url 'password_reset_request' %}">Forgot password?</a></p>
 						<div class="social">
-							<p>ou se connecter avec</p>
-							<a href="{% url 'social:begin' '42' %}">
+							<p>connect with</p>
+							<a href="{% url 'social:begin' 'intra42' %}">
 								<img src="{% static 'assets/42.svg' %}" class="social-img">
 							</a>
 						</div>
@@ -48,19 +48,19 @@
 			<div class="modal-content">
 				<div class="modal-header">
 					<span class="close-modal">&times;</span>
-					<h1>Vérification du code</h1>
+					<h1>Double authentication code</h1>
 				</div>
 				<div id="verifyErrorMessage"></div>
 				<form id="verifyCodeForm">
 					{% csrf_token %}
 					<div class="label-code">
-						<label for="code">Code de vérification :</label>
+						<label for="code">Verification code :</label>
 					</div>
 					<div class="input-code">
 						<input type="text" id="code" name="code" required>
 					</div>
 					<div class="button-code">
-						<button type="submit">Vérifier</button>
+						<button type="submit">Verify</button>
 					</div>
 				</form>
 			</div>
