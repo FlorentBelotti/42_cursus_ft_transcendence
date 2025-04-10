@@ -45,6 +45,7 @@ class UserUpdateForm(UserChangeForm):
     class Meta:
         model = customUser
         fields = ['username', 'email', 'profile_picture']
+        exclude = ['password']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -56,6 +57,11 @@ class UserUpdateForm(UserChangeForm):
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.TextInput):
                 field.widget.attrs.update({'class': 'form-control'})
+
+        # Remove password fields
+        self.fields.pop('password', None)
+        self.fields.pop('password1', None)
+        self.fields.pop('password2', None)
 
 class CustomPasswordChangeForm(PasswordChangeForm):
     class Meta:

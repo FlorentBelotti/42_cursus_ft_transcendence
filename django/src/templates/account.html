@@ -86,25 +86,5 @@
     </div>
 
     <script src="{% static 'js/account.js' %}"></script>
-    <script>
-        // JavaScript pour gérer le défilement vers les sections
-        document.addEventListener('DOMContentLoaded', () => {
-            const buttons = document.querySelectorAll('.sidebar-btn');
-
-            buttons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const sectionId = button.getAttribute('data-section');
-                    const section = document.getElementById(sectionId);
-
-                    // Faire défiler jusqu'à la section
-                    section.scrollIntoView({ behavior: 'smooth' });
-
-                    // Mettre en surbrillance le bouton actif
-                    buttons.forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-                });
-            });
-        });
-    </script>
 </body>
 </html>

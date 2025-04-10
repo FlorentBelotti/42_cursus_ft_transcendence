@@ -47,12 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
 								updateAuthButtons();
 							}
 							if (scriptUrl.includes('account.js')) {
-								updateFormEvent();
-								passwordFormEvent();
-								deleteFormEvent();
-								updateAuthButtons();
-								disconnectFormEvent();
-    							nicknameFormEvent();
+								window.initAccountPage();
 							}
 							if (scriptUrl.includes('animationPong.js')) {
 								initPongAnimation();
@@ -255,6 +250,12 @@ document.addEventListener('DOMContentLoaded', function () {
             window.cubeAnimation.cleanup();
             window.cubeAnimation = null;
         }
+
+		if (window.PongAnimation) {
+			console.log("Cleaning up Pong animation...");
+			window.PongAnimation.stopAnimation();
+			window.PongAnimation = null;
+		}
 	}
 
 	function loadScript(url, callback, isModule = false) {

@@ -176,11 +176,33 @@ function nicknameFormEvent() {
     });
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+function initAccountPage() {
     updateFormEvent();
     passwordFormEvent();
     deleteFormEvent();
     disconnectFormEvent();
     nicknameFormEvent();
-});
 
+    const buttons = document.querySelectorAll('.sidebar-btn');
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            const sectionId = button.getAttribute('data-section');
+            const section = document.getElementById(sectionId);
+            const windowHeight = window.innerHeight;
+            const sectionHeight = section.offsetHeight;
+            const scrollPosition = section.offsetTop - (windowHeight / 2) + (sectionHeight / 2);
+
+            window.scrollTo({
+                top: scrollPosition,
+                behavior: 'smooth'
+            });
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+        });
+    });
+}
+
+document.addEventListener("DOMContentLoaded", initAccountPage);
+
+window.initAccountPage = initAccountPage;
