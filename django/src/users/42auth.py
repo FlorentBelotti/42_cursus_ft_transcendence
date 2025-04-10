@@ -2,8 +2,8 @@ from social_core.backends.oauth import BaseOAuth2
 
 from base64 import b64encode
 
-class Intra42OAuth2(BaseOAuth2):
-    name = 'intra42'
+class fortytwoOAuth2(BaseOAuth2):
+    name = '42'
     AUTHORIZATION_URL = 'https://api.intra.42.fr/oauth/authorize'
     ACCESS_TOKEN_URL = 'https://api.intra.42.fr/oauth/token'
     ACCESS_TOKEN_METHOD = 'POST'

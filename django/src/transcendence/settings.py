@@ -33,9 +33,7 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.open_id.OpenIdAuth',
-    'social_core.backends.oauth.OAuth2',
-    'social_core.backends.intra42.Intra42OAuth2',
-    'users.42auth.Intra42OAuth2',
+    'users.42auth.fortytwoOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -65,7 +63,7 @@ MIDDLEWARE = [
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'social_django.middleware.SocialAuthExceptionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
