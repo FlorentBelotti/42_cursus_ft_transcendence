@@ -87,47 +87,48 @@
 				});
 			});
 
-			// Friends Modal
-			const friendsModal = document.getElementById('friends-modal');
-			const friendsButton = document.getElementById('friends-button');
-			const closeFriendsModal = document.querySelector('.close-friends-modal');
-			const friendsList = document.getElementById('friends-list');
-			const addFriendButton = document.getElementById('add-friend-button');
-			const friendUsernameInput = document.getElementById('friend-username');
+            const friendsModal = document.getElementById('friends-modal');
+            const friendsButton = document.getElementById('friends-button');
+            const closeFriendsModal = document.querySelector('.close-friends-modal');
+            const friendsList = document.getElementById('friends-list');
+            const addFriendButton = document.getElementById('add-friend-button');
+            const friendUsernameInput = document.getElementById('friend-username');
 
-			friendsButton.addEventListener('click', function () {
-				fetchFriends();
-				friendsModal.style.display = 'block';
-			});
+            if (friendsButton && friendsModal && closeFriendsModal && friendsList && addFriendButton && friendUsernameInput) {
+                friendsButton.addEventListener('click', function () {
+                    fetchFriends();
+                    friendsModal.style.display = 'block';
+                });
 
-			closeFriendsModal.addEventListener('click', function () {
-				friendsModal.style.display = 'none';
-			});
+                closeFriendsModal.addEventListener('click', function () {
+                    friendsModal.style.display = 'none';
+                });
 
-			window.addEventListener('click', function (event) {
-				if (event.target === friendsModal) {
-					friendsModal.style.display = 'none';
-				}
-			});
+                window.addEventListener('click', function (event) {
+                    if (event.target === friendsModal) {
+                        friendsModal.style.display = 'none';
+                    }
+                });
 
-			addFriendButton.addEventListener('click', function () {
-				const username = friendUsernameInput.value.trim();
-				if (username) {
-					addFriend(username);
-					friendUsernameInput.value = ''; // Réinitialiser l'input
-				}
-			});
-		});
+                addFriendButton.addEventListener('click', function () {
+                    const username = friendUsernameInput.value.trim();
+                    if (username) {
+                        addFriend(username);
+                        friendUsernameInput.value = '';
+                    }
+                });
+            }
+        });
 	</script>
 
-	<script type="importmap">
-		{
-			"imports": {
-				"three": "https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js",
-				"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/"
-			}
-		}
-	</script>
+	<!-- <script type="importmap">
+	    {
+	        "imports": {
+	            "three": "https://unpkg.com/three@0.152.0/build/three.module.js",
+	            "three/addons/": "https://unpkg.com/three@0.152.0/examples/jsm/"
+	        }
+	    }
+	</script> -->
 
 	<script src="{% static 'js/gameInvitations.js' %}"></script>
 	<script src="{% static 'js/friendModal.js' %}"></script>
