@@ -11,7 +11,7 @@ urlpatterns = [
     path('home/', views.define_render, name='home'),
     path('authentication/', views.define_render, name='authentication'),
     path('register/', views.register, name='register'),
-    path('oauth/', include('social_django.urls', namespace='social')),
+    path('auth/', include('social_django.urls', namespace='social')),
 
     path('login/', views.user_login, name='login'),
     path('verify_code/<int:user_id>/', views.verify_code, name='verify_code'),
@@ -35,6 +35,9 @@ urlpatterns = [
     path('legal_rgpd/', views.define_render, name='rgpd'),
     path('legal_mentions_legales/', views.define_render, name='mentions_legales'),
     path('legal_cgu/', views.define_render, name='regles'),
+
+	path('api/snake/high-score/', views.get_snake_high_score, name='snake_high_score'),
+    path('api/snake/update-score/', views.update_snake_score, name='update_snake_score'),
 
     path('', include('django_prometheus.urls')),
 ]

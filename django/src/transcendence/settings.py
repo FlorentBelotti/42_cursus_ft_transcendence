@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -22,7 +23,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'users',
     'transcendence',
-    'social_django',
+    'social_django',  # <- nécessaire pour auth 42
 ]
 
 REST_FRAMEWORK = {
@@ -32,8 +33,7 @@ REST_FRAMEWORK = {
 }
 
 AUTHENTICATION_BACKENDS = (
-    'social_core.backends.open_id.OpenIdAuth',
-    'users.42auth.fortytwoOAuth2',
+    'users.intra42_backend.Intra42OAuth2',  # <- renommé proprement
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -48,11 +48,9 @@ CHANNEL_LAYERS = {
 
 AUTH_USER_MODEL = 'users.customUser'
 
-from datetime import timedelta
-
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7), 
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'ALGORITHM': 'HS256',
@@ -86,9 +84,15 @@ EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
-SOCIAL_AUTH_42_KEY = os.getenv("SOCIAL_AUTH_42_KEY")
-SOCIAL_AUTH_42_SECRET = os.getenv("SOCIAL_AUTH_42_SECRET")
+# AUTH 42 CONFIG - renommée pour être propre et éviter les conflits
+SOCIAL_AUTH_INTRA42_KEY = os.getenv("SOCIAL_AUTH_INTRA42_KEY")
+SOCIAL_AUTH_INTRA42_SECRET = os.getenv("SOCIAL_AUTH_INTRA42_SECRET")
 SOCIAL_AUTH_INTRA42_SCOPE = ['public']
+
+# REDIRECTIONS APRES LOGIN / LOGOUT
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
 ROOT_URLCONF = 'transcendence.urls'
 
@@ -103,6 +107,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',  # <- pour {% url 'social:begin' %}
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -158,7 +164,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ASGI_APPLICATION = "transcendence.asgi.application"
 
 CSRF_TRUSTED_ORIGINS = ['https://pong.ovh', 'http://pong.ovh']
-CSRF_COOKIE_SECURE = True  
+CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'

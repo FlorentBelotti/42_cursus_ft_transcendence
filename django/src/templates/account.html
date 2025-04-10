@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Account</title>
+    <title>Mon Compte</title>
     {% load static %}
-	<link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/account.css' %}">
 </head>
 <body>
@@ -65,17 +64,17 @@
                     {% csrf_token %}
                     <h3 class="form-title">Change Password</h3>
                     {{ password_form.as_p }}
-                    <button type="submit" name="change_password" class="btn password-btn">Update password</button>
+                    <button type="submit" name="change_password" class="btn password-btn">Change password</button>
                 </form>
             </div>
 
             <!-- Section Account Actions -->
             <div id="danger-section" class="account-section account-form danger-zone">
-                <h3 class="form-title">Logout / Delete account</h3>
+                <h3 class="form-title">Account Actions</h3>
                 <div class="button-group">
                     <form id="disconnectForm" method="post" class="inline-form">
                         {% csrf_token %}
-                        <button type="submit" name="disconnect" class="btn disconnect-btn">Logout</button>
+                        <button type="submit" name="disconnect" class="btn disconnect-btn">Disconnect</button>
                     </form>
                     <form id="deleteForm" method="post" class="inline-form">
                         {% csrf_token %}
@@ -87,25 +86,5 @@
     </div>
 
     <script src="{% static 'js/account.js' %}"></script>
-    <script>
-        // JavaScript pour gérer le défilement vers les sections
-        document.addEventListener('DOMContentLoaded', () => {
-            const buttons = document.querySelectorAll('.sidebar-btn');
-
-            buttons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const sectionId = button.getAttribute('data-section');
-                    const section = document.getElementById(sectionId);
-
-                    // Faire défiler jusqu'à la section
-                    section.scrollIntoView({ behavior: 'smooth' });
-
-                    // Mettre en surbrillance le bouton actif
-                    buttons.forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-                });
-            });
-        });
-    </script>
 </body>
 </html>

@@ -4,8 +4,6 @@ document.addEventListener('DOMContentLoaded', function () {
 	let snakeGame = null;
 	updateAuthButtons();
 
-
-
 	window.loadContent = function(url, addToHistory = true) {
 
 		window.isDynamicLoading = true;
@@ -49,12 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
 								updateAuthButtons();
 							}
 							if (scriptUrl.includes('account.js')) {
-								updateFormEvent();
-								passwordFormEvent();
-								deleteFormEvent();
-								updateAuthButtons();
-								disconnectFormEvent();
-    							nicknameFormEvent();
+								window.initAccountPage();
 							}
 							if (scriptUrl.includes('animationPong.js')) {
 								initPongAnimation();
@@ -257,6 +250,12 @@ document.addEventListener('DOMContentLoaded', function () {
             window.cubeAnimation.cleanup();
             window.cubeAnimation = null;
         }
+
+		if (window.PongAnimation) {
+			console.log("Cleaning up Pong animation...");
+			window.PongAnimation.stopAnimation();
+			window.PongAnimation = null;
+		}
 	}
 
 	function loadScript(url, callback, isModule = false) {
@@ -306,12 +305,4 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.loadContent(event.state.url, false);
 		}
 	});
-
-	document.querySelectorAll('footer a').forEach(function (link) {
-        link.addEventListener('click', function (event) {
-            event.preventDefault();
-            const url = this.getAttribute('href');
-            window.loadContent(url);
-        });
-    });
 });

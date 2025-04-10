@@ -4,17 +4,16 @@ import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 
 class Snake3D {
     constructor() {
-        this.initSnake();
-        this.cameraStartPosition = new THREE.Vector3(0, 5, 10);
-        this.cameraStartLookAt = new THREE.Vector3(0, 0, 0);
-        this.cameraGamePosition = new THREE.Vector3(-15, 25, 35);
-        this.cameraGameLookAt = new THREE.Vector3(0, 0, 0);
-        this.cameraTransitionDuration = 2000; // 2 seconds
-        this.cameraTransitionStartTime = 0;
-        this.isTransitioning = false;
+        // Attendre que le DOM soit chargé
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.initSnake());
+        } else {
+            this.initSnake();
+        }
     }
 
     initSnake() {
+        // Configuration du jeu (reste inchangée)
         this.gridSize = 20;
         this.tileCount = 20;
         this.gameStarted = false;
@@ -30,279 +29,206 @@ class Snake3D {
             y: Math.floor(Math.random() * this.tileCount)
         };
 
-		this.obstacles = [];
+        this.obstacles = [];
 
-		const obstacleCount = 20;
-		this.generateObstacles(obstacleCount);
+        const obstacleCount = 20;
+        this.generateObstacles(obstacleCount);
 
         // Initialiser Three.js
         this.setupThreeJS();
         this.createGrid();
         this.createSnake();
         this.createFood();
-		this.createObstacles();
+        this.createObstacles();
         this.setupLights();
         this.setupEventListeners();
 
         // Créer le score 3D
-        this.createScore3D();
+        this.updateScore3D();
+
+        // Afficher le classement
+        this.displayLeaderboard();
 
         // Démarrer l'animation
         this.animate();
     }
 
     generateObstacles(count) {
-		this.obstacles = [];
+        this.obstacles = [];
 
-		for (let i = 0; i < count; i++) {
-			let obstacleX, obstacleY;
-			let validPosition = false;
+        for (let i = 0; i < count; i++) {
+            let obstacleX, obstacleY;
+            let validPosition = false;
 
-			while (!validPosition) {
-				obstacleX = Math.floor(Math.random() * this.tileCount);
-				obstacleY = Math.floor(Math.random() * this.tileCount);
-				validPosition = true;
+            while (!validPosition) {
+                obstacleX = Math.floor(Math.random() * this.tileCount);
+                obstacleY = Math.floor(Math.random() * this.tileCount);
+                validPosition = true;
 
-				// Vérifier si cette position est occupée par le serpent
-				for (const segment of this.snake) {
-					if (segment.x === obstacleX && segment.y === obstacleY) {
-						validPosition = false;
-						break;
-					}
-				}
+                // Vérifier si cette position est occupée par le serpent
+                for (const segment of this.snake) {
+                    if (segment.x === obstacleX && segment.y === obstacleY) {
+                        validPosition = false;
+                        break;
+                    }
+                }
 
-				// Vérifier si cette position est occupée par la nourriture (seulement si this.food existe)
-				if (this.food && this.food.x === obstacleX && this.food.y === obstacleY) {
-					validPosition = false;
-				}
+                // Vérifier si cette position est occupée par la nourriture (seulement si this.food existe)
+                if (this.food && this.food.x === obstacleX && this.food.y === obstacleY) {
+                    validPosition = false;
+                }
 
-				// Vérifier si cette position est trop proche de la tête du serpent au départ
-				const headDistance = Math.sqrt(
-					Math.pow(this.snake[0].x - obstacleX, 2) +
-					Math.pow(this.snake[0].y - obstacleY, 2)
-				);
-				if (headDistance < 5) {
-					validPosition = false;
-				}
+                // Vérifier si cette position est trop proche de la tête du serpent au départ
+                const headDistance = Math.sqrt(
+                    Math.pow(this.snake[0].x - obstacleX, 2) +
+                    Math.pow(this.snake[0].y - obstacleY, 2)
+                );
+                if (headDistance < 5) {
+                    validPosition = false;
+                }
 
-				// Vérifier si cette position est déjà occupée par un autre obstacle
-				for (const obstacle of this.obstacles) {
-					if (obstacle.x === obstacleX && obstacle.y === obstacleY) {
-						validPosition = false;
-						break;
-					}
-				}
-			}
+                // Vérifier si cette position est déjà occupée par un autre obstacle
+                for (const obstacle of this.obstacles) {
+                    if (obstacle.x === obstacleX && obstacle.y === obstacleY) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+            }
 
-			this.obstacles.push({
-				x: obstacleX,
-				y: obstacleY
-			});
-		}
-	}
+            this.obstacles.push({
+                x: obstacleX,
+                y: obstacleY
+            });
+        }
+    }
 
     createObstacles() {
-        // Créer un groupe pour contenir tous les obstacles
         if (!this.obstaclesGroup) {
             this.obstaclesGroup = new THREE.Group();
             this.scene.add(this.obstaclesGroup);
         } else {
-            // Nettoyer les obstacles existants
             while (this.obstaclesGroup.children.length > 0) {
                 const child = this.obstaclesGroup.children[0];
                 this.obstaclesGroup.remove(child);
             }
         }
 
-        // Créer un obstacle pour chaque position
         for (const obstacle of this.obstacles) {
-            // Créer un cube gris pour chaque obstacle
             const obstacleGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
             const obstacleMaterial = new THREE.MeshStandardMaterial({
-                color: 0x808080, // Gris
-                roughness: 0.7,
-                metalness: 0.2
+                color: 0x546E7A,
+                roughness: 0.5,
+                metalness: 0.2,
+                emissive: 0x37474F,
+                emissiveIntensity: 0.1
             });
 
             const obstacleCube = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
-
-            // Positionner l'obstacle sur la grille
             obstacleCube.position.set(
                 (obstacle.x - this.tileCount / 2) + 0.5,
-                0.4, // Même hauteur que le serpent
+                0.4,
                 (obstacle.y - this.tileCount / 2) + 0.5
             );
 
-            // Ajouter des ombres
             obstacleCube.castShadow = true;
             obstacleCube.receiveShadow = true;
 
-            // Ajouter l'obstacle au groupe
             this.obstaclesGroup.add(obstacleCube);
         }
     }
 
+    updateScore3D() {
+        // Supprimer l'ancien score s'il existe
+        if (this.scoreGroup) {
+            this.scene.remove(this.scoreGroup);
+        }
 
-	// Modifiez la méthode createScore3D comme suit :
-	createScore3D() {
-		// Création d'un groupe pour le texte du score
-		this.scoreGroup = new THREE.Group();
-		this.scene.add(this.scoreGroup);
+        // Créer un nouveau groupe pour le score
+        this.scoreGroup = new THREE.Group();
+        this.scene.add(this.scoreGroup);
 
-		// Créer un texte temporaire pendant le chargement de la police
-		const tempGeometry = new THREE.BoxGeometry(4, 1, 0.5);
-		const tempMaterial = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
-		const tempMesh = new THREE.Mesh(tempGeometry, tempMaterial);
-		tempMesh.position.set(
-			this.tileCount / 2 + 2,
-			5,
-			0
-		);
-		this.scoreGroup.add(tempMesh);
+        const loader = new FontLoader();
+        loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (font) => {
+            // Créer le texte du score
+            const scoreText = `${this.score}`;
+            const scoreGeometry = new TextGeometry(scoreText, {
+                font: font,
+                size: 3,
+                height: 0.5,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 0.02,
+                bevelSize: 0.02,
+                bevelOffset: 0,
+                bevelSegments: 5
+            });
 
-		// Ajouter des logs pour le débogage
-		console.log("Chargement de la police...");
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.3,
+                // metalness: 0.8
+            });
 
-		// Vérifier si FontLoader est disponible
-		if (typeof FontLoader === 'undefined') {
-			console.error("FontLoader n'est pas disponible!");
-			// Chargement manuel de FontLoader
-			const script = document.createElement('script');
-			script.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/examples/js/loaders/FontLoader.js";
-			script.onload = () => {
-				const textGeometry = document.createElement('script');
-				textGeometry.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/examples/js/geometries/TextGeometry.js";
-				textGeometry.onload = () => this.loadFont();
-				document.head.appendChild(textGeometry);
-			};
-			document.head.appendChild(script);
-		} else {
-			this.loadFont();
-		}
-	}
+            const scoreMesh = new THREE.Mesh(scoreGeometry, material);
+            // Positionner le score en dehors du plan de jeu, en haut à gauche
+            scoreMesh.position.set(0, 2, -this.tileCount/2 );
+            scoreMesh.rotation.y = 0; // Pas de rotation pour une meilleure lisibilité
 
-	// Créer une méthode séparée pour charger la police
-	loadFont() {
-		const loader = new FontLoader();
-		const fontUrl = 'https://threejs.org//examples/fonts/helvetiker_bold.typeface.json';
+            // Centrer le texte
+            scoreGeometry.computeBoundingBox();
+            const scoreBoundingBox = scoreGeometry.boundingBox;
+            const scoreCenterOffset = -(scoreBoundingBox.max.x - scoreBoundingBox.min.x) / 2;
+            scoreMesh.position.x += scoreCenterOffset;
 
-		loader.load(fontUrl,
-			(font) => {
-				this.scoreFont = font;
-				this.updateScore3D();
-			},
-		);
-	}
+            this.scoreGroup.add(scoreMesh);
+        });
+    }
 
-	// Améliorer la méthode updateScore3D pour un meilleur débogage
-	updateScore3D() {
-		if (!this.scoreFont) {
-			return;
-		}
+    createGradientTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
 
-		// Supprimer l'ancien texte de score
-		while (this.scoreGroup.children.length > 0) {
-			const oldMesh = this.scoreGroup.children[0];
-			if (oldMesh.geometry) oldMesh.geometry.dispose();
-			if (oldMesh.material) oldMesh.material.dispose();
-			this.scoreGroup.remove(oldMesh);
-		}
+        const context = canvas.getContext('2d');
 
-		try {
-			// Vérifier si TextGeometry est disponible
-			if (typeof TextGeometry === 'undefined') {
-				console.error("TextGeometry n'est pas disponible!");
-				return;
-			}
+        // Créer un dégradé avec les couleurs spécifiées
+        const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#0a0a0a'); // Vert clair (groundColor)
+        gradient.addColorStop(0.5, '#0d0d0d'); // Teinte intermédiaire
+        gradient.addColorStop(1, '#181818'); // Vert clair (groundColor)
 
-			// Créer le nouveau texte
-			const textGeometry = new TextGeometry(`${this.score}`, {
-				font: this.scoreFont,
-				size: 3,
-				height: 0.8,
-				curveSegments: 6,  // Réduire pour de meilleures performances
-				bevelEnabled: true,
-				bevelThickness: 0.05,
-				bevelSize: 0.03,
-				bevelOffset: 0,
-				bevelSegments: 3   // Réduire pour de meilleures performances
-			});
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, canvas.width, canvas.height);
 
-			// Centrer la géométrie
-			textGeometry.computeBoundingBox();
+        const texture = new THREE.CanvasTexture(canvas);
+        return texture;
+    }
 
-			// Matériau plus simple pour la performance
-			const textMaterial = new THREE.MeshStandardMaterial({
-				color: 0xffffff,
-				roughness: 0.3
-			});
+    setupThreeJS() {
+        // Créer la scène, la caméra et le rendu
+        this.scene = new THREE.Scene();
+        this.scene.background = this.createGradientTexture();
 
-			const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        // Initialiser la position finale de la caméra avant de l'utiliser
+        this.finalCameraPosition = new THREE.Vector3(-15, 25, 35);
 
-			// Position plus visible
-			textMesh.position.set(
-				0,
-				0,
-				-this.tileCount + 5
-			);
+        this.camera = new THREE.PerspectiveCamera(
+            35,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
 
-			// Rotation pour faire face à la caméra
-			textMesh.rotation.y = 0;
+        this.camera.position.set(0, 5, 10);
+        this.camera.lookAt(0, 0, 0);
 
-			textMesh.castShadow = true;
-			this.scoreGroup.add(textMesh);
-
-		} catch (error) {
-			console.error("Erreur lors de la création du texte 3D:", error);
-		}
-	}
-
-	createGradientTexture() {
-		const canvas = document.createElement('canvas');
-		canvas.width = 512;
-		canvas.height = 512;
-
-		const context = canvas.getContext('2d');
-
-		// Créer un dégradé linéaire
-		const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
-		gradient.addColorStop(0, '#0a0a0a'); // Couleur du haut (bleu ciel)
-		gradient.addColorStop(0.3, '#0d0d0d'); // Couleur du bas (blanc)
-		gradient.addColorStop(1, '#181818'); // Couleur du bas (blanc)
-
-		// Remplir le canvas avec le dégradé
-		context.fillStyle = gradient;
-		context.fillRect(0, 0, canvas.width, canvas.height);
-
-		// Convertir le canvas en texture Three.js
-		const texture = new THREE.CanvasTexture(canvas);
-		return texture;
-	}
-
-
-	setupThreeJS() {
-		// Créer la scène, la caméra et le rendu
-		this.scene = new THREE.Scene();
-		this.scene.background = this.createGradientTexture();
-
-		this.camera = new THREE.PerspectiveCamera(
-			35,
-			window.innerWidth / window.innerHeight,
-			0.1,
-			1000
-		);
-
-		// Position initiale de la caméra (vue de départ)
-		this.camera.position.copy(this.cameraStartPosition);
-		this.camera.lookAt(this.cameraStartLookAt);
-
-		// Créer le rendu
-		this.renderer = new THREE.WebGLRenderer({
+        this.renderer = new THREE.WebGLRenderer({
             antialias: true,
             precision: "highp",
             powerPreference: "high-performance"
         });
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -311,15 +237,15 @@ class Snake3D {
         this.renderer.toneMappingExposure = 1.0;
         document.body.appendChild(this.renderer.domElement);
 
-		// Groupe pour le serpent
-		this.snakeGroup = new THREE.Group();
-		this.scene.add(this.snakeGroup);
+        this.snakeGroup = new THREE.Group();
+        this.scene.add(this.snakeGroup);
 
-		const planeGeometry = new THREE.PlaneGeometry(this.tileCount + 2, this.tileCount + 2);
+        // Créer un plan transparent
+        const planeGeometry = new THREE.PlaneGeometry(this.tileCount + 2, this.tileCount + 2);
         const planeMaterial = new THREE.MeshStandardMaterial({
-            color: 0xF7F7F7,
-            roughness: 0.8,
-            metalness: 0.2
+            transparent: true,
+            opacity: 0,
+            side: THREE.DoubleSide
         });
         this.plane = new THREE.Mesh(planeGeometry, planeMaterial);
         this.plane.rotation.x = -Math.PI / 2;
@@ -327,264 +253,219 @@ class Snake3D {
         this.plane.receiveShadow = true;
         this.scene.add(this.plane);
 
-        // Créer le texte de démarrage
-        this.createStartScreen();
-	}
-
-    createStartScreen() {
-        // Créer un groupe pour le texte de démarrage
-        this.startScreenGroup = new THREE.Group();
-        this.scene.add(this.startScreenGroup);
-
-        // Créer un texte temporaire pendant le chargement de la police
-        const tempGeometry = new THREE.BoxGeometry(8, 1, 0.5);
-        const tempMaterial = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
-        const tempMesh = new THREE.Mesh(tempGeometry, tempMaterial);
-        tempMesh.position.set(0, 2, 0);
-        this.startScreenGroup.add(tempMesh);
-
-        // Charger la police pour le texte de démarrage
-        const loader = new FontLoader();
-        loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (font) => {
-            const textGeometry = new TextGeometry('Appuyez sur ESPACE pour commencer', {
-                font: font,
-                size: 0.5,
-                height: 0.1,
-                curveSegments: 12,
-                bevelEnabled: true,
-                bevelThickness: 0.02,
-                bevelSize: 0.02,
-                bevelOffset: 0,
-                bevelSegments: 5
-            });
-            textGeometry.computeBoundingBox();
-            const textMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
-            const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-            textMesh.position.set(-4, 2, 0);
-            this.startScreenGroup.add(textMesh);
-        });
-    }
-
-    startCameraTransition() {
-        this.isTransitioning = true;
-        this.cameraTransitionStartTime = Date.now();
-    }
-
-    updateCameraTransition() {
-        if (!this.isTransitioning) return;
-
-        const elapsed = Date.now() - this.cameraTransitionStartTime;
-        const progress = Math.min(elapsed / this.cameraTransitionDuration, 1);
-
-        // Interpolation linéaire pour la position
-        this.camera.position.lerpVectors(
-            this.cameraStartPosition,
-            this.cameraGamePosition,
-            progress
-        );
-
-        // Interpolation linéaire pour le point de vue
-        const currentLookAt = new THREE.Vector3();
-        currentLookAt.lerpVectors(
-            this.cameraStartLookAt,
-            this.cameraGameLookAt,
-            progress
-        );
-        this.camera.lookAt(currentLookAt);
-
-        if (progress >= 1) {
-            this.isTransitioning = false;
-            this.startScreenGroup.visible = false;
-        }
-    }
-
-    animate() {
-        if (!this.renderer) return;
-
-        this.animationFrameId = requestAnimationFrame(() => this.animate());
-
-        if (this.isTransitioning) {
-            this.updateCameraTransition();
-        }
-
-        this.renderer.render(this.scene, this.camera);
+        this.arrowsGroup = new THREE.Group();
+        this.scene.add(this.arrowsGroup);
+        this.createDirectionalArrows();
     }
 
     createGrid() {
-        // Créer une grille pour le fond
+        // Créer une grille avec des lignes plus claires
         const gridHelper = new THREE.GridHelper(
             this.tileCount,
             this.tileCount,
-            0x5A5A5A,
-            0x5B5B5B
+            0xffffff, // Lignes principales plus claires
+            0xffffff  // Lignes secondaires plus claires
         );
+        gridHelper.position.y = -0.1; // Positionner légèrement en dessous du plan
         this.scene.add(gridHelper);
     }
 
-	createEyes() {
-		// Créer un seul cylindre qui traverse la tête
-		const eyeGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.85, 32, 4); // Rayon de 0.1, longueur de 0.8
-		const eyeMaterial = new THREE.MeshStandardMaterial({
-			color: 0xffffff,
-			roughness: 0.2,
+    createEyes(isDead = false) {
+        // Créer un seul cylindre qui traverse la tête
+        const eyeGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.85, 32, 4);
+        const eyeMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            roughness: 0.2,
             metalness: 0.1
-		});
-		const eyeball = new THREE.Mesh(eyeGeometry, eyeMaterial);
-		eyeball.catShadow = true;
+        });
+        const eyeball = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eyeball.castShadow = true;
 
-		// Créer les pupilles (sphères noires)
-		const pupilGeometry = new THREE.SphereGeometry(0.1, 16, 16); // Rayon de 0.05
-		const pupilMaterial = new THREE.MeshStandardMaterial({
-			color: 0x000000,
-			roughness: 0.1,
-			metalness: 0.5
-		});
+        if (isDead) {
+            // Créer des croix pour les yeux morts
+            const crossGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.2, 8); // Plus petit et plus fin
+            const crossMaterial = new THREE.MeshStandardMaterial({
+                color: 0x000000,
+                roughness: 0.1,
+                metalness: 0.5
+            });
 
-		// Pupille gauche
-		const pupilLeft = new THREE.Mesh(pupilGeometry, pupilMaterial);
-		pupilLeft.position.set(0, 0.4, 0); // Positionner à gauche du cylindre
-		eyeball.add(pupilLeft);
+            // Croix gauche
+            const leftCross = new THREE.Group();
+            const leftVertical = new THREE.Mesh(crossGeometry, crossMaterial);
+            const leftHorizontal = new THREE.Mesh(crossGeometry, crossMaterial);
+            leftVertical.rotation.x = Math.PI / 2;
+            leftHorizontal.rotation.z = Math.PI / 2;
+            leftCross.add(leftVertical);
+            leftCross.add(leftHorizontal);
+            leftCross.position.set(0, 0.4, 0);
+            leftCross.rotation.y = Math.PI / 4; // Rotation de 45 degrés
+            eyeball.add(leftCross);
 
-		// Pupille droite
-		const pupilRight = new THREE.Mesh(pupilGeometry, pupilMaterial);
-		pupilRight.position.set(0, -0.4, 0); // Positionner à droite du cylindre
-		eyeball.add(pupilRight);
+            // Croix droite
+            const rightCross = new THREE.Group();
+            const rightVertical = new THREE.Mesh(crossGeometry, crossMaterial);
+            const rightHorizontal = new THREE.Mesh(crossGeometry, crossMaterial);
+            rightVertical.rotation.x = Math.PI / 2;
+            rightHorizontal.rotation.z = Math.PI / 2;
+            rightCross.add(rightVertical);
+            rightCross.add(rightHorizontal);
+            rightCross.position.set(0, -0.4, 0);
+            rightCross.rotation.y = Math.PI / 4; // Rotation de 45 degrés
+            eyeball.add(rightCross);
+        } else {
+            // Créer les pupilles (sphères noires) pour les yeux vivants
+            const pupilGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+            const pupilMaterial = new THREE.MeshStandardMaterial({
+                color: 0x000000,
+                roughness: 0.1,
+                metalness: 0.5
+            });
 
-		// Orienter le cylindre horizontalement
-		eyeball.rotation.x = Math.PI / 2;
+            // Pupille gauche
+            const pupilLeft = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            pupilLeft.position.set(0, 0.4, 0);
+            eyeball.add(pupilLeft);
 
-		return eyeball;
-	}
+            // Pupille droite
+            const pupilRight = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            pupilRight.position.set(0, -0.4, 0);
+            eyeball.add(pupilRight);
+        }
 
-	createMouth() {
-		const mouthGeometry = new THREE.BoxGeometry(0.4, 0.1, 0.2, 2, 2, 2); // Largeur: 0.4, Hauteur: 0.1, Profondeur: 0.2
-		const mouthMaterial = new THREE.MeshStandardMaterial({
-			color: 0xff0000,
-			roughness: 0.3,
-		});
-		const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
-		mouth.castShadow = true;
+        // Orienter le cylindre horizontalement
+        eyeball.rotation.x = Math.PI / 2;
 
-		return mouth;
-	}
+        return eyeball;
+    }
 
-	createSnakeSegment(position, isHead = false) {
-		// Créer un segment du serpent avec des coins arrondis
-		const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8, 3, 3, 3); // Largeur, hauteur, profondeur, segments, rayon des coins
-		const material = new THREE.MeshStandardMaterial({
-			color: isHead ? 0x006947: 0x01B27B,
-			roughness: 0.3,
-			// emissive: isHead ? 0x331100 : 0x220000,
-			// emissiveIntensity: 0.2
-		});
+    createMouth() {
+        const mouthGeometry = new THREE.BoxGeometry(0.4, 0.1, 0.2, 2, 2, 2); // Largeur: 0.4, Hauteur: 0.1, Profondeur: 0.2
+        const mouthMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff0000,
+            roughness: 0.3,
+        });
+        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+        mouth.castShadow = true;
 
-		const segment = new THREE.Mesh(geometry, material);
-		segment.castShadow = true;
+        return mouth;
+    }
+
+    createSnakeSegment(position, isHead = false) {
+        const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8, 3, 3, 3);
+        const material = new THREE.MeshStandardMaterial({
+            color: isHead ? 0x006947 : 0x01B27B, // Couleurs d'origine du serpent
+            roughness: 0.2,
+            metalness: 0.3,
+            emissive: isHead ? 0x003D1F : 0x004D26, // Légère lueur verte plus sombre
+            emissiveIntensity: 0.1
+        });
+
+        const segment = new THREE.Mesh(geometry, material);
+        segment.castShadow = true;
         segment.receiveShadow = true;
 
-		// Ajuster la position pour aligner avec les cases de la grille
-		segment.position.set(
-			(position.x - this.tileCount / 2) + 0.5, // Ajouter 0.5 pour centrer dans la case
-			0.4, // Position y (hauteur)
-			(position.y - this.tileCount / 2) + 0.5  // Ajouter 0.5 pour centrer dans la case
-		);
+        segment.position.set(
+            (position.x - this.tileCount / 2) + 0.5,
+            0.4,
+            (position.y - this.tileCount / 2) + 0.5
+        );
 
-		if (isHead) {
-			// Ajouter des yeux à la tête
+        if (isHead) {
+            const eyes = this.createEyes();
+            const mouth = this.createMouth();
 
-			const eyes = this.createEyes();
-			const mouth = this.createMouth();
+            eyes.position.set(0, 0.1, 0);
+            mouth.position.set(0, -0.2, 0.45);
 
-			eyes.position.set(0, 0.1, 0);
-			mouth.position.set(0, -0.2, 0.45);
+            segment.add(eyes);
+            segment.add(mouth);
+        }
 
-			segment.add(eyes);
-			segment.add(mouth);
-		}
+        return segment;
+    }
 
-		return segment;
-	}
+    // Ajouter cette méthode pour créer un segment de connexion entre deux parties du serpent
+    createConnector(positionA, positionB) {
+        // Calculer le centre et la direction entre les deux positions
+        const midX = (positionA.x + positionB.x) / 2;
+        const midY = (positionA.y + positionB.y) / 2;
 
-	// Ajouter cette méthode pour créer un segment de connexion entre deux parties du serpent
-	createConnector(positionA, positionB) {
-		// Calculer le centre et la direction entre les deux positions
-		const midX = (positionA.x + positionB.x) / 2;
-		const midY = (positionA.y + positionB.y) / 2;
+        // Calculer la différence entre les positions
+        const diffX = positionB.x - positionA.x;
+        const diffY = positionB.y - positionA.y;
 
-		// Calculer la différence entre les positions
-		const diffX = positionB.x - positionA.x;
-		const diffY = positionB.y - positionA.y;
+        const connectorGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.6)
 
-		const connectorGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.6)
+        const connectorMaterial = new THREE.MeshStandardMaterial({
+            color: 0x02C589, // Couleur entre celle de la tête et du corps
+            roughness: 0.3,
+            emissive: 0x220000,
+            emissiveIntensity: 0.2
+        });
 
-		const connectorMaterial = new THREE.MeshStandardMaterial({
-			color: 0x02C589, // Couleur entre celle de la tête et du corps
-			roughness: 0.3,
-			emissive: 0x220000,
-			emissiveIntensity: 0.2
-		});
+        const connector = new THREE.Mesh(connectorGeometry, connectorMaterial);
+        connector.castShadow = true;
+        connector.receiveShadow = true;
 
-		const connector = new THREE.Mesh(connectorGeometry, connectorMaterial);
-		connector.castShadow = true;
-		connector.receiveShadow = true;
+        // Positionner le connecteur au milieu
+        connector.position.set(
+            (midX - this.tileCount / 2) + 0.5,
+            0.4, // Même hauteur que les segments
+            (midY - this.tileCount / 2) + 0.5
+        );
 
-		// Positionner le connecteur au milieu
-		connector.position.set(
-			(midX - this.tileCount / 2) + 0.5,
-			0.4, // Même hauteur que les segments
-			(midY - this.tileCount / 2) + 0.5
-		);
+        // Orienter le connecteur correctement
+        if (Math.abs(diffX) > 0) {
+            // Connexion horizontale
+            connector.rotation.z = Math.PI / 2;
+        } else if (Math.abs(diffY) > 0) {
+            // Connexion verticale
+            connector.rotation.x = Math.PI / 2;
+        }
 
-		// Orienter le connecteur correctement
-		if (Math.abs(diffX) > 0) {
-			// Connexion horizontale
-			connector.rotation.z = Math.PI / 2;
-		} else if (Math.abs(diffY) > 0) {
-			// Connexion verticale
-			connector.rotation.x = Math.PI / 2;
-		}
+        return connector;
+    }
 
-		return connector;
-		}
+    createSnake() {
+        // Supprimer tous les segments existants
+        while (this.snakeGroup.children.length > 0) {
+            const child = this.snakeGroup.children[0];
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) child.material.dispose();
+            this.snakeGroup.remove(child);
+        }
 
-		createSnake() {
-			// Supprimer tous les segments existants
-			while (this.snakeGroup.children.length > 0) {
-				const child = this.snakeGroup.children[0];
-				if (child.geometry) child.geometry.dispose();
-				if (child.material) child.material.dispose();
-				this.snakeGroup.remove(child);
-			}
+        // Créer les segments principaux du serpent
+        for (let i = 0; i < this.snake.length; i++) {
+            const isHead = i === 0;
+            const mesh = this.createSnakeSegment(this.snake[i], isHead);
+            this.snakeGroup.add(mesh);
 
-			// Créer les segments principaux du serpent
-			for (let i = 0; i < this.snake.length; i++) {
-				const isHead = i === 0;
-				const mesh = this.createSnakeSegment(this.snake[i], isHead);
-				this.snakeGroup.add(mesh);
+            if (isHead) {
+                this.updateEyes(mesh);
+            }
 
-				if (isHead) {
-					this.updateEyes(mesh);
-				}
-
-				// Ajouter un connecteur entre ce segment et le suivant (sauf pour le dernier segment)
-				if (i < this.snake.length - 1) {
-					const connector = this.createConnector(this.snake[i], this.snake[i + 1]);
-					this.snakeGroup.add(connector);
-				}
-			}
-		}
+            // Ajouter un connecteur entre ce segment et le suivant (sauf pour le dernier segment)
+            if (i < this.snake.length - 1) {
+                const connector = this.createConnector(this.snake[i], this.snake[i + 1]);
+                this.snakeGroup.add(connector);
+            }
+        }
+    }
 
     createFood() {
-        // Créer la nourriture
-        const foodGeometry = new THREE.SphereGeometry(0.3, 24, 24);
+        const foodGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
         const foodMaterial = new THREE.MeshStandardMaterial({
-			color: 0xff0000,
-			roughness: 0.1,
-            emissive: 0x330000,
-            emissiveIntensity: 0.5
-		});
+            color: 0xFF5252, // Rouge vif
+            roughness: 0.5,
+            metalness: 0.2,
+            emissive: 0xFF1744, // Lueur rouge
+            emissiveIntensity: 0.1
+        });
         this.foodMesh = new THREE.Mesh(foodGeometry, foodMaterial);
-		this.foodMesh.castShadow = true;
+        this.foodMesh.castShadow = true;
+        this.foodMesh.receiveShadow = true;
         this.updateFoodPosition();
         this.scene.add(this.foodMesh);
     }
@@ -598,331 +479,911 @@ class Snake3D {
         );
     }
 
+    setupLights() {
+        // Lumière ambiante plus douce
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        this.scene.add(ambientLight);
 
-	setupLights() {
-		// Lumière ambiante blanche pour l'éclairage général
-		const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-		this.scene.add(ambientLight);
+        // Lumière directionnelle principale avec ombres
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(15, 25, 15);
+        directionalLight.castShadow = true;
 
-		// Lumière directionnelle principale avec ombres (blanc pur)
-		const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-		directionalLight.position.set(15, 25, 15);
-		directionalLight.castShadow = true;
+        // Améliorer la qualité des ombres
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 50;
+        directionalLight.shadow.camera.left = -15;
+        directionalLight.shadow.camera.right = 15;
+        directionalLight.shadow.camera.top = 15;
+        directionalLight.shadow.camera.bottom = -15;
+        directionalLight.shadow.bias = -0.0005;
 
-		// Améliorer la qualité des ombres
-		directionalLight.shadow.mapSize.width = 2048;
-		directionalLight.shadow.mapSize.height = 2048;
-		directionalLight.shadow.camera.near = 0.5;
-		directionalLight.shadow.camera.far = 50;
-		directionalLight.shadow.camera.left = -15;
-		directionalLight.shadow.camera.right = 15;
-		directionalLight.shadow.camera.top = 15;
-		directionalLight.shadow.camera.bottom = -15;
-		directionalLight.shadow.bias = -0.0005;
+        this.scene.add(directionalLight);
 
-		this.scene.add(directionalLight);
+        // Lumière de remplissage avec une teinte légèrement bleue
+        const backLight = new THREE.DirectionalLight(0xE3F2FD, 0.3);
+        backLight.position.set(-10, 15, -10);
+        this.scene.add(backLight);
 
-		// Remplacer la lumière bleue par une lumière blanche
-		const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
-		backLight.position.set(-10, 15, -10);
-		this.scene.add(backLight);
+        // Lumière de remplissage par le bas avec une teinte légèrement verte
+        const fillLight = new THREE.DirectionalLight(0xE8F5E9, 0.2);
+        fillLight.position.set(0, -10, 5);
+        this.scene.add(fillLight);
+    }
 
-		// Ajouter une lumière de remplissage blanche par le bas
-		const fillLight = new THREE.DirectionalLight(0xffffff, 0.2);
-		fillLight.position.set(0, -10, 5);
-		this.scene.add(fillLight);
+    setupEventListeners() {
+        this.keydownHandler = (event) => {
+            if (event.key === ' ' && this.gameStarted) {
+                this.paused = !this.paused;
+            }
+            if (!this.paused) {
+                switch (event.key) {
+                    case 'ArrowUp':
+                    case 'z':
+                        if (this.direction.y === 0) this.direction = { x: 0, y: -1 };
+                        break;
+                    case 'ArrowDown':
+                    case 's':
+                        if (this.direction.y === 0) this.direction = { x: 0, y: 1 };
+                        break;
+                    case 'ArrowRight':
+                    case 'd':
+                        if (this.direction.x === 0) this.direction = { x: 1, y: 0 };
+                        break;
+                    case 'ArrowLeft':
+                    case 'q':
+                        if (this.direction.x === 0) this.direction = { x: -1, y: 0 };
+                        break;
+                }
+            }
+            if (!this.gameStarted && event.key === ' ') {
+                this.gameStarted = true;
+                this.startGame();
+            }
+            if (this.gameOver && event.key === ' ') {
+                this.resetGame();
+            }
+        };
+        document.addEventListener('keydown', this.keydownHandler);
 
-	}
+        this.resizeHandler = () => {
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        };
+        window.addEventListener('resize', this.resizeHandler);
+    }
 
-	setupEventListeners() {
-		this.keydownHandler = (event) => {
-			if (event.key === 'Escape' && this.gameStarted) {
-				this.paused = !this.paused;
-			}
-			if (!this.paused) {
-				switch (event.key) {
-					case 'ArrowUp':
-					case 'z':
-						if (this.direction.y === 0) this.direction = { x: 0, y: -1 };
-						break;
-					case 'ArrowDown':
-					case 's':
-						if (this.direction.y === 0) this.direction = { x: 0, y: 1 };
-						break;
-					case 'ArrowRight':
-					case 'd':
-						if (this.direction.x === 0) this.direction = { x: 1, y: 0 };
-						break;
-					case 'ArrowLeft':
-					case 'q':
-						if (this.direction.x === 0) this.direction = { x: -1, y: 0 };
-						break;
-				}
-			}
-			if (!this.gameStarted && event.key === ' ') {
-				this.gameStarted = true;
-				this.startGame();
-			}
-			if (this.gameOver && event.key === ' ') {
-				this.resetGame();
-			}
-		};
-		document.addEventListener('keydown', this.keydownHandler);
+    updateEyes(headSegment, isDead = false) {
+        const eyes = headSegment.children;
 
-		this.resizeHandler = () => {
-			this.camera.aspect = window.innerWidth / window.innerHeight;
-			this.camera.updateProjectionMatrix();
-			this.renderer.setSize(window.innerWidth, window.innerHeight);
-		};
-		window.addEventListener('resize', this.resizeHandler);
-	}
+        // Supprimer les anciens yeux et la bouche
+        while (eyes.length > 0) {
+            headSegment.remove(eyes[0]);
+        }
 
+        // Créer de nouveaux yeux et la bouche
+        const eyeMesh = this.createEyes(isDead);
+        const mouth = this.createMouth();
 
-	updateEyes(headSegment) {
-		const eyes = headSegment.children;
+        if (this.direction.x === 1) {
+            // Direction droite
+            eyeMesh.rotation.y = 0;
+            eyeMesh.rotation.z = 0;
+            mouth.position.set(0.4, -0.2, 0);
+            mouth.rotation.y = Math.PI / 2;
+            mouth.rotation.z = Math.PI / 2;
+        } else if (this.direction.x === -1) {
+            // Direction gauche
+            eyeMesh.rotation.y = Math.PI;
+            eyeMesh.rotation.z = 0;
+            mouth.position.set(-0.4, -0.2, 0);
+            mouth.rotation.y = -Math.PI / 2;
+            mouth.rotation.z = Math.PI / 2;
+        } else if (this.direction.y === 1) {
+            // Direction bas
+            eyeMesh.rotation.z = Math.PI / 2;
+            mouth.position.set(0, -0.2, 0.4);
+            mouth.rotation.z = Math.PI / 2;
+        } else if (this.direction.y === -1) {
+            // Direction haut
+            eyeMesh.rotation.z = -Math.PI / 2;
+            mouth.position.set(0, -0.2, -0.4);
+            mouth.rotation.z = -Math.PI / 2;
+        }
 
-		// Supprimer les anciens yeux et la bouche
-		while (eyes.length > 0) {
-			headSegment.remove(eyes[0]);
-		}
-
-		// Créer de nouveaux yeux et la bouche
-		const eyeMesh = this.createEyes();
-		const mouth = this.createMouth();
-
-		if (this.direction.x === 1) {
-			// Direction droite
-			eyeMesh.rotation.y = 0;
-			eyeMesh.rotation.z = 0;
-			mouth.position.set(0.4, -0.2, 0);
-			mouth.rotation.y = Math.PI / 2;
-			mouth.rotation.z = Math.PI / 2;
-		} else if (this.direction.x === -1) {
-			// Direction gauche
-			eyeMesh.rotation.y = Math.PI;
-			eyeMesh.rotation.z = 0;
-			mouth.position.set(-0.4, -0.2, 0);
-			mouth.rotation.y = -Math.PI / 2;
-			mouth.rotation.z = Math.PI / 2;
-		} else if (this.direction.y === 1) {
-			// Direction bas
-			eyeMesh.rotation.z = Math.PI / 2;
-			mouth.position.set(0, -0.2, 0.4);
-			mouth.rotation.z = Math.PI / 2;
-		} else if (this.direction.y === -1) {
-			// Direction haut
-			eyeMesh.rotation.z = -Math.PI / 2;
-			mouth.position.set(0, -0.2, -0.4);
-			mouth.rotation.z = -Math.PI / 2;
-		}
-
-		headSegment.add(eyeMesh);
-		headSegment.add(mouth);
-	}
+        headSegment.add(eyeMesh);
+        headSegment.add(mouth);
+    }
 
     startGame() {
         if (!this.gameLoop) {
-            this.startCameraTransition();
-            this.gameLoop = setInterval(() => this.update(), 200);
+            // Afficher les flèches
+            this.arrowsGroup.visible = true;
+
+            // Animer la transition de la caméra
+            this.animateCameraTransition();
+
+            // Déplacer le classement vers la position jeu
+            this.positionLeaderboard(true);
+
+            // Démarrer la boucle de jeu après un court délai
+            setTimeout(() => {
+                this.gameLoop = setInterval(() => this.update(), 200);
+            }, 2000);
         }
     }
 
-	update() {
-		if (this.paused) {
-			return;
-		}
-		if (!this.gameStarted) {
-			return;
-		}
-		// Vérifier que le jeu est dans un état valide
-		if (!this.snake || this.snake.length === 0 || !this.renderer) {
-			console.warn("Game state is invalid, stopping game loop.");
-			clearInterval(this.gameLoop);
-			this.gameLoop = null;
-			return; // Ne pas appeler resetGame ici
-		}
+    update() {
+        if (this.paused) {
+            return;
+        }
+        if (!this.gameStarted) {
+            return;
+        }
+        // Vérifier que le jeu est dans un état valide
+        if (!this.snake || this.snake.length === 0 || !this.renderer) {
+            console.warn("Game state is invalid, stopping game loop.");
+            clearInterval(this.gameLoop);
+            this.gameLoop = null;
+            return; // Ne pas appeler resetGame ici
+        }
 
-		if (this.checkCollision()) {
-			this.gameOver = true;
-			clearInterval(this.gameLoop);
-			this.gameLoop = null;
-			return;
-		}
-		this.moveSnake();
-	}
+        if (this.checkCollision()) {
+            this.gameOver = true;
+            clearInterval(this.gameLoop);
+            this.gameLoop = null;
+            return;
+        }
+        this.moveSnake();
+    }
 
-	moveSnake() {
-		// Vérifier que le serpent existe et a au moins une tête
-		if (!this.snake || this.snake.length === 0) {
-			console.warn("Snake array is empty or undefined, stopping movement.");
-			return;
-		}
+    moveSnake() {
+        // Vérifier que le serpent existe et a au moins une tête
+        if (!this.snake || this.snake.length === 0) {
+            console.warn("Snake array is empty or undefined, stopping movement.");
+            return;
+        }
 
-		const head = {
-			x: this.snake[0].x + this.direction.x,
-			y: this.snake[0].y + this.direction.y
-		};
-		this.snake.unshift(head);
+        const head = {
+            x: this.snake[0].x + this.direction.x,
+            y: this.snake[0].y + this.direction.y
+        };
+        this.snake.unshift(head);
 
-		if (head.x === this.food.x && head.y === this.food.y) {
-			this.score++;
-			this.food = {
-				x: Math.floor(Math.random() * this.tileCount),
-				y: Math.floor(Math.random() * this.tileCount)
-			};
+        if (head.x === this.food.x && head.y === this.food.y) {
+            this.score++;
 
-			let validFoodPosition = false;
-			while (!validFoodPosition) {
-				validFoodPosition = true;
+            // Ajouter 3 nouveaux obstacles tous les 5 points
+            if (this.score % 5 === 0) {
+                for (let i = 0; i < 3; i++) {
+                    this.addNewObstacle();
+                }
+            }
 
-				for (const obstacle of this.obstacles) {
-					if (this.food.x === obstacle.x && this.food.y === obstacle.y) {
-						validFoodPosition = false;
-						this.food = {
-							x: Math.floor(Math.random() * this.tileCount),
-							y: Math.floor(Math.random() * this.tileCount)
-						};
-						break;
-					}
-				}
+            // Générer une nouvelle position pour la nourriture
+            this.generateNewFoodPosition();
+            this.updateFoodPosition();
+            this.updateScore3D();
+        } else {
+            this.snake.pop();
+        }
+        this.createSnake();
 
-				for (const segment of this.snake) {
-					if (this.food.x === segment.x && this.food.y === segment.y) {
-						validFoodPosition = false;
-						this.food = {
-							x: Math.floor(Math.random() * this.tileCount),
-							y: Math.floor(Math.random() * this.tileCount)
-						};
-						break;
-					}
-				}
-			}
+        const headSegment = this.snakeGroup.children[0];
+        this.updateEyes(headSegment);
+    }
 
-			this.updateFoodPosition();
-			this.updateScore3D();
-		} else {
-			this.snake.pop();
-		}
-		this.createSnake();
+    addNewObstacle() {
+        let newObstacle;
+        let validPosition = false;
 
-		const headSegment = this.snakeGroup.children[0];
-		this.updateEyes(headSegment);
-	}
+        while (!validPosition) {
+            newObstacle = {
+                x: Math.floor(Math.random() * this.tileCount),
+                y: Math.floor(Math.random() * this.tileCount)
+            };
 
-	checkCollision() {
-		// Vérifier d'abord si le serpent existe et a au moins une section (la tête)
-		if (!this.snake || this.snake.length === 0) {
-			return false;  // Ou true, selon votre logique de jeu
-		}
+            validPosition = true;
 
-		const head = this.snake[0];
+            // Vérifier si la position est déjà occupée par un obstacle
+            for (const obstacle of this.obstacles) {
+                if (obstacle.x === newObstacle.x && obstacle.y === newObstacle.y) {
+                    validPosition = false;
+                    break;
+                }
+            }
 
-		// Vérifier les collisions avec les bords
-		if (
-			head.x < 0 ||
-			head.x >= this.tileCount ||
-			head.y < 0 ||
-			head.y >= this.tileCount
-		) {
-			return true;
-		}
+            // Vérifier si la position est occupée par le serpent
+            for (const segment of this.snake) {
+                if (segment.x === newObstacle.x && segment.y === newObstacle.y) {
+                    validPosition = false;
+                    break;
+                }
+            }
 
-		// Vérifier les collisions avec le corps du serpent
-		for (let i = 1; i < this.snake.length; i++) {
-			if (head.x === this.snake[i].x && head.y === this.snake[i].y) {
-				return true;
-			}
-		}
+            // Vérifier si la position est occupée par la nourriture
+            if (this.food && this.food.x === newObstacle.x && this.food.y === newObstacle.y) {
+                validPosition = false;
+            }
+        }
 
-		// Vérifier les collisions avec les obstacles
-		for (const obstacle of this.obstacles) {
-			if (head.x === obstacle.x && head.y === obstacle.y) {
-				return true;
-			}
-		}
+        this.obstacles.push(newObstacle);
+        this.createObstacles();
+    }
 
-		return false;
-	}
+    generateNewFoodPosition() {
+        let validPosition = false;
+
+        while (!validPosition) {
+            this.food = {
+                x: Math.floor(Math.random() * this.tileCount),
+                y: Math.floor(Math.random() * this.tileCount)
+            };
+
+            validPosition = true;
+
+            // Vérifier si la position est occupée par un obstacle
+            for (const obstacle of this.obstacles) {
+                if (obstacle.x === this.food.x && obstacle.y === this.food.y) {
+                    validPosition = false;
+                    break;
+                }
+            }
+
+            // Vérifier si la position est occupée par le serpent
+            for (const segment of this.snake) {
+                if (segment.x === this.food.x && segment.y === this.food.y) {
+                    validPosition = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    checkCollision() {
+        // Vérifier d'abord si le serpent existe et a au moins une section (la tête)
+        if (!this.snake || this.snake.length === 0) {
+            return false;  // Ou true, selon votre logique de jeu
+        }
+
+        const head = this.snake[0];
+
+        // Vérifier les collisions avec les bords
+        if (
+            head.x < 0 ||
+            head.x >= this.tileCount ||
+            head.y < 0 ||
+            head.y >= this.tileCount
+        ) {
+            this.handleGameOver();
+            return true;
+        }
+
+        // Vérifier les collisions avec le corps du serpent
+        for (let i = 1; i < this.snake.length; i++) {
+            if (head.x === this.snake[i].x && head.y === this.snake[i].y) {
+                this.handleGameOver();
+                return true;
+            }
+        }
+
+        // Vérifier les collisions avec les obstacles
+        for (const obstacle of this.obstacles) {
+            if (head.x === obstacle.x && head.y === obstacle.y) {
+                this.handleGameOver();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    moveLeaderboardToCamera() {
+        if (!this.leaderboardGroup) return;
+
+        // Position finale du classement (devant la caméra)
+        const finalPosition = new THREE.Vector3(0, 0, -5);
+        const finalRotation = new THREE.Euler(0, 0, 0);
+
+        // Animation du déplacement
+        const duration = 1000; // 1 seconde
+        const startTime = Date.now();
+        const startPosition = this.leaderboardGroup.position.clone();
+        const startRotation = this.leaderboardGroup.rotation.clone();
+
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Interpolation linéaire de la position et de la rotation
+            this.leaderboardGroup.position.lerpVectors(startPosition, finalPosition, progress);
+            this.leaderboardGroup.rotation.x = THREE.MathUtils.lerp(startRotation.x, finalRotation.x, progress);
+            this.leaderboardGroup.rotation.y = THREE.MathUtils.lerp(startRotation.y, finalRotation.y, progress);
+            this.leaderboardGroup.rotation.z = THREE.MathUtils.lerp(startRotation.z, finalRotation.z, progress);
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        animate();
+    }
+
+    handleGameOver() {
+        this.gameOver = true;
+        clearInterval(this.gameLoop);
+        this.gameLoop = null;
+
+        // Mettre à jour les yeux pour afficher des croix
+        const headSegment = this.snakeGroup.children[0];
+        this.updateEyes(headSegment, true);
+
+        // Position finale de la caméra (vue rapprochée du serpent)
+        const finalCameraPosition = new THREE.Vector3(0, 5, 10);
+        const finalCameraLookAt = new THREE.Vector3(0, 0, 0);
+
+        // Animation de la caméra
+        const duration = 1000; // 1 seconde
+        const startTime = Date.now();
+        const startPosition = this.camera.position.clone();
+        const startLookAt = new THREE.Vector3(0, 0, 0);
+
+        // Sauvegarder la position initiale de la tête
+        const headStartPosition = headSegment.position.clone();
+        // Position finale de la tête au centre
+        const headFinalPosition = new THREE.Vector3(0, 0.4, 0);
+
+        const animateCamera = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Interpolation linéaire de la position
+            this.camera.position.lerpVectors(startPosition, finalCameraPosition, progress);
+
+            // Interpolation du point de vue
+            const currentLookAt = new THREE.Vector3();
+            currentLookAt.lerpVectors(startLookAt, finalCameraLookAt, progress);
+            this.camera.lookAt(currentLookAt);
+
+            // Animation de la tête vers le centre
+            headSegment.position.lerpVectors(headStartPosition, headFinalPosition, progress);
+
+            if (progress < 1) {
+                requestAnimationFrame(animateCamera);
+            }
+        };
+
+        animateCamera();
+
+        // Déplacer le classement vers la position menu
+        this.positionLeaderboard(false);
+
+        // Mettre à jour le score du joueur
+        console.log('Envoi du score:', this.score);
+
+        fetch('/api/snake/update-score/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({score: this.score})
+        })
+        .then(response => {
+            console.log('Statut de la réponse:', response.status);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('Réponse du serveur:', text);
+                    if (response.status === 401) {
+                        throw new Error('Non authentifié - veuillez vous reconnecter');
+                    }
+                    throw new Error(`Erreur serveur (${response.status}): ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Score mis à jour avec succès:', data);
+            // Rafraîchir le classement après la mise à jour du score
+            this.displayLeaderboard();
+        })
+        .catch(error => {
+            console.error('Erreur détaillée:', error);
+        });
+    }
+
+    animateCameraToCloseUp() {
+        const duration = 2000; // 2 secondes
+        const startTime = Date.now();
+        const startPosition = this.camera.position.clone();
+        const finalPosition = new THREE.Vector3(0, 5, 10); // Même position que setupCloseUpView
+        const startLookAt = new THREE.Vector3(0, 0, 0);
+        const finalLookAt = new THREE.Vector3(0, 0, 0);
+
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Animation de la position
+            this.camera.position.lerpVectors(startPosition, finalPosition, progress);
+
+            // Animation du point de vue
+            const currentLookAt = new THREE.Vector3();
+            currentLookAt.lerpVectors(startLookAt, finalLookAt, progress);
+            this.camera.lookAt(currentLookAt);
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        animate();
+    }
+
+    createFinalScore() {
+        // Supprimer l'ancien score s'il existe
+        if (this.scoreGroup) {
+            this.scene.remove(this.scoreGroup);
+        }
+
+        // Créer un nouveau groupe pour le score final
+        this.scoreGroup = new THREE.Group();
+        this.scene.add(this.scoreGroup);
+
+        // Récupérer le meilleur score global
+        fetch('/api/snake/high-score/')
+            .then(response => response.json())
+            .then(data => {
+                const loader = new FontLoader();
+                loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (font) => {
+                    // Créer le texte du score actuel
+                    const currentScoreGeometry = new TextGeometry(`Votre score: ${this.score}`, {
+                        font: font,
+                        size: 0.5,
+                        height: 0.1,
+                        curveSegments: 12,
+                        bevelEnabled: true,
+                        bevelThickness: 0.02,
+                        bevelSize: 0.02,
+                        bevelOffset: 0,
+                        bevelSegments: 5
+                    });
+
+                    const material = new THREE.MeshStandardMaterial({
+                        color: 0xffffff,
+                        roughness: 0.3,
+                        metalness: 0.8
+                    });
+
+                    const currentScoreMesh = new THREE.Mesh(currentScoreGeometry, material);
+                    currentScoreMesh.position.set(-2, 1.5, 0);
+                    currentScoreMesh.rotation.y = Math.PI / 4;
+
+                    // Centrer le texte
+                    currentScoreGeometry.computeBoundingBox();
+                    const boundingBox = currentScoreGeometry.boundingBox;
+                    const centerOffset = -(boundingBox.max.x - boundingBox.min.x) / 2;
+                    currentScoreMesh.position.x += centerOffset;
+
+                    this.scoreGroup.add(currentScoreMesh);
+
+                    // Afficher le meilleur score personnel si disponible
+                    if (data.current_user_score !== null) {
+                        const personalBestGeometry = new TextGeometry(`Votre meilleur score: ${data.current_user_score}`, {
+                            font: font,
+                            size: 0.4,
+                            height: 0.1,
+                            curveSegments: 12,
+                            bevelEnabled: true,
+                            bevelThickness: 0.02,
+                            bevelSize: 0.02,
+                            bevelOffset: 0,
+                            bevelSegments: 5
+                        });
+
+                        const personalBestMesh = new THREE.Mesh(personalBestGeometry, material);
+                        personalBestMesh.position.set(-2, 0.8, 0);
+                        personalBestMesh.rotation.y = Math.PI / 4;
+
+                        // Centrer le texte
+                        personalBestGeometry.computeBoundingBox();
+                        const personalBestBoundingBox = personalBestGeometry.boundingBox;
+                        const personalBestCenterOffset = -(personalBestBoundingBox.max.x - personalBestBoundingBox.min.x) / 2;
+                        personalBestMesh.position.x += personalBestCenterOffset;
+
+                        this.scoreGroup.add(personalBestMesh);
+                    }
+
+                    // Créer le texte du meilleur score global
+                    if (data.high_score > 0) {
+                        const highScoreGeometry = new TextGeometry(`Meilleur score global: ${data.high_score} par ${data.username}`, {
+                            font: font,
+                            size: 0.4,
+                            height: 0.1,
+                            curveSegments: 12,
+                            bevelEnabled: true,
+                            bevelThickness: 0.02,
+                            bevelSize: 0.02,
+                            bevelOffset: 0,
+                            bevelSegments: 5
+                        });
+
+                        const highScoreMesh = new THREE.Mesh(highScoreGeometry, material);
+                        highScoreMesh.position.set(-2, 0.1, 0);
+                        highScoreMesh.rotation.y = Math.PI / 4;
+
+                        // Centrer le texte
+                        highScoreGeometry.computeBoundingBox();
+                        const highScoreBoundingBox = highScoreGeometry.boundingBox;
+                        const highScoreCenterOffset = -(highScoreBoundingBox.max.x - highScoreBoundingBox.min.x) / 2;
+                        highScoreMesh.position.x += highScoreCenterOffset;
+
+                        this.scoreGroup.add(highScoreMesh);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Erreur lors de la récupération du meilleur score:', error);
+            });
+    }
+
+    animate() {
+        // Vérifier si le renderer existe avant de poursuivre
+        if (!this.renderer) return;
+
+        this.animationFrameId = requestAnimationFrame(() => this.animate());
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    cleanup() {
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+        if (this.gameLoop) {
+            clearInterval(this.gameLoop);
+            this.gameLoop = null;
+        }
+        if (this.keydownHandler) {
+            document.removeEventListener('keydown', this.keydownHandler);
+        }
+        if (this.resizeHandler) {
+            window.removeEventListener('resize', this.resizeHandler);
+        }
+
+        if (this.scene) {
+            while (this.scene.children.length > 0) {
+                const child = this.scene.children[0];
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+                this.scene.remove(child);
+            }
+        }
+        if (this.renderer) {
+            if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+                this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+            }
+            this.renderer.dispose();
+            this.renderer = null;
+        }
+
+        this.gameStarted = false;
+        this.paused = false;
+        this.gameOver = false;
+        this.score = 0;
+        this.snake = [];
+        this.food = null;
+        this.obstacles = [];
+    }
+
+    setupCloseUpView() {
+        // Positionner la caméra pour une vue rapprochée du serpent
+        this.camera.position.set(0, 5, 10);
+        this.camera.lookAt(0, 0, 0);
+    }
+
+    animateCameraTransition() {
+        const duration = 2000; // 2 secondes
+        const startTime = Date.now();
+        const startPosition = this.camera.position.clone();
+        const startLookAt = new THREE.Vector3(0, 0, 0);
+        const finalLookAt = new THREE.Vector3(0, 0, 0);
+
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Animation de la position
+            this.camera.position.lerpVectors(startPosition, this.finalCameraPosition, progress);
+
+            // Animation du point de vue
+            const currentLookAt = new THREE.Vector3();
+            currentLookAt.lerpVectors(startLookAt, finalLookAt, progress);
+            this.camera.lookAt(currentLookAt);
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        animate();
+    }
 
     resetGame() {
-		this.snake = [{ x: 9, y: 10 }];
-		this.direction = { x: 1, y: 0 };
-		this.score = 0;
-		this.gameOver = false;
-		this.gameStarted = true;
+        // Ne pas supprimer le classement, juste le repositionner
+        if (this.leaderboardGroup) {
+            // Repositionner le classement sur le côté droit
+            this.positionLeaderboard(true);
+        }
 
-		// Initialiser this.food AVANT generateObstacles
-		this.food = {
-			x: Math.floor(Math.random() * this.tileCount),
-			y: Math.floor(Math.random() * this.tileCount)
-		};
+        // Réinitialiser l'état du jeu
+        this.snake = [{ x: 9, y: 10 }];
+        this.direction = { x: 1, y: 0 };
+        this.gameOver = false;
+        this.gameStarted = true;
+        this.score = 0;
 
-		// Régénérer les obstacles après avoir défini this.food
-		this.generateObstacles(Math.floor(this.tileCount * 0.15));
-		this.createObstacles();
+        // Initialiser this.food AVANT generateObstacles
+        this.food = {
+            x: Math.floor(Math.random() * this.tileCount),
+            y: Math.floor(Math.random() * this.tileCount)
+        };
 
-		// S'assurer que la nourriture n'apparaît pas sur un obstacle
-		let validFoodPosition = false;
-		while (!validFoodPosition) {
-			validFoodPosition = true;
-			for (const obstacle of this.obstacles) {
-				if (this.food.x === obstacle.x && this.food.y === obstacle.y) {
-					validFoodPosition = false;
-					this.food = {
-						x: Math.floor(Math.random() * this.tileCount),
-						y: Math.floor(Math.random() * this.tileCount)
-					};
-					break;
-				}
-			}
-		}
+        // Régénérer les obstacles avec un nombre constant
+        this.generateObstacles(20);
+        this.createObstacles();
 
-		this.updateFoodPosition();
-		this.createSnake();
-		this.updateScore3D();
-		this.startGame();
-	}
+        // S'assurer que la nourriture n'apparaît pas sur un obstacle
+        let validFoodPosition = false;
+        while (!validFoodPosition) {
+            validFoodPosition = true;
+            for (const obstacle of this.obstacles) {
+                if (this.food.x === obstacle.x && this.food.y === obstacle.y) {
+                    validFoodPosition = false;
+                    this.food = {
+                        x: Math.floor(Math.random() * this.tileCount),
+                        y: Math.floor(Math.random() * this.tileCount)
+                    };
+                    break;
+                }
+            }
+        }
 
-	cleanup() {
-		if (this.animationFrameId) {
-			cancelAnimationFrame(this.animationFrameId);
-			this.animationFrameId = null;
-		}
-		if (this.gameLoop) {
-			clearInterval(this.gameLoop);
-			this.gameLoop = null;
-		}
-		if (this.keydownHandler) {
-			document.removeEventListener('keydown', this.keydownHandler);
-		}
-		if (this.resizeHandler) {
-			window.removeEventListener('resize', this.resizeHandler);
-		}
+        this.updateFoodPosition();
+        this.createSnake();
 
-		if (this.scene) {
-			while (this.scene.children.length > 0) {
-				const child = this.scene.children[0];
-				if (child.geometry) child.geometry.dispose();
-				if (child.material) child.material.dispose();
-				this.scene.remove(child);
-			}
-		}
-		if (this.renderer) {
-			if (this.renderer.domElement && this.renderer.domElement.parentNode) {
-				this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
-			}
-			this.renderer.dispose();
-			this.renderer = null;
-		}
+        // Mettre à jour les yeux pour revenir à la normale
+        const headSegment = this.snakeGroup.children[0];
+        this.updateEyes(headSegment, false);
 
-		this.gameStarted = false;
-		this.paused = false;
-		this.gameOver = false;
-		this.score = 0;
-		this.snake = [];
-		this.food = null;
-		this.obstacles = [];
-	}
+        // Mettre à jour le score
+        this.updateScore3D();
+
+        // Animer la transition vers la vue de jeu
+        this.animateCameraTransition();
+
+        // Démarrer le jeu après la transition
+        setTimeout(() => {
+            this.startGame();
+        }, 2000);
+    }
+
+    createDirectionalArrows() {
+        // Créer un plan pour les flèches
+        const textureLoader = new THREE.TextureLoader();
+        const arrowsTexture = textureLoader.load('/static/assets/arrows.png');
+        const spaceTexture = textureLoader.load('/static/assets/space.png');
+
+        // Créer les flèches
+        const arrowsGeometry = new THREE.PlaneGeometry(5, 5);
+        const arrowsMaterial = new THREE.MeshBasicMaterial({
+            map: arrowsTexture,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        const arrowsMesh = new THREE.Mesh(arrowsGeometry, arrowsMaterial);
+        arrowsMesh.position.set(this.tileCount / 3, 0.1, this.tileCount / 2 + 3);
+        arrowsMesh.rotation.x = -Math.PI / 2;
+
+        // Créer la barre espace
+        const spaceGeometry = new THREE.PlaneGeometry(5, 1.5);
+        const spaceMaterial = new THREE.MeshBasicMaterial({
+            map: spaceTexture,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        const spaceMesh = new THREE.Mesh(spaceGeometry, spaceMaterial);
+        spaceMesh.position.set(this.tileCount / 10, 0.1, this.tileCount / 2 + 3.5);
+        spaceMesh.rotation.x = -Math.PI / 2;
+
+        this.arrowsGroup.add(arrowsMesh);
+        this.arrowsGroup.add(spaceMesh);
+        this.arrowsGroup.visible = false; // Caché par défaut
+    }
+
+    displayLeaderboard() {
+        // Supprimer l'ancien classement s'il existe
+        if (this.leaderboardGroup) {
+            this.scene.remove(this.leaderboardGroup);
+        }
+
+        // Créer un nouveau groupe pour le classement
+        this.leaderboardGroup = new THREE.Group();
+        this.scene.add(this.leaderboardGroup);
+
+        // Récupérer les meilleurs scores
+        fetch('/api/snake/high-score/')
+            .then(response => response.json())
+            .then(data => {
+                const loader = new FontLoader();
+                loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (font) => {
+                    // Créer le titre
+                    const titleGeometry = new TextGeometry('Best Scores', {
+                        font: font,
+                        size: 0.4,
+                        height: 0.01,
+                        // curveSegments: 12,
+                        // bevelEnabled: true,
+                        // bevelThickness: 0.02,
+                        // bevelSize: 0.02,
+                        // bevelOffset: 0,
+                        // bevelSegments: 5
+                    });
+
+                    const material = new THREE.MeshStandardMaterial({
+                        color: 0xffffff,
+                        roughness: 0.3,
+                        // metalness: 0.8
+                    });
+
+                    const titleMesh = new THREE.Mesh(titleGeometry, material);
+                    // Position initiale du titre
+                    titleMesh.position.set(0, 0, 0);
+                    titleMesh.rotation.y = 0;
+
+                    // Centrer le titre
+                    titleGeometry.computeBoundingBox();
+                    const titleBoundingBox = titleGeometry.boundingBox;
+                    const titleCenterOffset = -(titleBoundingBox.max.x - titleBoundingBox.min.x) / 2;
+                    titleMesh.position.x += titleCenterOffset;
+
+                    this.leaderboardGroup.add(titleMesh);
+
+                    // Afficher les 5 meilleurs scores
+                    const topPlayers = data.players_scores.slice(0, 5);
+                    let yOffset = -0.5; // Commencer juste en dessous du titre
+
+                    topPlayers.forEach((player, index) => {
+                        const playerText = `${index + 1}. ${player.username}: ${player.score}`;
+                        const playerGeometry = new TextGeometry(playerText, {
+                            font: font,
+                            size: 0.3,
+                            height: 0.01,
+                            // curveSegments: 12,
+                            // bevelEnabled: true,
+                            // bevelThickness: 0.02,
+                            // bevelSize: 0.02,
+                            // bevelOffset: 0,
+                            // bevelSegments: 5
+                        });
+
+                        const playerMesh = new THREE.Mesh(playerGeometry, material);
+                        playerMesh.position.set(0, yOffset, 0);
+                        playerMesh.rotation.y = 0;
+
+                        // Centrer le texte
+                        playerGeometry.computeBoundingBox();
+                        const playerBoundingBox = playerGeometry.boundingBox;
+                        const playerCenterOffset = -(playerBoundingBox.max.x - playerBoundingBox.min.x) / 2;
+                        playerMesh.position.x += playerCenterOffset;
+
+                        this.leaderboardGroup.add(playerMesh);
+                        yOffset -= 0.6; // Espacement entre les lignes
+                    });
+
+                    // Afficher le score de l'utilisateur actuel s'il est connecté
+                    if (data.current_user_score !== null) {
+                        const userText = `Votre meilleur score: ${data.current_user_score}`;
+                        const userGeometry = new TextGeometry(userText, {
+                            font: font,
+                            size: 0.4,
+                            height: 0.1,
+                            curveSegments: 12,
+                            bevelEnabled: true,
+                            bevelThickness: 0.02,
+                            bevelSize: 0.02,
+                            bevelOffset: 0,
+                            bevelSegments: 5
+                        });
+
+                        const userMesh = new THREE.Mesh(userGeometry, material);
+                        userMesh.position.set(0, yOffset - 0.3, 0);
+                        userMesh.rotation.y = 0;
+
+                        // Centrer le texte
+                        userGeometry.computeBoundingBox();
+                        const userBoundingBox = userGeometry.boundingBox;
+                        const userCenterOffset = -(userBoundingBox.max.x - userBoundingBox.min.x) / 2;
+                        userMesh.position.x += userCenterOffset;
+
+                        this.leaderboardGroup.add(userMesh);
+                    }
+
+                    // Positionner le classement selon l'état du jeu
+                    this.positionLeaderboard(this.gameStarted && !this.gameOver);
+                });
+            })
+            .catch(error => {
+                console.error('Erreur lors de la récupération du classement:', error);
+            });
+    }
+
+    positionLeaderboard(isGameActive) {
+        if (!this.leaderboardGroup) return;
+
+        // Position finale du classement selon l'état du jeu
+        const finalPosition = isGameActive
+            ? new THREE.Vector3(this.tileCount/2 + 2, 5, 0) // Position pendant le jeu
+        : new THREE.Vector3(2, 2.5, 4); // Position en menu/fin de partie
+
+        // Rotation finale selon l'état du jeu
+        const finalRotation = isGameActive
+            ? new THREE.Euler(0, -Math.PI / 4, 0) // Rotation pendant le jeu
+            : new THREE.Euler(0, -Math.PI / 4, 0); // Pas de rotation en menu/fin de partie
+
+        // Animation du déplacement
+        const duration = 1000; // 1 seconde
+        const startTime = Date.now();
+        const startPosition = this.leaderboardGroup.position.clone();
+        const startRotation = this.leaderboardGroup.rotation.clone();
+
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Interpolation linéaire de la position et de la rotation
+            this.leaderboardGroup.position.lerpVectors(startPosition, finalPosition, progress);
+            this.leaderboardGroup.rotation.x = THREE.MathUtils.lerp(startRotation.x, finalRotation.x, progress);
+            this.leaderboardGroup.rotation.y = THREE.MathUtils.lerp(startRotation.y, finalRotation.y, progress);
+            this.leaderboardGroup.rotation.z = THREE.MathUtils.lerp(startRotation.z, finalRotation.z, progress);
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        animate();
+    }
+
+    createCross() {
+        // Créer un groupe pour la croix
+        const crossGroup = new THREE.Group();
+
+        // Créer deux cylindres pour former une croix
+        const crossGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.4, 8);
+        const crossMaterial = new THREE.MeshStandardMaterial({
+            color: 0x000000,
+            roughness: 0.1,
+            metalness: 0.5
+        });
+
+        // Cylindre vertical
+        const vertical = new THREE.Mesh(crossGeometry, crossMaterial);
+        vertical.rotation.x = Math.PI / 2;
+        crossGroup.add(vertical);
+
+        // Cylindre horizontal
+        const horizontal = new THREE.Mesh(crossGeometry, crossMaterial);
+        horizontal.rotation.z = Math.PI / 2;
+        crossGroup.add(horizontal);
+
+        return crossGroup;
+    }
 }
 
 // Initialiser le jeu au chargement de la page

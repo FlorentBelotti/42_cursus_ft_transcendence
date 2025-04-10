@@ -202,6 +202,16 @@ class PongAnimation {
 		this.ctx.fill();
 	}
 
+	stopAnimation() {
+		if (this.animationFrameId) {
+			cancelAnimationFrame(this.animationFrameId);
+		}
+		if (this.canvas) {
+			this.canvas.remove();
+		}
+		window.removeEventListener('resize', this.resizeCanvas);
+	}
+
 	animate(currentTime = 0) {
 		const deltaTime = Math.min(currentTime - this.state.lastTime, 100) / 16;
 		this.state.lastTime = currentTime;
@@ -210,7 +220,7 @@ class PongAnimation {
 		this.updateBall();
 		this.generateNoise();
 		this.draw();
-		requestAnimationFrame((t) => this.animate(t));
+		this.animationFrameId = requestAnimationFrame((t) => this.animate(t));
 	}
 }
 
