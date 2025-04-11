@@ -96,7 +96,7 @@ SOCIAL_AUTH_INTRA42_SCOPE = ['public']
 
 # REDIRECTIONS APRES LOGIN / LOGOUT
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/api/post-login/'
 LOGOUT_REDIRECT_URL = '/'
 
 ROOT_URLCONF = 'transcendence.urls'

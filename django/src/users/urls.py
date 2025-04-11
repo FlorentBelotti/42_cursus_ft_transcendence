@@ -2,10 +2,12 @@ from django.urls import path
 from .views import (create_user, list_users, user_detail, update_user, delete_user,
                    logout_action, RefreshTokenView, online_friends_view,
                    get_user_invitations, respond_to_invitation, cancel_game_invitation,
-                   forfeit_match, forfeit_tournament, friends_view, user_me_detail, friends_view, add_friend_view, user_me_detail)
+                   forfeit_match, forfeit_tournament, friends_view, user_me_detail, friends_view, add_friend_view, user_me_detail,
+                   post_login)
 
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import include
 
 urlpatterns = [
     path('users/', list_users, name='list_users'),
@@ -28,6 +30,7 @@ urlpatterns = [
 
 	path('users/me/', user_me_detail, name='user_me_detail'),
 
+    path('post-login/', post_login, name='post_login'),
 ]
 
 if settings.DEBUG:

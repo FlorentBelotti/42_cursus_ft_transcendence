@@ -133,8 +133,9 @@ def delete_user(request, pk):
 def logout_action(request):
     if request.method == 'POST':
         response = HttpResponseRedirect('/home/')
-        response.delete_cookie('access_token')
-        response.delete_cookie('refresh_token')
+        response.delete_cookie('sessionid')
+        # response.delete_cookie('access_token')
+        # response.delete_cookie('refresh_token')
         return response
     return redirect('logout_page')
 
@@ -164,8 +165,9 @@ class RefreshTokenView(APIView):
 
 def logout_view(request):
     response = redirect('home')
-    response.delete_cookie('access_token')
-    response.delete_cookie('refresh_token')
+    response.delete_cookie('sessionid')
+    # response.delete_cookie('access_token')
+    # response.delete_cookie('refresh_token')
     logout(request)
     return response
 
@@ -306,6 +308,46 @@ def password_reset_confirm(request, uidb64, token):
     else:
         return JsonResponse({"error": "Lien invalide ou expiré"}, status=400)
 
+
+
+# users/views.py
+from django.http import HttpResponseRedirect
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.decorators import login_required
+import logging
+
+logger = logging.getLogger(__name__)
+
+@login_required
+def post_login(request):
+    """
+    API appelée après une connexion réussie. Génère des JWT si nécessaire et redirige vers /home/.
+    """
+    logger.info(f"Requête reçue pour /api/post-login/ par {request.user}")
+
+    # Vérifie si les tokens sont déjà dans les cookies
+    access_token = request.COOKIES.get('access_token')
+    refresh_token = request.COOKIES.get('refresh_token')
+
+    # Si pas de tokens, génère-les
+    if not access_token or not refresh_token:
+        user = request.user
+        logger.info(f"Utilisateur authentifié : {user}, génération des tokens")
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        # Crée la réponse de redirection
+        response = HttpResponseRedirect('/home/')
+        response.set_cookie('access_token', access_token, httponly=True, secure=True, samesite='Strict')
+        response.set_cookie('refresh_token', refresh_token, httponly=True, secure=True, samesite='Strict')
+        logger.info(f"Tokens générés - Access: {access_token[:10]}..., Refresh: {refresh_token[:10]}...")
+        logger.info("Cookies définis, redirection vers /home/")
+        return response
+
+    # Si les tokens existent déjà, redirige directement
+    logger.info("Tokens déjà présents, redirection vers /home/")
+    return HttpResponseRedirect('/home/')
 
 ########################################################################################################################################
 ########################################################################################################################################
