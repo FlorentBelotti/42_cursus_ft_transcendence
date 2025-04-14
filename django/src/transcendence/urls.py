@@ -3,7 +3,7 @@ from django.views.generic import RedirectView
 from views import views
 from django.conf import settings
 from django.conf.urls.static import static
-from users.views import logout_view, password_reset_confirm, password_reset_request
+from users.views import password_reset_confirm, password_reset_request
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/home/', permanent=True)),
@@ -22,7 +22,6 @@ urlpatterns = [
     path('password_reset_confirm/<uidb64>/<token>/', password_reset_confirm, name='password_reset_confirm'),
 
     path('leaderboard/', views.leaderboard, name='leaderboard'),
-    path('logout/', logout_view, name='logout'),
     path('api/', include('users.urls')),
     path('auth/', include('social_django.urls', namespace='social')),
     path('snake/', views.define_render, name='snake'),

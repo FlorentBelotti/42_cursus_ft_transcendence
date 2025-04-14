@@ -104,44 +104,6 @@ function deleteFormEvent() {
     });
 }
 
-function disconnectFormEvent() {
-    document.getElementById("disconnectForm").addEventListener("submit", async function (event) {
-        event.preventDefault();
-
-        if (!confirm('Are you sure you want to disconnect?')) {
-            return;
-        }
-
-        let disconnectFormData = new FormData(event.target);
-        disconnectFormData.append('disconnect', 'true');
-
-        try {
-            let response = await fetch('/account/', {
-                method: "post",
-                body: disconnectFormData,
-                headers: {
-                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-                    "X-Requested-With": "XMLHttpRequest"
-                }
-            });
-
-            let data = await response.json();
-
-            if ('success' in data) {
-                console.log('Success:', data.success);
-                await updateAuthButtons();
-                window.loadContent('/home/');
-            } else if ('error' in data) {
-                console.log('Error:', data.error);
-                alert('Failed to disconnect: ' + data.error);
-            }
-        } catch (error) {
-            console.error('Fetch error:', error);
-            alert('An error occurred while trying to delete your account.');
-        }
-    });
-}
-
 function nicknameFormEvent() {
     document.getElementById("nicknameForm").addEventListener("submit", async function (event) {
         event.preventDefault();

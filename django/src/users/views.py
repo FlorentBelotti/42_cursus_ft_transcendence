@@ -134,10 +134,10 @@ def logout_action(request):
     if request.method == 'POST':
         response = HttpResponseRedirect('/home/')
         response.delete_cookie('sessionid')
-        # response.delete_cookie('access_token')
-        # response.delete_cookie('refresh_token')
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
         return response
-    return redirect('logout_page')
+    return redirect('home')
 
 class RefreshTokenView(APIView):
     def post(self, request):

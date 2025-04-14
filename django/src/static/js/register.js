@@ -37,7 +37,7 @@ function registerFormEvent() {
 
             if ('success' in data) {
                 console.log('Success:', "User created");
-                window.loadContent('/home/'); // Redirige vers la page d'accueil après succès
+                window.loadContent('/login/'); // Redirige vers la page d'accueil après succès
             } else if ('error' in data) {
                 console.log('Error:', data.error);
                 if (data.errors) {

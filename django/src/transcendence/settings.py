@@ -23,7 +23,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'users',
     'transcendence',
-    'social_django',  # <- nécessaire pour auth 42
+    'social_django',
 ]
 
 REST_FRAMEWORK = {
