@@ -32,6 +32,34 @@ function updateFormEvent() {
     });
 }
 
+function logoutFormEvent() {
+    const logoutForm = document.querySelector("form[action='{% url 'logout_action' %}']");
+
+    logoutForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        try {
+            let response = await fetch('{% url "logout_action" %}', {
+                method: 'POST',
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            });
+
+            let data = await response.json();
+            if ('success' in data) {
+                console.log('Déconnexion réussie:', data.success);
+                window.location.href = '/home/';
+            } else if ('error' in data) {
+                console.log('Erreur:', data.error);
+            }
+        } catch (error) {
+            console.error('Erreur lors de la déconnexion:', error);
+        }
+    });
+}
+
 function passwordFormEvent() {
     document.getElementById("passwordForm").addEventListener("submit", async function (event) {
         event.preventDefault();
@@ -142,7 +170,7 @@ function initAccountPage() {
     updateFormEvent();
     passwordFormEvent();
     deleteFormEvent();
-    // disconnectFormEvent();
+    logoutFormEvent();
     nicknameFormEvent();
 
     const buttons = document.querySelectorAll('.sidebar-btn');

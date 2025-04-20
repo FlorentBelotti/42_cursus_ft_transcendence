@@ -46,7 +46,6 @@ def protected_view(request):
 
     return JsonResponse({"message": f"Bienvenue, {request.user.username} !"})
 
-# Create
 @api_view(['POST'])
 def create_user(request):
     serializer = UserSerializer(data=request.data)
@@ -64,14 +63,12 @@ def create_user(request):
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Read (List)
 @api_view(['GET'])
 def list_users(request):
     users = customUser.objects.all()
     serializer = UserDataSerializer(users, many=True)
     return Response(serializer.data)
 
-# Read (Detail)
 @api_view(['GET'])
 def user_detail(request, pk):
     try:
@@ -107,7 +104,6 @@ def user_me_detail(request):
             'error': str(e)
         }, status=status.HTTP_401_UNAUTHORIZED)
 
-# Update
 @api_view(['PUT'])
 def update_user(request, pk):
     try:
@@ -120,7 +116,6 @@ def update_user(request, pk):
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Delete
 @api_view(['DELETE'])
 def delete_user(request, pk):
     try:
@@ -130,14 +125,13 @@ def delete_user(request, pk):
     user.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+@api_view(['POST'])
 def logout_action(request):
-    if request.method == 'POST':
-        response = HttpResponseRedirect('/home/')
-        response.delete_cookie('sessionid')
-        response.delete_cookie('access_token')
-        response.delete_cookie('refresh_token')
-        return response
-    return redirect('home')
+    response = Response({'message': 'Disconnected'}, status=200)
+    response.delete_cookie('access_token')
+    response.delete_cookie('refresh_token')
+    return response
+
 
 class RefreshTokenView(APIView):
     def post(self, request):
@@ -156,7 +150,7 @@ class RefreshTokenView(APIView):
                 value=access_token,
                 httponly=True,
                 secure=True,
-                # samesite='Lax' # En production uniquement
+                samesite='Lax'
             )
             return response
 
@@ -165,22 +159,16 @@ class RefreshTokenView(APIView):
 
 @api_view(['GET'])
 def online_friends_view(request):
-    # Récupérer le token depuis le cookie
     token = request.COOKIES.get('access_token', '')
 
     try:
-        # Valider le token
         validated_token = AccessToken(token)
-        # Récupérer l'utilisateur à partir du token
         user_id = validated_token['user_id']
         user = customUser.objects.get(id=user_id)
 
-        # Récupérer tous les amis de l'utilisateur
         all_friends = user.friends.all()
-        # Filtrer les amis en ligne
         online_friends = [friend for friend in all_friends if friend.is_online()]
 
-        # Sérialiser les données
         serializer = UserDataSerializer(online_friends, many=True)
         return Response({
             'online_friends': serializer.data,
@@ -188,7 +176,6 @@ def online_friends_view(request):
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
-        # Si le token est invalide ou autre erreur
         return Response({
             'online_friends': [],
             'count': 0,
@@ -198,20 +185,15 @@ def online_friends_view(request):
 
 @api_view(['GET'])
 def friends_view(request):
-    # Récupérer le token depuis le cookie
     token = request.COOKIES.get('access_token', '')
 
     try:
-        # Valider le token
         validated_token = AccessToken(token)
-        # Récupérer l'utilisateur à partir du token
         user_id = validated_token['user_id']
         user = customUser.objects.get(id=user_id)
 
-        # Récupérer tous les amis de l'utilisateur (sans filtre)
         all_friends = user.friends.all()
 
-        # Sérialiser les données
         serializer = UserDataSerializer(all_friends, many=True)
         return Response({
             'friends': serializer.data,
@@ -219,7 +201,6 @@ def friends_view(request):
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
-        # Si le token est invalide ou autre erreur
         return Response({
             'friends': [],
             'count': 0,
@@ -242,14 +223,11 @@ def password_reset_request(request):
 
         try:
             user = customUser.objects.get(email=email)
-            # Générer un token et un UID
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
 
-            # Générer le lien
             reset_link = f"{request.scheme}://{request.get_host()}/password_reset_confirm/{uid}/{token}/"
 
-            # Envoyer l'email avec le lien
             html_message = render_to_string('password_reset_email.html', {
                 'reset_link': reset_link,
                 'user': user,
@@ -302,7 +280,6 @@ def password_reset_confirm(request, uidb64, token):
 
 
 
-# users/views.py
 from django.http import HttpResponseRedirect
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.decorators import login_required
@@ -312,16 +289,11 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def post_login(request):
-    """
-    API appelée après une connexion réussie. Génère des JWT si nécessaire et redirige vers /home/.
-    """
     logger.info(f"Requête reçue pour /api/post-login/ par {request.user}")
 
-    # Vérifie si les tokens sont déjà dans les cookies
     access_token = request.COOKIES.get('access_token')
     refresh_token = request.COOKIES.get('refresh_token')
 
-    # Si pas de tokens, génère-les
     if not access_token or not refresh_token:
         user = request.user
         logger.info(f"Utilisateur authentifié : {user}, génération des tokens")
@@ -329,7 +301,6 @@ def post_login(request):
         access_token = str(refresh.access_token)
         refresh_token = str(refresh)
 
-        # Crée la réponse de redirection
         response = HttpResponseRedirect('/home/')
         response.set_cookie('access_token', access_token, httponly=True, secure=True, samesite='Strict')
         response.set_cookie('refresh_token', refresh_token, httponly=True, secure=True, samesite='Strict')
@@ -337,7 +308,6 @@ def post_login(request):
         logger.info("Cookies définis, redirection vers /home/")
         return response
 
-    # Si les tokens existent déjà, redirige directement
     logger.info("Tokens déjà présents, redirection vers /home/")
     return HttpResponseRedirect('/home/')
 
@@ -614,7 +584,6 @@ def friends_view(request):
 
         all_friends = user.friends.all()
 
-        # Créez une liste avec les données nécessaires
         friends_data = []
         for friend in all_friends:
             friends_data.append({
@@ -642,34 +611,26 @@ def add_friend_view(request):
     token = request.COOKIES.get('access_token', '')
 
     try:
-        # Valider le token
         validated_token = AccessToken(token)
         user_id = validated_token['user_id']
         user = customUser.objects.get(id=user_id)
 
-        # Récupérer le nom d'utilisateur de l'ami à ajouter
         friend_username = request.data.get('username')
         if not friend_username:
             return Response({'error': 'Nom d’utilisateur requis'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Vérifier si l'utilisateur existe
         try:
             friend = customUser.objects.get(username=friend_username)
         except customUser.DoesNotExist:
             return Response({'error': 'Utilisateur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Vérifier que l'utilisateur ne s'ajoute pas lui-même
         if friend == user:
             return Response({'error': 'Vous ne pouvez pas vous ajouter vous-même'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Vérifier si l'utilisateur est déjà un ami
         if friend in user.friends.all():
             return Response({'error': 'Cet utilisateur est déjà votre ami'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Ajouter l'ami (relation symétrique ou non selon ton choix)
         user.friends.add(friend)
-        # Si tu veux une relation symétrique (les deux deviennent amis) :
-        # friend.friends.add(user)
 
         return Response({'success': True, 'message': f'{friend_username} ajouté comme ami'}, status=status.HTTP_200_OK)
 
