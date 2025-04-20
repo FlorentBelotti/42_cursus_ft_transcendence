@@ -18,8 +18,8 @@
 		</ul>
 	</nav>
 
-	<div id="pong-modal" class="modal">
-		<div class="modal-content">
+	<div id="pong-modal" class="header-modal">
+		<div class="header-modal-content">
 			<h2>Games</h2>
 			<span class="close-modal">&times;</span>
 			<div class="horizontal-line"></div>
@@ -34,8 +34,8 @@
 		</div>
 	</div>
 
-	<div id="friends-modal" class="modal">
-		<div class="modal-content">
+	<div id="friends-modal" class="header-modal">
+		<div class="header-modal-content">
 			{% csrf_token %}
 			<div class="friends-section">
 				<h2>Friend List</h2>
@@ -121,14 +121,14 @@
         });
 	</script>
 
-	<!-- <script type="importmap">
-	    {
-	        "imports": {
-	            "three": "https://unpkg.com/three@0.152.0/build/three.module.js",
-	            "three/addons/": "https://unpkg.com/three@0.152.0/examples/jsm/"
-	        }
-	    }
-	</script> -->
+	<script type="importmap">
+		{
+			"imports": {
+				"three": "https://unpkg.com/three@0.152.0/build/three.module.js",
+				"three/addons/": "https://unpkg.com/three@0.152.0/examples/jsm/"
+			}
+		}
+	</script>
 
 	<script src="{% static 'js/gameInvitations.js' %}"></script>
 	<script src="{% static 'js/friendModal.js' %}"></script>

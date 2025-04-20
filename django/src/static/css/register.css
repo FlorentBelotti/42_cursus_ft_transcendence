@@ -1,21 +1,22 @@
 body {
-	/* margin-top: 150px; */
-	/* padding: 150px; */
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	min-height: 100vh;
-	font-family: 'Bebas Neue', sans-serif;
-	background-color: #171717;
-	/* overflow-x: hidden; */
+	font-family: 'Noto Sans', sans-serif;
+	background-color: #0D0D0D;
+
 }
 
 .box {
 	display: flex;
 	width: 100%;
 	max-width: 900px;
-	border: solid 1px #fff;
+	border-radius: 50px;
 	margin: 0 auto;
+	background-color: #171717;
+	box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .left-box, .right-box{
@@ -25,7 +26,7 @@ body {
 }
 
 .inscription-box h1{
-	font-family: 'Bebas Neue', sans-serif;
+	font-family: 'Noto Sans', sans-serif;
 	font-size: 42px;
 	font-weight: 400;
 	text-align: center;
@@ -35,7 +36,6 @@ body {
 
 .form-group img{
 	width: 20px;
-	/* margin-right: 10px; */
 }
 
 .form-group{
@@ -50,6 +50,7 @@ body {
 .form-group input{
 	border: none;
 	background-color: #171717;
+	color: #fff;
 	width: 100%;
 	font-size: 16px;
 	padding: 0 20px 0 10px;
@@ -60,9 +61,10 @@ body {
 .submit-button{
 	margin-top: 60px;
 	border: solid 1px transparent;
-	background-color: #000;
+	background: var(--project-color-35);
+	backdrop-filter: blur(12px) brightness(2);
 	color: #F7F7F7;
-	border: solid 1px #fff;
+	border-radius: 50px;
 	padding: 15px 30px;
 	display: block;
 	margin-left: 50px;
@@ -71,9 +73,9 @@ body {
 }
 
 .submit-button:hover{
-	background-color: transparent;
-	border: solid 1px #000 ;
-	color: #fff;
+	background-color: #121212;
+	box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .right-box{
@@ -86,17 +88,15 @@ body {
 #cube-container{
 	width: 400px;
 	height: 400px;
-	/* margin-bottom: 20px; */
 }
 
 .connection {
 	text-align: center;
-	/* margin-top: 20px; */
+	margin-top: 20px;
 }
 
 .connection a{
 	color: #fff;
-	/* text-decoration: none; */
 }
 
 .connection a:hover{

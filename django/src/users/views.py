@@ -163,14 +163,6 @@ class RefreshTokenView(APIView):
         except Exception as e:
             return Response({"error": "Refresh token invalide"}, status=status.HTTP_401_UNAUTHORIZED)
 
-def logout_view(request):
-    response = redirect('home')
-    response.delete_cookie('sessionid')
-    # response.delete_cookie('access_token')
-    # response.delete_cookie('refresh_token')
-    logout(request)
-    return response
-
 @api_view(['GET'])
 def online_friends_view(request):
     # Récupérer le token depuis le cookie

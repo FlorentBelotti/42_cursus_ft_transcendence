@@ -264,7 +264,7 @@ class Snake3D {
 			this.createDirectionalArrows();
 		} catch (error) {
     	    console.error('Three.js initialization failed:', error);
-    	    document.getElementById('message').textContent = 
+    	    document.getElementById('message').textContent =
     	        'Error loading 3D engine. Please refresh the page.';
     	}
 	}

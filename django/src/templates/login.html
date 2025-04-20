@@ -32,14 +32,16 @@
 							<img src="{% static 'assets/password1.png' %}">
 							{{ form.password }}
 						</div>
-						<button type="submit" class="submit-button">Login</button>
-						<p><a href="{% url 'password_reset_request' %}">Forgot password?</a></p>
-						<div class="social">
-							<p>connect with</p>
-							<a href="{% url 'social:begin' 'intra42' %}">
-								<img src="{% static 'assets/42.svg' %}" class="social-img">
-							</a>
+						<div class="buttons-container">
+							<button type="submit" class="submit-button">Login</button>
+							<div class="social">
+								<p>connect with</p>
+								<a href="{% url 'social:begin' 'intra42' %}">
+									<img src="{% static 'assets/42.svg' %}" class="social-img">
+								</a>
+							</div>
 						</div>
+						<p><a href="{% url 'password_reset_request' %}">Forgot password?</a></p>
 					</form>
 				</div>
 			</div>
@@ -48,7 +50,7 @@
 			<div class="modal-content">
 				<div class="modal-header">
 					<span class="close-modal">&times;</span>
-					<h1>Double authentication code</h1>
+					<h1>Verify Code</h1>
 				</div>
 				<div id="verifyErrorMessage"></div>
 				<form id="verifyCodeForm">
@@ -68,6 +70,5 @@
 		<script type="module" src="{% static 'js/cubeAnimation.js' %}"></script>
 		<script src="{% static 'js/login.js' %}"></script>
 		<script src="{% static 'js/verify_code.js' %}"></script>
-		<!-- <script src="{% static 'js/closeModal.js' %}"></script> -->
 	</body>
 </html>

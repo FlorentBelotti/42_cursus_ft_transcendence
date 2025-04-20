@@ -1,4 +1,5 @@
 .main-footer {
+	display: block;
     color: white;
     text-align: center;
     padding: 20px;
@@ -20,4 +21,9 @@
 
 .footer-links a:hover {
     text-decoration: underline;
+}
+
+/* Masquer le footer sur la page snake */
+.snake-page .main-footer {
+    display: none;
 }

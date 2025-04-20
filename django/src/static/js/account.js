@@ -142,7 +142,7 @@ function initAccountPage() {
     updateFormEvent();
     passwordFormEvent();
     deleteFormEvent();
-    disconnectFormEvent();
+    // disconnectFormEvent();
     nicknameFormEvent();
 
     const buttons = document.querySelectorAll('.sidebar-btn');
