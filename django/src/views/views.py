@@ -70,16 +70,13 @@ def leaderboard(request):
     User = get_user_model()
     users = User.objects.all().order_by('-elo')
 
-    # Get the current user's history if they're logged in
     user_history = []
     if request.user.is_authenticated:
         user_history = request.user.history if hasattr(request.user, 'history') else []
 
-        # Sort history by timestamp (newest first)
         if user_history:
             user_history = sorted(user_history, key=lambda x: x.get('timestamp', ''), reverse=True)
 
-            # Add opponent profile picture URLs
             enhanced_history = []
             for match in user_history:
                 match_copy = match.copy()
@@ -193,7 +190,7 @@ def register(request):
 
 def user_login(request):
     if request.method == "POST":
-        form = CustomLoginForm(request, data=request.POST)  # Utilisez CustomLoginForm ici
+        form = CustomLoginForm(request, data=request.POST)
         if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
@@ -222,7 +219,7 @@ def user_login(request):
         else:
             return JsonResponse({"error": "Wrong username or password"}, status=400)
     else:
-        form = CustomLoginForm()  # Utilisez CustomLoginForm ici aussi
+        form = CustomLoginForm()
         return define_render(request, {'form': form})
 
 def verify_code(request, user_id):

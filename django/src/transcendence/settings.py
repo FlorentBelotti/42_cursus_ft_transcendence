@@ -33,7 +33,7 @@ REST_FRAMEWORK = {
 }
 
 AUTHENTICATION_BACKENDS = (
-    'users.intra42_backend.Intra42OAuth2',  # <- renommé proprement
+    'users.intra42_backend.Intra42OAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -89,12 +89,10 @@ SECURE_SSL_REDIRECT = True
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 SOCIAL_AUTH_REDIRECT_URL = 'https://pong.ovh/auth/complete/intra42/'
 
-# AUTH 42 CONFIG - renommée pour être propre et éviter les conflits
 SOCIAL_AUTH_INTRA42_KEY = os.getenv("SOCIAL_AUTH_INTRA42_KEY")
 SOCIAL_AUTH_INTRA42_SECRET = os.getenv("SOCIAL_AUTH_INTRA42_SECRET")
 SOCIAL_AUTH_INTRA42_SCOPE = ['public']
 
-# REDIRECTIONS APRES LOGIN / LOGOUT
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/api/post-login/'
 LOGOUT_REDIRECT_URL = '/'
@@ -112,7 +110,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'social_django.context_processors.backends',  # <- pour {% url 'social:begin' %}
+                'social_django.context_processors.backends',
                 'social_django.context_processors.login_redirect',
             ],
         },

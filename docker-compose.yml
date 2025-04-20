@@ -30,8 +30,6 @@ services:
     volumes:
       - ./django/src/static:/django/src/static
       - ./django/src/media:/django/src/media
-      #      - static_data:/django/src/static
-      # - media_data:/django/src/media
     expose:
       - "8000"
     depends_on:
@@ -95,5 +93,5 @@ volumes:
 networks:
   transcendence_network:
     driver: bridge
-  monitoring_network: #J'ai rajouté cette ligne mais je sais pas pourquoi elle y était plus
+  monitoring_network:
     driver: bridge

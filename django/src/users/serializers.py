@@ -19,9 +19,8 @@ class UserDataSerializer(serializers.ModelSerializer):
         }
     def get_profile_picture(self, obj):
         if obj.profile_picture:
-            # Retourne l'URL absolue en utilisant request.build_absolute_uri()
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.profile_picture.url)
-            return obj.profile_picture.url  # Fallback si pas de request dans le contexte
+            return obj.profile_picture.url
         return None

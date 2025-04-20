@@ -33,13 +33,13 @@ function updateFormEvent() {
 }
 
 function logoutFormEvent() {
-    const logoutForm = document.querySelector("form[action='{% url 'logout_action' %}']");
+    const logoutForm = document.getElementById("logoutForm");
 
     logoutForm.addEventListener("submit", async function(event) {
         event.preventDefault();
 
         try {
-            let response = await fetch('{% url "logout_action" %}', {
+            let response = await fetch('{% url "api/logout_action" %}', {
                 method: 'POST',
                 headers: {
                     "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
@@ -59,6 +59,7 @@ function logoutFormEvent() {
         }
     });
 }
+
 
 function passwordFormEvent() {
     document.getElementById("passwordForm").addEventListener("submit", async function (event) {

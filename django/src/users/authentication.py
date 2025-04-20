@@ -8,7 +8,7 @@ class CookieJWTAuthentication(JWTAuthentication):
     def authenticate(self, request):
         access_token = request.COOKIES.get('access_token')
         if not access_token:
-            return None  # Passe à la méthode suivante si pas de token
+            return None
 
         try:
             payload = jwt.decode(

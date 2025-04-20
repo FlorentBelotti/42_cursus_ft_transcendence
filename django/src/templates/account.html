@@ -72,9 +72,9 @@
             <div id="danger-section" class="account-section account-form danger-zone">
                 <h3 class="form-title">Account Actions</h3>
                 <div class="button-group">
-                    <form id="logoutForm" method="post" action="{% url 'logout_action' %}" class="inline-form">
+                    <form method="post" action="{% url 'logout_action' %}" class="inline-form">
                         {% csrf_token %}
-                        <button type="submit" name="disconnect" class="btn disconnect-btn">Disconnect</button>
+                        <button type="submit" name="disconnect" class="btn disconnect-btn">Logout</button>
                     </form>
                     <form id="deleteForm" method="post" class="inline-form">
                         {% csrf_token %}

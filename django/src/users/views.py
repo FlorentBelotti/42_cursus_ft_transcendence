@@ -127,10 +127,13 @@ def delete_user(request, pk):
 
 @api_view(['POST'])
 def logout_action(request):
-    response = Response({'message': 'Disconnected'}, status=200)
-    response.delete_cookie('access_token')
-    response.delete_cookie('refresh_token')
-    return response
+    if request.method == 'POST':
+        response = HttpResponseRedirect('/home/')
+        response.delete_cookie('sessionid')
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+        return response
+    return redirect('home') 
 
 
 class RefreshTokenView(APIView):

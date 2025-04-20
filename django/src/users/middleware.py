@@ -18,16 +18,14 @@ class JWTAuthenticationMiddleware:
                 token = AccessToken(access_token)
                 user_id = token.payload.get('user_id')
                 user = User.objects.get(id=user_id)
-                request.user = user  # Attache l'utilisateur à la requête
+                request.user = user 
 
             except (TokenError, InvalidToken, User.DoesNotExist) as e:
-                # Si le token est expiré, tente de le rafraîchir
                 if refresh_token:
                     try:
                         refresh = RefreshToken(refresh_token)
                         new_access_token = str(refresh.access_token)
 
-                        # Met à jour le cookie avec le nouvel access token
                         response = self.get_response(request)
                         response.set_cookie(
                             key='access_token',
