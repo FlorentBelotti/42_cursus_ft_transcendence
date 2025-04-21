@@ -3,7 +3,7 @@ from .views import (create_user, list_users, user_detail, update_user, delete_us
                    logout_action, RefreshTokenView, online_friends_view,
                    get_user_invitations, respond_to_invitation, cancel_game_invitation,
                    forfeit_match, forfeit_tournament, friends_view, user_me_detail, friends_view, add_friend_view, user_me_detail,
-                   post_login)
+                   post_login, remove_friend_view)
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -18,7 +18,6 @@ urlpatterns = [
     path('users/<int:pk>/delete/', delete_user, name='delete_user'),
     path('logout/action', logout_action, name='logout_action'),
     path('refresh-token/', RefreshTokenView.as_view(), name='token_refresh'),
-    path('online-friends/', online_friends_view, name='online_friends_api'),
     path('invitations/', get_user_invitations, name='get_user_invitations'),
     path('invitations/<int:invitation_id>/respond/', respond_to_invitation, name='respond_to_invitation'),
     path('invitations/cancel/', cancel_game_invitation, name='cancel_game_invitation'),
@@ -26,7 +25,9 @@ urlpatterns = [
     path('tournament/forfeit/', forfeit_tournament, name='forfeit_tournament'),
 
 	path('friends/', friends_view, name='friends_view'),
+    path('online-friends/', online_friends_view, name='online_friends_api'),
 	path('friends/add/', add_friend_view, name='add_friend'),
+    path('friends/remove/', remove_friend_view, name='remove_friend'),
 
 	path('users/me/', user_me_detail, name='user_me_detail'),
 

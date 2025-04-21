@@ -640,6 +640,33 @@ def add_friend_view(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
 
+@api_view(['POST'])
+def remove_friend_view(request):
+    token = request.COOKIES.get('access_token', '')
+
+    try:
+        validated_token = AccessToken(token)
+        user_id = validated_token['user_id']
+        user = customUser.objects.get(id=user_id)
+
+        friend_username = request.data.get('username')
+        if not friend_username:
+            return Response({'error': 'Nom d’utilisateur requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            friend = customUser.objects.get(username=friend_username)
+        except customUser.DoesNotExist:
+            return Response({'error': 'Utilisateur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+
+        if friend not in user.friends.all():
+            return Response({'error': 'Cet utilisateur n’est pas dans votre liste d’amis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.friends.remove(friend)
+
+        return Response({'success': True, 'message': f'{friend_username} supprimé de votre liste d’amis'}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['GET'])
 def user_me_detail(request):
