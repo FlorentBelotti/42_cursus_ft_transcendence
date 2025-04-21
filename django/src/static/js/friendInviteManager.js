@@ -58,7 +58,6 @@ class FriendInviteManager {
         console.log('Attempting to fetch online friends');
         const friendsList = document.getElementById('friendsList');
         
-        // Show loading indicator
         friendsList.innerHTML = '<p>Loading friends list...</p>';
         
         fetch('/api/online-friends/', {
@@ -80,16 +79,14 @@ class FriendInviteManager {
             console.log('Online friends data received:', data);
             
             if (data.online_friends && data.online_friends.length === 0) {
-                // Fallback to all friends if no online friends
-                this.fetchAllFriends();
+                friendsList.innerHTML = '<p>Aucun ami connecté</p>';
             } else {
                 this.displayFriendsList(data.online_friends || []);
             }
         })
         .catch(error => {
             console.error('Error fetching friends:', error);
-            // If there's an error, try fetching all friends as fallback
-            this.fetchAllFriends();
+            friendsList.innerHTML = '<p>Aucun ami connecté</p>';
         });
     }
     
