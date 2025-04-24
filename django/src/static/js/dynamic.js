@@ -4,6 +4,23 @@ document.addEventListener('DOMContentLoaded', function () {
 	let snakeGame = null;
 	updateAuthButtons();
 
+	function attachFooterButtonEvents() {
+		document.querySelectorAll('.footer-button').forEach(function (button) {
+			// Supprimer les anciens gestionnaires pour éviter les doublons
+			button.removeEventListener('click', handleFooterButtonClick);
+			button.addEventListener('click', handleFooterButtonClick);
+		});
+	}
+
+	// Gestionnaire d'événements pour les clics sur les boutons du footer
+	function handleFooterButtonClick(event) {
+		event.preventDefault();
+		const url = event.currentTarget.getAttribute('data-url');
+		if (window.location.pathname !== new URL(url, window.location.origin).pathname) {
+			window.loadContent(url);
+		}
+	}
+
 	window.loadContent = function(url, addToHistory = true) {
 
 		window.isDynamicLoading = true;
@@ -62,8 +79,8 @@ document.addEventListener('DOMContentLoaded', function () {
 								initSnake();
 							}
 							if (scriptUrl.includes('gameInvitations.js')) {
-                                initGameInvitations();
-                            }
+								initGameInvitations();
+							}
 							if (scriptUrl.includes('cubeAnimation.js')){
 								initCubeAnimation();
 							}
@@ -72,37 +89,39 @@ document.addEventListener('DOMContentLoaded', function () {
 					updateAuthButtons();
 				});
 
+				attachFooterButtonEvents();
 				if (addToHistory) {
 					history.pushState({ url: url }, '', url);
 				}
 			});
 	}
+	attachFooterButtonEvents();
 
 	function initCubeAnimation() {
-        console.log('Initializing cube animation...');
-        if (window.cubeAnimation) {
-            console.log('Cleaning up old cube animation...');
-            window.cubeAnimation.cleanup();
-        }
-        const container = document.getElementById('cube-container');
-        if (!container) {
-            console.error('Cube container not found!');
-            return;
-        }
-        window.cubeAnimation = new CubeAnimation(container);
-    }
+		console.log('Initializing cube animation...');
+		if (window.cubeAnimation) {
+			console.log('Cleaning up old cube animation...');
+			window.cubeAnimation.cleanup();
+		}
+		const container = document.getElementById('cube-container');
+		if (!container) {
+			console.error('Cube container not found!');
+			return;
+		}
+		window.cubeAnimation = new CubeAnimation(container);
+	}
 
-    function initGameInvitations() {
-        console.log('Initializing game invitations...');
-        if (window.gameInvitationsManager) {
-            window.gameInvitationsManager.init();
-        } else {
-            console.error('Game invitations manager not found');
-            // If for some reason it's not available, let's create it
-            window.gameInvitationsManager = new GameInvitationsManager();
-            window.gameInvitationsManager.init();
-        }
-    }
+	function initGameInvitations() {
+		console.log('Initializing game invitations...');
+		if (window.gameInvitationsManager) {
+			window.gameInvitationsManager.init();
+		} else {
+			console.error('Game invitations manager not found');
+			// If for some reason it's not available, let's create it
+			window.gameInvitationsManager = new GameInvitationsManager();
+			window.gameInvitationsManager.init();
+		}
+	}
 
 	function initPong() {
 		if (window.pongGame) {
@@ -239,17 +258,17 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.sphereAnimation.cleanup();
 			window.sphereAnimation = null;
 		}
-        if (window.gameInvitationsManager) {
-            window.gameInvitationsManager.cleanup();
-        }
+		if (window.gameInvitationsManager) {
+			window.gameInvitationsManager.cleanup();
+		}
 		if (window.gameInvitationsManager) {
 			window.gameInvitationsManager.cleanup();
 		}
 		if (window.cubeAnimation) {
-            console.log('Cleaning up cube animation...');
-            window.cubeAnimation.cleanup();
-            window.cubeAnimation = null;
-        }
+			console.log('Cleaning up cube animation...');
+			window.cubeAnimation.cleanup();
+			window.cubeAnimation = null;
+		}
 
 		if (window.PongAnimation) {
 			console.log("Cleaning up Pong animation...");
