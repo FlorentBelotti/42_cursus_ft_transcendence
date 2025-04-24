@@ -1,7 +1,6 @@
 {% load static %}
 {% block content %}
 <header>
-	<!-- <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chivo:ital,wght@0,100..900;1,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet"> -->
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="{% static 'css/header.css' %}">
 	<link rel="stylesheet" href="{% static 'css/base.css' %}">
@@ -67,59 +66,29 @@
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
 			const pongModal = document.getElementById('pong-modal');
-			const closeModalButton = document.querySelector('.close-modal');
-
-			closeModalButton.addEventListener('click', function () {
-				pongModal.style.display = 'none';
-			});
-			window.addEventListener('click', function (event) {
-				if (event.target === pongModal) {
-					pongModal.style.display = 'none';
-				}
-			});
 			const modalButtons = document.querySelectorAll('.modal-button');
+
 			modalButtons.forEach(button => {
-				button.addEventListener('click', function () {
+				button.addEventListener('click', function (event) {
+					event.preventDefault();
 					const url = button.getAttribute('data-url');
 					if (url) {
-						window.location.href = url;
+						pongModal.style.display = 'none';
+						document.querySelectorAll('.nav-button.active, .pong-button.active, #amis-button.active').forEach(btn => {
+							btn.classList.remove('active');
+						});
+						const pongGameButton = document.getElementById('pong-game-button');
+						if (pongGameButton) {
+							pongGameButton.classList.add('active');
+							updateSlider(pongGameButton);
+						}
+						window.loadContent(url);
+						history.pushState({ url: url }, '', url);
 					}
 				});
 			});
-
-            const friendsModal = document.getElementById('friends-modal');
-            const friendsButton = document.getElementById('friends-button');
-            const closeFriendsModal = document.querySelector('.close-friends-modal');
-            const friendsList = document.getElementById('friends-list');
-            const addFriendButton = document.getElementById('add-friend-button');
-            const friendUsernameInput = document.getElementById('friend-username');
-
-            if (friendsButton && friendsModal && closeFriendsModal && friendsList && addFriendButton && friendUsernameInput) {
-                friendsButton.addEventListener('click', function () {
-                    fetchFriends();
-                    friendsModal.style.display = 'block';
-                });
-
-                closeFriendsModal.addEventListener('click', function () {
-                    friendsModal.style.display = 'none';
-                });
-
-                window.addEventListener('click', function (event) {
-                    if (event.target === friendsModal) {
-                        friendsModal.style.display = 'none';
-                    }
-                });
-
-                addFriendButton.addEventListener('click', function () {
-                    const username = friendUsernameInput.value.trim();
-                    if (username) {
-                        addFriend(username);
-                        friendUsernameInput.value = '';
-                    }
-                });
-            }
-        });
-	</script>
+		});
+		</script>
 
 	<script type="importmap">
 		{

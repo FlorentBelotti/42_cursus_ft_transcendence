@@ -35,8 +35,7 @@ urlpatterns = [
     path('legal_mentions_legales/', views.define_render, name='mentions_legales'),
     path('legal_cgu/', views.define_render, name='regles'),
 
-	path('api/snake/high-score/', views.get_snake_high_score, name='snake_high_score'),
-    path('api/snake/update-score/', views.update_snake_score, name='update_snake_score'),
+
 
     path('', include('django_prometheus.urls')),
 ]

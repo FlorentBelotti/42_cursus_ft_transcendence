@@ -6,66 +6,6 @@
     <title>Pongserver</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/match.css'%}">
-    <style>
-        .controls-container {
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .matchmaking-btn {
-            padding: 12px 24px;
-            font-size: 18px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .matchmaking-btn:hover {
-            background-color: #45a049;
-        }
-
-        .matchmaking-btn:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-
-        .invite-friends-btn {
-            padding: 12px 24px;
-            font-size: 18px;
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-right: 10px;
-        }
-
-        .invite-friends-btn:hover {
-            background-color: #0b7dda;
-        }
-
-        .invite-friends-btn:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-
-        .friends-invite-dialog {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            z-index: 1000;
-            min-width: 300px;
-        }
-    </style>
 </head>
 <body>
     <div class="controls-container">

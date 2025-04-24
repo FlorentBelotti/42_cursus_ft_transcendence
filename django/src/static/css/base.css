@@ -8,22 +8,17 @@
     flex-shrink: 0;
 }
 
-.footer-links {
-    margin-top: 10px;
-}
-
-.footer-links a {
-    color: white;
-    text-decoration: none;
-    margin: 0 15px;
-    font-size: 14px;
-}
-
-.footer-links a:hover {
+.footer-button {
+    background: none;
+    border: none;
+    color: white; /* Couleur des liens */
+    cursor: pointer;
+    font-size: 16px;
+    padding: 5px 10px;
     text-decoration: underline;
+    transition: color 0.3s;
 }
 
-/* Masquer le footer sur la page snake */
-.snake-page .main-footer {
-    display: none;
+.footer-button:hover {
+    color: #0056b3; /* Couleur au survol */
 }

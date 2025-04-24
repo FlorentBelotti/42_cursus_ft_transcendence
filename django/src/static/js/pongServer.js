@@ -77,7 +77,7 @@ class PongServerGame {
     setupNotificationSocket() {
         const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
         this.notificationSocket = new WebSocket(`${wsProtocol}${window.location.host}/ws/notifications/`);
-        
+
         this.notificationSocket.onopen = () => {
             console.log('Notification WebSocket connected');
         };
@@ -249,10 +249,10 @@ class PongServerGame {
     // Store as instance property for access in callbacks
         this.useForMatchmaking = useForMatchmaking;
         console.log(`Connecting WebSocket (useForMatchmaking: ${useForMatchmaking})`);
-        
+
         const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
         this.socket = new WebSocket(`${wsProtocol}${window.location.host}/ws/match/`);
-        
+
         this.socket.onopen = () => {
             console.log('WebSocket connected for pong game');
 
@@ -898,3 +898,6 @@ window.declarePongForfeit = function() {
 };
 
 const pongGame = new PongServerGame();
+// document.addEventListener('DOMContentLoaded', () => {
+//     const pongServerGame = new PongServerGame();
+// });

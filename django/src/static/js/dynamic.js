@@ -4,6 +4,24 @@ document.addEventListener('DOMContentLoaded', function () {
 	let snakeGame = null;
 	updateAuthButtons();
 
+	function attachFooterButtonEvents() {
+        document.querySelectorAll('.footer-button').forEach(function (button) {
+            // Supprimer les anciens gestionnaires pour éviter les doublons
+            button.removeEventListener('click', handleFooterButtonClick);
+            button.addEventListener('click', handleFooterButtonClick);
+        });
+    }
+
+    // Gestionnaire d'événements pour les clics sur les boutons du footer
+    function handleFooterButtonClick(event) {
+        event.preventDefault();
+        const url = event.currentTarget.getAttribute('data-url');
+        if (window.location.pathname !== new URL(url, window.location.origin).pathname) {
+            window.loadContent(url);
+            history.pushState({ url: url }, '', url);
+        }
+    }
+
 	window.loadContent = function(url, addToHistory = true) {
 
 		window.isDynamicLoading = true;
@@ -25,11 +43,17 @@ document.addEventListener('DOMContentLoaded', function () {
 					const scriptUrl = script.src;
 					if (scriptUrl) {
 						loadScript(scriptUrl, function () {
-							if (scriptUrl.includes('pong.js')) {
+							if (scriptUrl.includes('local.js')) {
 								initPong();
+							}
+							if (scriptUrl.includes('vsBot.js')) {
+								initPongBot();
 							}
 							if (scriptUrl.includes('pongServer.js')) {
 								initPongServer();
+							}
+							if (scriptUrl.includes('tournamentClient.js')) {
+								initTournament();
 							}
 							if (scriptUrl.includes('leaderboard.js')) {
 								loadLeaderboard();
@@ -72,11 +96,15 @@ document.addEventListener('DOMContentLoaded', function () {
 					updateAuthButtons();
 				});
 
+				attachFooterButtonEvents();
 				if (addToHistory) {
 					history.pushState({ url: url }, '', url);
 				}
 			});
 	}
+
+	attachFooterButtonEvents();
+
 
 	function initCubeAnimation() {
         console.log('Initializing cube animation...');
@@ -107,18 +135,38 @@ document.addEventListener('DOMContentLoaded', function () {
 	function initPong() {
 		if (window.pongGame) {
 			window.pongGame.stopGame();
+			window.pongGame = null;
 			window.pongGame = new PongGame();
 		} else {
 			window.pongGame = new PongGame();
 		}
 	}
 
+	function initPongBot() {
+		if (window.pongGameBot) {
+			window.pongGameBot.stopGame();
+			window.pongGameBot = new PongGameBot();
+		} else {
+			window.pongGame = new PongGameBot();
+		}
+	}
+
 	function initPongServer() {
 		if (window.pongServerGame) {
 			window.pongServerGame.stopGame();
+			window.pongServerGame = null;
 			window.pongServerGame = new PongServerGame();
 		} else {
 			window.pongServerGame = new PongServerGame();
+		}
+	}
+
+	function initTournament(){
+		if (window.TournamentClient){
+			window.TournamentClient.stopGame();
+			window.TournamentClient = new TournamentClient();
+		}else {
+			window.TournamentClient = new TournamentClient();
 		}
 	}
 
@@ -202,6 +250,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			} catch (error) {
 				console.error("Error during pongServerGame cleanup:", error);
 			}
+			window.pongServerGame = null;
 		}
 
 		// Clean up gameInvitationsManager
@@ -214,10 +263,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		}
 
-		// Remove global instances to prevent conflicts on reload
-		window.pongServerGame = null;
-		window.pongGame = null;
-
 		// Remove dynamic scripts
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic="true"]');
 		console.log(`Removing ${dynamicScripts.length} dynamic scripts`);
@@ -225,8 +270,14 @@ document.addEventListener('DOMContentLoaded', function () {
 			script.remove();
 		});
 
-		if (window.pongGame && window.pongGame.isGameRunning) {
-			window.pongGame.stopGame();
+		if (window.pongGame) {
+			console.log('Cleaning up PongGame')
+			try{
+				window.pongGame.stopGame();
+			}catch(error){
+				console.error('Error during cleaning PongGame', error);
+			}
+			window.pongGame = null;
 		}
 		if (window.pongServerGame && window.pongServerGame.isGameRunning) {
 			window.pongServerGame.stopGame();

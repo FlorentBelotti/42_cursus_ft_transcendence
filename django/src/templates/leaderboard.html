@@ -35,6 +35,7 @@
             </tbody>
         </table>
     </div>
+
 </div>
 
 <!-- Match History Section -->
@@ -103,6 +104,13 @@
 	</div>
 	{% endif %}
 </div>
+<footer class="main-footer">
+	<div class="footer-links">
+		<button class="footer-button" data-url="{% url 'rgpd' %}">GDPR</button>
+		<button class="footer-button" data-url="{% url 'mentions_legales' %}">Legal notice</button>
+		<button class="footer-button" data-url="{% url 'regles' %}">Site rules</button>
+	</div>
+</footer>
 
 <!-- Add this CSS to match your friends.html styling for profile pictures -->
 <style>

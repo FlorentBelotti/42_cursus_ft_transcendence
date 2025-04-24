@@ -1,4 +1,4 @@
-class PongGame {
+class PongGameBot {
     constructor() {
         this.canvas = document.getElementById('pong');
         this.ctx = this.canvas.getContext('2d');
@@ -21,7 +21,7 @@ class PongGame {
         this.ball = {
             x: this.canvas.width / 2 - this.ballWidth / 2,
             y: this.canvas.height / 2 - this.ballHeight / 2,
-            ballSpeed: 3
+            ballSpeed: 1
         };
         this.directionBall = {
             x: Math.random() < 0.5 ? -1 : 1,
@@ -128,7 +128,8 @@ class PongGame {
         this.directionBall.x /= magnitude;
         this.directionBall.y /= magnitude;
 
-        this.ball.ballSpeed = 4 + (this.count * 0.3);
+        this.count = (this.count || 0) + 1;
+        this.ball.ballSpeed = 1 + (this.count * 0.3);
         this.ball.x = pad.x + (direction === 1 ? this.padWidth + 1 : -this.ballWidth - 1);
         this.ballTouched = true;
     }
@@ -159,7 +160,7 @@ class PongGame {
         this.ball.y = this.canvas.height / 2 - this.ballHeight / 2;
         this.directionBall.x = scorer === 'left' ? -1 : 1;
         this.directionBall.y = 0;
-        this.ball.ballSpeed = 3;
+        this.ball.ballSpeed = 1;
         this.count = 0;
         this.ballTouched = false;
     }
@@ -167,22 +168,29 @@ class PongGame {
     displayScore() {
         this.ctx.fillStyle = 'white';
         this.ctx.textAlign = 'center';
-        this.ctx.font = '30px Noto';
+        this.ctx.font = '30px PPNeueMontreal';
         this.ctx.fillText(this.score.score1, this.canvas.width / 2 - 30, 30);
         this.ctx.fillText(":", this.canvas.width / 2, 30);
         this.ctx.fillText(this.score.score2, this.canvas.width / 2 + 30, 30);
+        this.ctx.font = '20px PPNeueMontreal';
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText("Player 1", 20, 30);
+        this.ctx.textAlign = 'right';
+        this.ctx.fillText("Bot", this.canvas.width - 20, 30);
     }
 
     manageScore() {
-        if (this.score.score1 === 10) return 'left';
-        if (this.score.score2 === 10) return 'right';
+        if (this.score.score1 === 3) return 'left';
+        if (this.score.score2 === 3) return 'right';
         return null;
     }
 
     displayWinner(winner) {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.font = '50px Arial';
-        this.ctx.fillText(`Player ${winner === 'left' ? 1 : 2} wins!`, this.canvas.width / 2, 50);
+        this.ctx.fillStyle = 'white';
+        this.ctx.textAlign = 'center';
+        this.ctx.font = '50px PPNeueMontreal';
+        this.ctx.fillText(`${winner === 'left' ? 'Player 1' : 'Bot'} has won.`, this.canvas.width / 2, this.canvas.height / 2);
         this.stopGame();
     }
 
@@ -278,7 +286,7 @@ class PongGame {
             x: Math.random() < 0.5 ? -1 : 1,
             y: Math.random() < 0.5 ? -1 : 1,
         };
-        this.ball.ballSpeed = 3;
+        this.ball.ballSpeed = 1;
         this.count = 0;
     }
 
@@ -296,8 +304,22 @@ class PongGame {
 }
 
 // Initialiser le jeu Pong
-let pongGame;
+let pongGameBot;
 
 function initPong() {
-    pongGame = new PongGame();
+    const fontStyle = document.createElement('style');
+    fontStyle.textContent = `
+        @font-face {
+            font-family: 'PPNeueMontreal';
+            src: url('/static/fonts/PPNeueMontreal-Medium.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+    `;
+    document.head.appendChild(fontStyle);
+
+    // Wait for police, then start the game
+    document.fonts.ready.then(() => {
+        pongGameBot = new PongGameBot();
+    });
 }

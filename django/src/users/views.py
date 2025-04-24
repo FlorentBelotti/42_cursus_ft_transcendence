@@ -133,7 +133,7 @@ def logout_action(request):
         response.delete_cookie('access_token')
         response.delete_cookie('refresh_token')
         return response
-    return redirect('home') 
+    return redirect('home')
 
 
 class RefreshTokenView(APIView):
@@ -666,3 +666,86 @@ def user_me_detail(request):
             'status': 'error',
             'error': str(e)
         }, status=status.HTTP_401_UNAUTHORIZED)
+
+@api_view(['GET'])
+def get_snake_high_score(request):
+    """
+    Get the list of all players' high scores in Snake game, sorted by score.
+    """
+    try:
+        # Get all users with their snake high scores
+        users = customUser.objects.filter(snake_high_score__gt=0).order_by('-snake_high_score')
+
+        # Create a list of players with their scores
+        players_scores = []
+        for user in users:
+            players_scores.append({
+                'username': user.nickname or user.username,
+                'score': user.snake_high_score,
+                'profile_picture': user.profile_picture.url if user.profile_picture else None
+            })
+
+        # Get current user's score if authenticated
+        current_user_score = None
+        current_user_username = None
+        current_user_picture = None
+        if request.user.is_authenticated:
+            current_user_score = request.user.snake_high_score
+            current_user_username = request.user.nickname or request.user.username
+            current_user_picture = request.user.profile_picture.url if request.user.profile_picture else None
+
+        response_data = {
+            'players_scores': players_scores,
+            'current_user_score': current_user_score,
+            'current_user_username': current_user_username,
+            'current_user_picture': current_user_picture
+        }
+
+        return JsonResponse(response_data)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+def update_snake_score(request):
+    """
+    Update the user's snake high score if the current score is higher.
+    """
+    try:
+        token = request.COOKIES.get('access_token', '')
+        if not token:
+            return JsonResponse({'error': 'Token non trouvé'}, status=401)
+
+        try:
+            validated_token = AccessToken(token)
+            user_id = validated_token['user_id']
+            user = customUser.objects.get(id=user_id)
+        except Exception as e:
+            return JsonResponse({'error': 'Token invalide'}, status=401)
+
+        print("Tentative de mise à jour du score pour l'utilisateur:", user.username)
+
+        score = request.data.get('score')
+        print("Score reçu:", score)
+
+        if not score or not isinstance(score, int):
+            return JsonResponse({'error': 'Score invalide'}, status=400)
+
+        print("Score actuel de l'utilisateur:", user.snake_high_score)
+
+        if score > user.snake_high_score:
+            user.snake_high_score = score
+            user.save()
+            print("Nouveau meilleur score enregistré:", score)
+            return JsonResponse({
+                'success': 'Score mis à jour',
+                'new_high_score': score
+            })
+
+        print("Score non mis à jour car inférieur au meilleur score actuel")
+        return JsonResponse({
+            'success': 'Score non mis à jour',
+            'current_high_score': user.snake_high_score
+        })
+    except Exception as e:
+        print("Erreur lors de la mise à jour du score:", str(e))
+        return JsonResponse({'error': str(e)}, status=500)

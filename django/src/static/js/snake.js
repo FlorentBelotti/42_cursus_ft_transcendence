@@ -11,10 +11,6 @@ class Snake3D {
      }
 
     initSnake() {
-        // Configuration du jeu (reste inchangée)
-		console.log('THREE namespace:', THREE); // Should show the THREE object
-		console.log('FontLoader:', FontLoader);
-
 		this.gridSize = 20;
         this.tileCount = 20;
         this.gameStarted = false;
@@ -22,7 +18,6 @@ class Snake3D {
         this.gameOver = false;
         this.score = 0;
 
-        // État du serpent (reste inchangé)
         this.snake = [{ x: 9, y: 10 }];
         this.direction = { x: 1, y: 0 };
         this.food = {
@@ -35,7 +30,6 @@ class Snake3D {
 		const obstacleCount = 20;
 		this.generateObstacles(obstacleCount);
 
-        // Initialiser Three.js
         this.setupThreeJS();
         this.createGrid();
         this.createSnake();
@@ -1241,12 +1235,6 @@ class Snake3D {
                         font: font,
                         size: 0.4,
                         height: 0.01,
-                        // curveSegments: 12,
-                        // bevelEnabled: true,
-                        // bevelThickness: 0.02,
-                        // bevelSize: 0.02,
-                        // bevelOffset: 0,
-                        // bevelSegments: 5
                     });
 
                     const material = new THREE.MeshStandardMaterial({
@@ -1278,12 +1266,6 @@ class Snake3D {
                             font: font,
                             size: 0.3,
                             height: 0.01,
-                            // curveSegments: 12,
-                            // bevelEnabled: true,
-                            // bevelThickness: 0.02,
-                            // bevelSize: 0.02,
-                            // bevelOffset: 0,
-                            // bevelSegments: 5
                         });
 
                         const playerMesh = new THREE.Mesh(playerGeometry, material);

@@ -127,7 +127,7 @@ class GameEngine:
 
         # Increase ball speed with each hit
         game_state["count"] += 1
-        game_state["ballSpeed"] = 4 + (game_state["count"] * 0.3)
+        game_state["ballSpeed"] = 5 + (game_state["count"] * 0.5)
 
         # Adjust ball position to prevent sticking to paddle
         if player == "player1":

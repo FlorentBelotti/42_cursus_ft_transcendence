@@ -7,6 +7,13 @@
 		<canvas class="noise-canvas"></canvas>
 	</div>
 	<h1 class="main-title">transcendence.</h1>
+	<footer class="main-footer">
+		<div class="footer-links">
+			<button class="footer-button" data-url="{% url 'rgpd' %}">GDPR</button>
+			<button class="footer-button" data-url="{% url 'mentions_legales' %}">Legal notice</button>
+			<button class="footer-button" data-url="{% url 'regles' %}">Site rules</button>
+		</div>
+	</footer>
 
 	<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>

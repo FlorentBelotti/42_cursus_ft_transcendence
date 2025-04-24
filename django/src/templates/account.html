@@ -84,6 +84,13 @@
             </div>
         </div>
     </div>
+	<footer class="main-footer">
+		<div class="footer-links">
+			<button class="footer-button" data-url="{% url 'rgpd' %}">GDPR</button>
+			<button class="footer-button" data-url="{% url 'mentions_legales' %}">Legal notice</button>
+			<button class="footer-button" data-url="{% url 'regles' %}">Site rules</button>
+		</div>
+	</footer>
 
     <script src="{% static 'js/account.js' %}"></script>
 </body>

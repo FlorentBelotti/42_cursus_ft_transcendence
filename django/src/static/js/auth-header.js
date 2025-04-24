@@ -21,19 +21,11 @@ async function updateAuthButtons() {
 				gameButtonsContainer.innerHTML = `
 					<li><button type="button" class="pong-button" id="pong-game-button">Games</button></li>
 				`;
-				const pongModal = document.getElementById('pong-modal');
 				const pongGameButton = document.getElementById('pong-game-button');
 				if (pongGameButton) {
 					pongGameButton.addEventListener('click', function(event) {
 						event.preventDefault();
-						// Sauvegarder le bouton actif actuel comme précédent
-						previousActiveButton = document.querySelector('.nav-button.active, .pong-button.active, #amis-button.active');
-						document.querySelectorAll('.nav-button.active, .pong-button.active, #amis-button.active').forEach(btn => {
-							btn.classList.remove('active');
-						});
-						this.classList.add('active');
-						updateSlider(this);
-						pongModal.style.display = 'block';
+						toggleModal('pong-modal', this);
 					});
 				}
 			}
@@ -44,19 +36,11 @@ async function updateAuthButtons() {
 				<li><button class="nav-button" data-url="${data.urls.account}">Account</button></li>
 			`;
 
-			const friendsModal = document.getElementById('friends-modal');
 			const amisButton = document.getElementById('amis-button');
 			if (amisButton) {
 				amisButton.addEventListener('click', function () {
-					// Sauvegarder le bouton actif actuel comme précédent
-					previousActiveButton = document.querySelector('.nav-button.active, .pong-button.active, #amis-button.active');
-					document.querySelectorAll('.nav-button.active, .pong-button.active, #amis-button.active').forEach(btn => {
-						btn.classList.remove('active');
-					});
-					this.classList.add('active');
-					updateSlider(this);
+					toggleModal('friends-modal', this);
 					fetchFriends();
-					friendsModal.style.display = 'block';
 				});
 			}
 		} else {
@@ -85,6 +69,28 @@ async function updateAuthButtons() {
 		initHeaderSlider();
 	} catch (error) {
 		console.error('Error updating auth buttons:', error);
+	}
+}
+
+function toggleModal(modalId, button){
+	const pongModal = document.getElementById('pong-modal');
+	const friendsModal = document.getElementById('friends-modal');
+
+	previousActiveButton = document.querySelector('.nav-button.active, .pong-button.active, #amis-button.active');
+
+	document.querySelectorAll('.nav-button.active, .pong-button.active, #amis-button.active').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+	button.classList.add('active');
+	updateSlider(button);
+
+	if (modalId === 'pong-modal'){
+		friendsModal.style.display = 'none';
+		pongModal.style.display = 'block';
+	}else if (modalId === 'friends-modal'){
+		friendsModal.style.display = 'block';
+		pongModal.style.display = 'none';
 	}
 }
 
