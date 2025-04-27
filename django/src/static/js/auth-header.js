@@ -169,15 +169,33 @@ function initHeaderSlider() {
 		updateSlider(activeBtn);
 	});
 }
+
 document.addEventListener('DOMContentLoaded', function () {
+	
 	updateAuthButtons();
 
 	const pongModal = document.getElementById('pong-modal');
-	const friendsModal = document.getElementById('friends-modal');
 	const closePongModal = pongModal.querySelector('.close-modal');
+	const pongModalButtons = document.querySelectorAll('.modal-button');
+
+	const friendsModal = document.getElementById('friends-modal');
 	const closeFriendsModal = friendsModal.querySelector('.close-friends-modal');
 
-	// Fermer la modale Pong et revenir au bouton précédent
+	// LISTEN TO CLICK EVENT ON PONG MODAL
+
+	pongModalButtons.forEach(button => {
+		button.addEventListener('click', function() {
+			const url = button.getAttribute('data-url');
+			// OPTIONNAL : handle re-click
+			if (url) {
+				window.loadContent(url);
+				history.pushState({ url: url }, '', url);
+			}
+		})
+	})
+
+	// CLOSE
+
 	closePongModal.addEventListener('click', function () {
 		pongModal.style.display = 'none';
 		if (previousActiveButton) {
@@ -189,20 +207,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 
-	window.addEventListener('click', function (event) {
-		if (event.target === pongModal) {
-			pongModal.style.display = 'none';
-			if (previousActiveButton) {
-				document.querySelectorAll('.nav-button.active, .pong-button.active, #amis-button.active').forEach(btn => {
-					btn.classList.remove('active');
-				});
-				previousActiveButton.classList.add('active');
-				updateSlider(previousActiveButton);
-			}
-		}
-	});
-
-	// Fermer la modale Friends et revenir au bouton précédent
 	closeFriendsModal.addEventListener('click', function () {
 		friendsModal.style.display = 'none';
 		if (previousActiveButton) {
@@ -211,19 +215,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			});
 			previousActiveButton.classList.add('active');
 			updateSlider(previousActiveButton);
-		}
-	});
-
-	window.addEventListener('click', function (event) {
-		if (event.target === friendsModal) {
-			friendsModal.style.display = 'none';
-			if (previousActiveButton) {
-				document.querySelectorAll('.nav-button.active, .pong-button.active, #amis-button.active').forEach(btn => {
-					btn.classList.remove('active');
-				});
-				previousActiveButton.classList.add('active');
-				updateSlider(previousActiveButton);
-			}
 		}
 	});
 });
