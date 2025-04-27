@@ -133,12 +133,17 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function initPongServer() {
-		if (window.pongServerGame) {
-			window.pongServerGame.stopGame();
+		setTimeout(() => {
+			if (window.pongServerGame) {
+				console.log('Replacing existing pongServerGame instance');
+				// Just to be extra safe
+				window.pongServerGame.cleanup();
+				window.pongServerGame = null;
+			}
+			
+			console.log('Creating new PongServerGame instance');
 			window.pongServerGame = new PongServerGame();
-		} else {
-			window.pongServerGame = new PongServerGame();
-		}
+		}, 100);
 	}
 
 	function  initPongAnimation(){
@@ -176,6 +181,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	function cleanupScriptsAndEvents() {
 
+		let cleanupComplete = false;
+
 		if (typeof window.declarePongForfeit === 'function') {
 			console.log("MATCH FORFEIT: Calling global forfeit declaration");
 			window.declarePongForfeit();
@@ -195,11 +202,30 @@ document.addEventListener('DOMContentLoaded', function () {
 			try {
 				console.log("Forcing socket close during cleanup");
 				if (window.pongServerGame.socket.readyState === WebSocket.OPEN) {
+					// Set a flag to prevent reconnection attempts
+					window.pongServerGame.isPageUnloading = true;
+					window.pongServerGame.isGameRunning = false;
+					
+					// Send forfeit message and wait a moment before proceeding
 					window.pongServerGame.socket.send(JSON.stringify({
 						type: 'declare_forfeit'
 					}));
+					
+					// Disable all socket callbacks to prevent reconnection
 					window.pongServerGame.socket.onclose = null;
+					window.pongServerGame.socket.onerror = null;
+					window.pongServerGame.socket.onopen = null;
+					window.pongServerGame.socket.onmessage = null;
+					
+					// Close the socket
 					window.pongServerGame.socket.close(1000, "Navigation cleanup");
+					
+					// Also close notification socket if it exists
+					if (window.pongServerGame.notificationSocket &&
+						window.pongServerGame.notificationSocket.readyState === WebSocket.OPEN) {
+						window.pongServerGame.notificationSocket.onclose = null;
+						window.pongServerGame.notificationSocket.close(1000, "Navigation cleanup");
+					}
 				}
 			} catch (e) {
 				console.error("Error closing socket:", e);
