@@ -897,4 +897,12 @@ window.declarePongForfeit = function() {
     }
 };
 
-const pongGame = new PongServerGame();
+window.initPongServerGame = function() {
+    // Only create the instance if it doesn't already exist
+    if (!window.pongServerGame) {
+        console.log('Creating pongServerGame instance from initPongServerGame');
+        window.pongServerGame = new PongServerGame();
+    } else {
+        console.log('pongServerGame instance already exists, skipping creation');
+    }
+};
