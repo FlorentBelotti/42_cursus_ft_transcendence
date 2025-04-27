@@ -110,18 +110,3 @@ if (addFriendButton && friendUsernameInput) {
 	});
 }
 
-const friendsModal = document.getElementById('friends-modal');
-const closeFriendsModal = document.querySelector('.close-friends-modal');
-
-if (closeFriendsModal) {
-	closeFriendsModal.addEventListener('click', function () {
-		friendsModal.style.display = 'none';
-	});
-}
-
-window.addEventListener('click', function (event) {
-	if (event.target === friendsModal) {
-		friendsModal.style.display = 'none';
-	}
-});
-

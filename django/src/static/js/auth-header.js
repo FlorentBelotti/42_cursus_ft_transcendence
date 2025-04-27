@@ -22,6 +22,7 @@ async function updateAuthButtons() {
 					<li><button type="button" class="pong-button" id="pong-game-button">Games</button></li>
 				`;
 				const pongModal = document.getElementById('pong-modal');
+				const friendsModal = document.getElementById('friends-modal');
 				const pongGameButton = document.getElementById('pong-game-button');
 				if (pongGameButton) {
 					pongGameButton.addEventListener('click', function(event) {
@@ -33,6 +34,9 @@ async function updateAuthButtons() {
 						});
 						this.classList.add('active');
 						updateSlider(this);
+						if (friendsModal){
+							friendsModal.style.display = 'none';
+						}
 						pongModal.style.display = 'block';
 					});
 				}
@@ -45,6 +49,7 @@ async function updateAuthButtons() {
 			`;
 
 			const friendsModal = document.getElementById('friends-modal');
+			const pongModal = document.getElementById('pong-modal');
 			const amisButton = document.getElementById('amis-button');
 			if (amisButton) {
 				amisButton.addEventListener('click', function () {
@@ -55,6 +60,9 @@ async function updateAuthButtons() {
 					});
 					this.classList.add('active');
 					updateSlider(this);
+					if (pongModal){
+						pongModal.style.display = 'none';
+					}
 					fetchFriends();
 					friendsModal.style.display = 'block';
 				});
