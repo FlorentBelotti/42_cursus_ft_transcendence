@@ -423,7 +423,7 @@ class GameInvitationsManager {
     }
 }
 
-// window.gameInvitationsManager = window.gameInvitationsManager || new GameInvitationsManager();
+window.gameInvitationsManager = window.gameInvitationsManager || new GameInvitationsManager();
 
 // document.addEventListener('DOMContentLoaded', function() {
 //     if (!window.isDynamicLoading) {
