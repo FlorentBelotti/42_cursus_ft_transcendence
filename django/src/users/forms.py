@@ -6,14 +6,16 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserChangeForm, PasswordChangeForm
 from .models import customUser
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
+import os
 
 User = get_user_model()
 
 class CustomLoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs.update({'placeholder': 'Nom d\'utilisateur'})
-        self.fields['password'].widget.attrs.update({'placeholder': 'Mot de passe'})
+        self.fields['username'].widget.attrs.update({'placeholder': 'Username'})
+        self.fields['password'].widget.attrs.update({'placeholder': 'Password'})
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -32,13 +34,16 @@ class RegisterForm(UserCreationForm):
     def clean_username(self):
         username = self.cleaned_data.get("username")
         if customUser.objects.filter(username=username).exists():
-            raise forms.ValidationError("Ce nom d'utilisateur est déjà pris.")
+            raise forms.ValidationError("Username already use.")
+        if not 3 <= len(username) <= 30:
+            raise forms.ValidationError("Username must be between 3 and 30 characters.")
+    
         return username
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
         if customUser.objects.filter(email=email).exists():
-            raise forms.ValidationError("Cet email est déjà utilisé.")
+            raise forms.ValidationError("Email already use.")
         return email
 
 class UserUpdateForm(UserChangeForm):
@@ -49,24 +54,33 @@ class UserUpdateForm(UserChangeForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Remove help texts
         for field in self.fields:
             self.fields[field].help_text = ''
 
-        # Add form-control class to inputs
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.TextInput):
                 field.widget.attrs.update({'class': 'form-control'})
 
-        # Remove password fields
         self.fields.pop('password', None)
         self.fields.pop('password1', None)
         self.fields.pop('password2', None)
 
+    def clean_profile_picture(self):
+        image = self.cleaned_data.get('profile_picture')
+        if image:
+            ext = os.path.splitext(image.name)[1]
+            valid_extensions = ['.jpg', '.jpeg', '.png']
+            if not ext.lower() in valid_extensions:
+                raise ValidationError('Unsupported file extension. Only .jpg and .png are allowed.')
+
+            if image.size > 2 * 1024 * 1024:
+                raise ValidationError('Image maximum size is 2MB.')
+
+        return image
+
 class CustomPasswordChangeForm(PasswordChangeForm):
     class Meta:
         model = customUser
-    # Remove help texts
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields:
