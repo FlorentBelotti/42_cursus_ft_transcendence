@@ -4,6 +4,7 @@ from views import views
 from django.conf import settings
 from django.conf.urls.static import static
 from users.views import password_reset_confirm, password_reset_request
+from django_prometheus import exports
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/home/', permanent=True)),
@@ -39,6 +40,7 @@ urlpatterns = [
     path('api/snake/update-score/', views.update_snake_score, name='update_snake_score'),
 
     path('', include('django_prometheus.urls')),
+    path('metrics/', exports.ExportToDjangoView, name='prometheus-metrics'),
 ]
 
 if settings.DEBUG:

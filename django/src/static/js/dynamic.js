@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', function () {
 							if (scriptUrl.includes('pongServer.js')) {
 								initPongServer();
 							}
+							if (scriptUrl.includes('tournamentClient.js')) {
+								initPongTournament();
+							}
 							if (scriptUrl.includes('leaderboard.js')) {
 								loadLeaderboard();
 							}
@@ -138,6 +141,15 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.pongServerGame = new PongServerGame();
 		} else {
 			window.pongServerGame = new PongServerGame();
+		}
+	}
+
+	function initPongTournament() {
+		if (window.tournament) {
+			window.tournament.stopGame();
+			window.tournament = new TournamentClient();
+		} else {
+			window.tournament = new TournamentClient();
 		}
 	}
 

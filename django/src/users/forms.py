@@ -77,6 +77,13 @@ class UserUpdateForm(UserChangeForm):
                 raise ValidationError('Image maximum size is 2MB.')
 
         return image
+    
+    def clean_username(self):
+        username = self.cleaned_data.get("username")
+        if customUser.objects.filter(username=username).exists():
+            raise forms.ValidationError("Username already use.")
+        if not 3 <= len(username) <= 30:
+            raise forms.ValidationError("Username must be between 3 and 30 characters.")
 
 class CustomPasswordChangeForm(PasswordChangeForm):
     class Meta:
