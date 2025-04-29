@@ -236,14 +236,14 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 
 		// Clean up gameInvitationsManager
-		if (window.gameInvitationsManager) {
-			console.log("Cleaning up gameInvitationsManager");
-			try {
-				window.gameInvitationsManager.cleanup();
-			} catch (error) {
-				console.error("Error during gameInvitationsManager cleanup:", error);
-			}
-		}
+		// if (window.gameInvitationsManager) {
+		// 	console.log("Cleaning up gameInvitationsManager");
+		// 	try {
+		// 		window.gameInvitationsManager.cleanup();
+		// 	} catch (error) {
+		// 		console.error("Error during gameInvitationsManager cleanup:", error);
+		// 	}
+		// }
 
 		// Remove global instances to prevent conflicts on reload
 		window.pongServerGame = null;
@@ -270,12 +270,10 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.sphereAnimation.cleanup();
 			window.sphereAnimation = null;
 		}
-		if (window.gameInvitationsManager) {
-			window.gameInvitationsManager.cleanup();
-		}
-		if (window.gameInvitationsManager) {
-			window.gameInvitationsManager.cleanup();
-		}
+		// if (window.gameInvitationsManager) {
+		// 	window.gameInvitationsManager.cleanup();
+		// }
+
 		if (window.cubeAnimation) {
 			console.log('Cleaning up cube animation...');
 			window.cubeAnimation.cleanup();

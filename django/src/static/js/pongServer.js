@@ -77,7 +77,7 @@ class PongServerGame {
     setupNotificationSocket() {
         const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
         this.notificationSocket = new WebSocket(`${wsProtocol}${window.location.host}/ws/notifications/`);
-        
+
         this.notificationSocket.onopen = () => {
             console.log('Notification WebSocket connected');
         };
@@ -116,6 +116,10 @@ class PongServerGame {
     handleFriendInvite(username) {
         console.log(`Pong Game handling friend invite for: ${username}`);
 
+		// Reset game state if coming from a previous game
+		if (this.isGameRunning) {
+			this.stopGame();
+		}
         // Connect to WebSocket if not already connected
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
             console.log('Connecting to WebSocket for invitation (NOT for matchmaking)');
@@ -249,10 +253,10 @@ class PongServerGame {
     // Store as instance property for access in callbacks
         this.useForMatchmaking = useForMatchmaking;
         console.log(`Connecting WebSocket (useForMatchmaking: ${useForMatchmaking})`);
-        
+
         const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
         this.socket = new WebSocket(`${wsProtocol}${window.location.host}/ws/match/`);
-        
+
         this.socket.onopen = () => {
             console.log('WebSocket connected for pong game');
 
@@ -462,6 +466,12 @@ class PongServerGame {
             this.stopGame();
             this.displayWelcomeScreen();
 
+			setTimeout(() => {
+				if (window.gameInvitationsManager) {
+					window.gameInvitationsManager.resetInvitations();
+				}
+			}, 1000);
+
         } else if (data.type === 'matchmaking_status' || data.type === 'waiting') {
             // Handle matchmaking status updates
             this.displayMatchmakingStatus(data);
@@ -623,6 +633,9 @@ class PongServerGame {
         console.log("Stopping game and cleaning up resources");
         this.isGameRunning = false;
         this.playerNumber = null;
+		this.match_id = null;
+		this.pendingInvitedGame = null;
+		this.useForMatchmaking = false;
 
         // Cancel any pending matchmaking
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -646,12 +659,22 @@ class PongServerGame {
         if (this.matchmakingButton) {
             this.matchmakingButton.disabled = false;
             this.matchmakingButton.textContent = 'Search for a game';
+			this.matchmakingButton.classList.remove('disabled');
+			this.matchmakingButton.title = '';
         }
 
         if (this.inviteFriendsBtn) {
             this.inviteFriendsBtn.disabled = false;
+			this.inviteFriendsBtn.classList.remove('disabled');
+			this.inviteFriendsBtn.title = '';
         }
+
+		if (this.friendInviteManager) {
+			this.friendInviteManager.hasInvitedSomeone = false;
+		}
     }
+
+
 
     draw(gameState) {
         if (!gameState) {

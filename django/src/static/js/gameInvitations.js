@@ -362,8 +362,11 @@ class GameInvitationsManager {
 
             if (data.success) {
                 if (action === 'accept') {
-                    console.log("Invitation accepted, starting game...");
-                    this.startInvitedGame(data.game_id, data.sender_username);
+					console.log("Invitation accepted, starting game...");
+					if (card) card.remove();
+					this.showStatusNotification(`Invitation accepted! Joining game...`);
+					this.startInvitedGame(data.game_id, data.sender_username);
+					this.fetchInvitationsWithForce();
                 } else {
                     console.log("Invitation declined");
                     // Just refresh the invitations list
@@ -383,6 +386,14 @@ class GameInvitationsManager {
             }
         });
     }
+
+	resetInvitations() {
+		this.activeInvitationIds = new Set();
+		if (this.invitationsContainer) {
+			this.invitationsContainer.innerHTML = '';
+		}
+		this.fetchInvitationsWithForce();
+	}
 
     startInvitedGame(gameId, opponentUsername) {
         console.log(`Starting invited game ${gameId} with ${opponentUsername}`);
