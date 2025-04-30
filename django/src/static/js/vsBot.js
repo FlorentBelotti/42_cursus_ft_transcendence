@@ -1,4 +1,4 @@
-class PongGame {
+class PongBot {
     constructor() {
         this.canvas = document.getElementById('pong');
         this.ctx = this.canvas.getContext('2d');
@@ -296,8 +296,8 @@ class PongGame {
 }
 
 // Initialiser le jeu Pong
-let pongGame;
+let PongBot;
 
 function initPong() {
-    pongGame = new PongGame();
+    PongBot = new PongBot();
 }

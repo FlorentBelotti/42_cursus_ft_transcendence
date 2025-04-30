@@ -42,8 +42,11 @@ document.addEventListener('DOMContentLoaded', function () {
 					const scriptUrl = script.src;
 					if (scriptUrl) {
 						loadScript(scriptUrl, function () {
-							if (scriptUrl.includes('pong.js')) {
+							if (scriptUrl.includes('local.js')) {
 								initPong();
+							}
+							if (scriptUrl.includes('vsBot.js')) {
+								initBot();
 							}
 							if (scriptUrl.includes('pongServer.js')) {
 								initPongServer();
@@ -132,6 +135,15 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.pongGame = new PongGame();
 		} else {
 			window.pongGame = new PongGame();
+		}
+	}
+
+	function initBot() {
+		if (window.pongBot) {
+			window.pongBot.stopGame();
+			window.pongBot = new PongGame();
+		} else {
+			window.pongBot = new PongGame();
 		}
 	}
 
