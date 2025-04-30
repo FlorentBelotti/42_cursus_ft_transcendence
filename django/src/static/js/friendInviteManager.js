@@ -202,6 +202,12 @@ class FriendInviteManager {
         });
     }
 
+    cleanup() {
+        console.log("[FriendInviteManager CLEANUP]: Cleaning up resources...");
+        this.hasInvitedSomeone = false;
+        console.log("[FriendInviteManager CLEANUP]: Cleanup completed.");
+    }
+
     displayFriendsList(friendsData) {
         const friendsList = document.getElementById('friendsList');
 

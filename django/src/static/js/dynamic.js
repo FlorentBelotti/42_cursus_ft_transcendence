@@ -189,113 +189,102 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function cleanupScriptsAndEvents() {
-
+		console.log("[CLEANUP]: Starting cleanup process...");
+	
+		// 1. Declare Pong Forfeit
 		if (typeof window.declarePongForfeit === 'function') {
-			console.log("[DYNAMIC]: Calling global forfeit declaration");
+			console.log("[CLEANUP]: Declaring Pong forfeit...");
 			window.declarePongForfeit();
 		}
-
+	
+		// 2. Cancel Pending Invitations
 		if (typeof window.cancelPendingPongInvitations === 'function') {
-			console.log("[DYNAMIC]: Calling global invitation cancellation");
+			console.log("[CLEANUP]: Cancelling pending invitations...");
 			window.cancelPendingPongInvitations();
 		}
-
-		if (typeof window.declarePongTournamentForfeit === 'function') {
-			console.log("[DYNAMIC]: Calling global forfeit declaration");
-			window.declarePongTournamentForfeit();
-		}
-
-		if (window.pongServerGame && window.pongServerGame.socket) {
-			try {
-				console.log("Forcing socket close during cleanup");
-				if (window.pongServerGame.socket.readyState === WebSocket.OPEN) {
-					window.pongServerGame.socket.send(JSON.stringify({
-						type: 'declare_forfeit'
-					}));
-					window.pongServerGame.socket.onclose = null;
-					window.pongServerGame.socket.close(1000, "Navigation cleanup");
-				}
-			} catch (e) {
-				console.error("Error closing socket:", e);
-			}
-		}
-
+	
+		// 3. Cleanup PongServerGame
 		if (window.pongServerGame) {
-			console.log("Cleaning up pongServerGame");
+			console.log("[CLEANUP]: Cleaning up PongServerGame...");
 			try {
-				// Make sure the socket is closed
-				if (window.pongServerGame.socket &&
-					window.pongServerGame.socket.readyState === WebSocket.OPEN) {
-					console.log("Closing socket connection");
-					window.pongServerGame.socket.close();
-				}
-
-				// Set flags to prevent further activity
-				window.pongServerGame.isPageUnloading = true;
+				window.pongServerGame.cleanup();
+				window.pongServerGame = null;
 			} catch (error) {
-				console.error("Error during pongServerGame cleanup:", error);
-			}
-		}
-
-		if (window.friendInviteManager) {
-			console.log("Cleaning up friendInviteManager");
-			try {
-				window.friendInviteManager = null;
-			} catch (error) {
-				console.error("Error during friendInviteManager cleanup:", error);
+				console.error("[CLEANUP]: Error during PongServerGame cleanup:", error);
 			}
 		}
 	
-		// Clean up gameInvitationsManager
-		// if (window.gameInvitationsManager) {
-		// 	console.log("Cleaning up gameInvitationsManager");
-		// 	try {
-		// 		window.gameInvitationsManager.cleanup();
-		// 	} catch (error) {
-		// 		console.error("Error during gameInvitationsManager cleanup:", error);
-		// 	}
-		// }
-
-		// Remove global instances to prevent conflicts on reload
-		window.pongServerGame = null;
-		window.pongGame = null;
-
-		// Remove dynamic scripts
+		// 4. Cleanup FriendInviteManager
+		if (window.friendInviteManager) {
+			console.log("[CLEANUP]: Cleaning up FriendInviteManager...");
+			try {
+				window.friendInviteManager = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during FriendInviteManager cleanup:", error);
+			}
+		}
+	
+		// 5. Cleanup GameInvitationsManager
+		if (window.gameInvitationsManager) {
+			console.log("[CLEANUP]: Cleaning up GameInvitationsManager...");
+			try {
+				window.gameInvitationsManager.cleanup();
+				window.gameInvitationsManager = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during GameInvitationsManager cleanup:", error);
+			}
+		}
+	
+		// 6. Cleanup Snake Game
+		if (window.snakeGame) {
+			console.log("[CLEANUP]: Cleaning up SnakeGame...");
+			try {
+				window.snakeGame.cleanup();
+				window.snakeGame = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during SnakeGame cleanup:", error);
+			}
+		}
+	
+		// 7. Cleanup Animations
+		if (window.cubeAnimation) {
+			console.log("[CLEANUP]: Cleaning up CubeAnimation...");
+			try {
+				window.cubeAnimation.cleanup();
+				window.cubeAnimation = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during CubeAnimation cleanup:", error);
+			}
+		}
+	
+		if (window.sphereAnimation) {
+			console.log("[CLEANUP]: Cleaning up SphereAnimation...");
+			try {
+				window.sphereAnimation.cleanup();
+				window.sphereAnimation = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during SphereAnimation cleanup:", error);
+			}
+		}
+	
+		if (window.PongAnimation) {
+			console.log("[CLEANUP]: Cleaning up PongAnimation...");
+			try {
+				window.PongAnimation.stopAnimation();
+				window.PongAnimation = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during PongAnimation cleanup:", error);
+			}
+		}
+	
+		// 8. Remove Dynamic Scripts
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic="true"]');
-		console.log(`Removing ${dynamicScripts.length} dynamic scripts`);
+		console.log(`[CLEANUP]: Removing ${dynamicScripts.length} dynamic scripts...`);
 		dynamicScripts.forEach(script => {
 			script.remove();
 		});
-
-		if (window.pongGame && window.pongGame.isGameRunning) {
-			window.pongGame.stopGame();
-		}
-		if (window.pongServerGame && window.pongServerGame.isGameRunning) {
-			window.pongServerGame.stopGame();
-		}
-		if (window.snakeGame){
-			window.snakeGame.cleanup();
-			window.snakeGame = null;
-		}
-		if (window.sphereAnimation) {
-			window.sphereAnimation.cleanup();
-			window.sphereAnimation = null;
-		}
-		// if (window.gameInvitationsManager) {
-		// 	window.gameInvitationsManager.cleanup();
-		// }
-
-		if (window.cubeAnimation) {
-			console.log('Cleaning up cube animation...');
-			window.cubeAnimation.cleanup();
-			window.cubeAnimation = null;
-		}
-
-		if (window.PongAnimation) {
-			console.log("Cleaning up Pong animation...");
-			window.PongAnimation.stopAnimation();
-			window.PongAnimation = null;
-		}
+	
+		console.log("[CLEANUP]: Cleanup process completed.");
 	}
 
 	function loadScript(url, callback, isModule = false) {

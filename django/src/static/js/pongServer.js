@@ -609,24 +609,34 @@ class PongServerGame {
     }
 
     cleanup() {
-
-        console.log("[MATCH CLEANUP]: Cleaning up PongServerGame resources");
+        console.log("[PongServerGame CLEANUP]: Cleaning up resources...");
+    
         // Mark as unloading to prevent reconnection attempts
         this.isPageUnloading = true;
-
-        // Close WebSocket connections if open
+    
+        // Close WebSocket connections
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            this.socket.close(1000, "Cleaning up before new game");
+            console.log("[PongServerGame CLEANUP]: Closing game WebSocket...");
+            this.socket.close(1000, "Cleaning up before navigation");
         }
-
+    
         if (this.notificationSocket && this.notificationSocket.readyState === WebSocket.OPEN) {
+            console.log("[PongServerGame CLEANUP]: Closing notification WebSocket...");
             this.notificationSocket.close(1000, "Cleaning up notifications");
         }
-
+    
         // Cancel any pending tasks
         if (this.reconnectTimeout) {
             clearTimeout(this.reconnectTimeout);
         }
+    
+        // Reset game state
+        this.isGameRunning = false;
+        this.playerNumber = null;
+        this.match_id = null;
+        this.pendingInvitedGame = null;
+    
+        console.log("[PongServerGame CLEANUP]: Cleanup completed.");
     }
 
     stopGame() {

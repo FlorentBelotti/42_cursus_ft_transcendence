@@ -214,16 +214,20 @@ class GameInvitationsManager {
     //==========================================================//
 
     cleanup() {
-        console.log("Cleaning up game invitations manager");
+        console.log("[GameInvitationsManager CLEANUP]: Cleaning up resources...");
+    
+        // Clear polling interval
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
             this.pollingInterval = null;
         }
-
+    
+        // Remove event listeners
         document.removeEventListener('visibilitychange', this.handleVisibilityChange);
         window.removeEventListener('storage', this.handleStorageEvent);
-
+    
         this.isInitialized = false;
+        console.log("[GameInvitationsManager CLEANUP]: Cleanup completed.");
     }
 
 
