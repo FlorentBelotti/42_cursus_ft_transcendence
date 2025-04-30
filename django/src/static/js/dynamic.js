@@ -191,17 +191,17 @@ document.addEventListener('DOMContentLoaded', function () {
 	function cleanupScriptsAndEvents() {
 
 		if (typeof window.declarePongForfeit === 'function') {
-			console.log("MATCH FORFEIT: Calling global forfeit declaration");
+			console.log("[DYNAMIC]: Calling global forfeit declaration");
 			window.declarePongForfeit();
 		}
 
 		if (typeof window.cancelPendingPongInvitations === 'function') {
-			console.log("INVITE CANCEL: Calling global invitation cancellation");
+			console.log("[DYNAMIC]: Calling global invitation cancellation");
 			window.cancelPendingPongInvitations();
 		}
 
 		if (typeof window.declarePongTournamentForfeit === 'function') {
-			console.log("TOURNAMENT FORFEIT: Calling global forfeit declaration");
+			console.log("[DYNAMIC]: Calling global forfeit declaration");
 			window.declarePongTournamentForfeit();
 		}
 
