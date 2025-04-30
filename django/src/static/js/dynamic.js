@@ -237,6 +237,15 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		}
 
+		if (window.friendInviteManager) {
+			console.log("Cleaning up friendInviteManager");
+			try {
+				window.friendInviteManager = null;
+			} catch (error) {
+				console.error("Error during friendInviteManager cleanup:", error);
+			}
+		}
+	
 		// Clean up gameInvitationsManager
 		// if (window.gameInvitationsManager) {
 		// 	console.log("Cleaning up gameInvitationsManager");
