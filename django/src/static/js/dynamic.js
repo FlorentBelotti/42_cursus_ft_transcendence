@@ -235,49 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		}
 	
-		// 6. Cleanup Snake Game
-		if (window.snakeGame) {
-			console.log("[CLEANUP]: Cleaning up SnakeGame...");
-			try {
-				window.snakeGame.cleanup();
-				window.snakeGame = null;
-			} catch (error) {
-				console.error("[CLEANUP]: Error during SnakeGame cleanup:", error);
-			}
-		}
-	
-		// 7. Cleanup Animations
-		if (window.cubeAnimation) {
-			console.log("[CLEANUP]: Cleaning up CubeAnimation...");
-			try {
-				window.cubeAnimation.cleanup();
-				window.cubeAnimation = null;
-			} catch (error) {
-				console.error("[CLEANUP]: Error during CubeAnimation cleanup:", error);
-			}
-		}
-	
-		if (window.sphereAnimation) {
-			console.log("[CLEANUP]: Cleaning up SphereAnimation...");
-			try {
-				window.sphereAnimation.cleanup();
-				window.sphereAnimation = null;
-			} catch (error) {
-				console.error("[CLEANUP]: Error during SphereAnimation cleanup:", error);
-			}
-		}
-	
-		if (window.PongAnimation) {
-			console.log("[CLEANUP]: Cleaning up PongAnimation...");
-			try {
-				window.PongAnimation.stopAnimation();
-				window.PongAnimation = null;
-			} catch (error) {
-				console.error("[CLEANUP]: Error during PongAnimation cleanup:", error);
-			}
-		}
-	
-		// 8. Remove Dynamic Scripts
+		// 6. Remove Dynamic Scripts
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic="true"]');
 		console.log(`[CLEANUP]: Removing ${dynamicScripts.length} dynamic scripts...`);
 		dynamicScripts.forEach(script => {

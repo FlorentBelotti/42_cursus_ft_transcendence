@@ -1,6 +1,11 @@
 class PongServerGame {
     constructor() {
         this.canvas = document.getElementById('pongServer');
+        if (!this.canvas) {
+            console.error("Canvas element not found! Aborting PongServerGame initialization.");
+            return;
+        }
+
         this.ctx = this.canvas.getContext('2d');
         this.matchmakingButton = document.getElementById('matchmaking');
         this.inviteFriendsBtn = document.getElementById('inviteFriendsBtn');
@@ -12,7 +17,7 @@ class PongServerGame {
         this.playerNumber = null;
         this.playerInfo = {
             player1: { username: "", nickname: "", elo: 0 },
-            player2: { username: "", nickname: "", elo: 0}
+            player2: { username: "", nickname: "", elo: 0 }
         };
         this.keysPressed = {};
 
@@ -853,9 +858,7 @@ window.cancelPendingPongInvitations = function() {
             console.log("CANCEL INVITE");
             window.pongServerGame.cancelPendingInvitations();
         } else {
-            // Create temporary instance if needed
-            const tempInstance = new PongServerGame();
-            tempInstance.cancelPendingInvitations();
+            console.log("No active PongServerGame instance. Skipping invitation cancellation.");
         }
         console.log("Invitations cancelled successfully via global function");
     } catch (error) {
