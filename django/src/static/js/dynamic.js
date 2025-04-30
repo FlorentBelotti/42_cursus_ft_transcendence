@@ -225,15 +225,15 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	
 		// 5. Cleanup GameInvitationsManager
-		if (window.gameInvitationsManager) {
-			console.log("[CLEANUP]: Cleaning up GameInvitationsManager...");
-			try {
-				window.gameInvitationsManager.cleanup();
-				window.gameInvitationsManager = null;
-			} catch (error) {
-				console.error("[CLEANUP]: Error during GameInvitationsManager cleanup:", error);
-			}
-		}
+		// if (window.gameInvitationsManager) {
+		// 	console.log("[CLEANUP]: Cleaning up GameInvitationsManager...");
+		// 	try {
+		// 		window.gameInvitationsManager.cleanup();
+		// 		window.gameInvitationsManager = null;
+		// 	} catch (error) {
+		// 		console.error("[CLEANUP]: Error during GameInvitationsManager cleanup:", error);
+		// 	}
+		// }
 	
 		// 6. Remove Dynamic Scripts
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic="true"]');
@@ -246,28 +246,29 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function loadScript(url, callback, isModule = false) {
-		// Check if script is already loaded (by data-src attribute)
+		// Check if the script is already loaded
 		const existingScript = document.querySelector(`script[data-src="${url}"]`);
 		if (existingScript) {
 			console.log(`Script already loaded: ${url}`);
-			if (callback) callback();
+			if (callback) callback(); // Call the callback if provided
 			return;
 		}
-
+	
+		// Create and load the script
 		const script = document.createElement('script');
 		script.setAttribute('data-dynamic', 'true');
-		script.setAttribute('data-src', url);  // Add this attribute to check for duplicates
-
+		script.setAttribute('data-src', url); // Add this attribute to track loaded scripts
+	
 		if (isModule) {
 			script.type = 'module';
 		}
-
+	
 		if (callback) {
-			script.onload = function() {
+			script.onload = function () {
 				callback();
 			};
 		}
-
+	
 		script.src = url;
 		document.body.appendChild(script);
 	}
