@@ -137,11 +137,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	function initPongServer() {
 		if (window.pongServerGame) {
+			console.log('[DYNAMIC]: Cleaning up existing game instance.');
 			window.pongServerGame.stopGame();
-			window.pongServerGame = new PongServerGame();
-		} else {
-			window.pongServerGame = new PongServerGame();
+			window.pongServerGame.cleanup();
+			window.pongServerGame = null;
 		}
+		console.log('[DYNAMIC]: Creating new game instance.');
+		window.pongServerGame = new PongServerGame();
 	}
 
 	function initPongTournament() {

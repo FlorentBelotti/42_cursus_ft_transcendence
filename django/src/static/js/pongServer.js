@@ -609,18 +609,18 @@ class PongServerGame {
     }
 
     cleanup() {
-        console.log("Cleaning up PongServerGame resources");
 
+        console.log("[MATCH CLEANUP]: Cleaning up PongServerGame resources");
         // Mark as unloading to prevent reconnection attempts
         this.isPageUnloading = true;
 
         // Close WebSocket connections if open
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            this.socket.close();
+            this.socket.close(1000, "Cleaning up before new game");
         }
 
         if (this.notificationSocket && this.notificationSocket.readyState === WebSocket.OPEN) {
-            this.notificationSocket.close();
+            this.notificationSocket.close(1000, "Cleaning up notifications");
         }
 
         // Cancel any pending tasks
@@ -673,8 +673,6 @@ class PongServerGame {
 			this.friendInviteManager.hasInvitedSomeone = false;
 		}
     }
-
-
 
     draw(gameState) {
         if (!gameState) {
