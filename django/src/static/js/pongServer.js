@@ -416,7 +416,7 @@ class PongServerGame {
     }
 
     handleMessage(data) {
-        console.log('Received message:', data);
+        // console.log('Received message:', data);
 
         // Handle different message types
         if (data.type === 'match_created') {
