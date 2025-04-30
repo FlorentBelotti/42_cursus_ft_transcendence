@@ -673,11 +673,22 @@ class PongServerGame {
 
     stopGame() {
         console.log("Stopping game and cleaning up resources");
+        // Immediately clear the canvas to prevent the previous game state from showing
+        if (this.ctx && this.canvas) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        
         this.isGameRunning = false;
         this.playerNumber = null;
-		this.match_id = null;
-		this.pendingInvitedGame = null;
-		this.useForMatchmaking = false;
+        this.match_id = null;
+        this.pendingInvitedGame = null;
+        this.useForMatchmaking = false;
+        
+        // Reset player info
+        this.playerInfo = {
+            player1: { username: "", nickname: "", elo: 0 },
+            player2: { username: "", nickname: "", elo: 0 }
+        };
 
         // Cancel any pending matchmaking
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -701,19 +712,19 @@ class PongServerGame {
         if (this.matchmakingButton) {
             this.matchmakingButton.disabled = false;
             this.matchmakingButton.textContent = 'Search for a game';
-			this.matchmakingButton.classList.remove('disabled');
-			this.matchmakingButton.title = '';
+            this.matchmakingButton.classList.remove('disabled');
+            this.matchmakingButton.title = '';
         }
 
         if (this.inviteFriendsBtn) {
             this.inviteFriendsBtn.disabled = false;
-			this.inviteFriendsBtn.classList.remove('disabled');
-			this.inviteFriendsBtn.title = '';
+            this.inviteFriendsBtn.classList.remove('disabled');
+            this.inviteFriendsBtn.title = '';
         }
 
-		if (this.friendInviteManager) {
-			this.friendInviteManager.hasInvitedSomeone = false;
-		}
+        if (this.friendInviteManager) {
+            this.friendInviteManager.hasInvitedSomeone = false;
+        }
     }
 
     draw(gameState) {
