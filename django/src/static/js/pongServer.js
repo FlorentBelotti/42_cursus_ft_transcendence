@@ -14,6 +14,7 @@ class PongServerGame {
         this.isGameRunning = false;
         this.isPageUnloading = false;
         this.reconnectTimeout = null;
+        this.notificationReconnectTimeout = null;
         this.playerNumber = null;
         this.playerInfo = {
             player1: { username: "", nickname: "", elo: 0 },
@@ -100,10 +101,20 @@ class PongServerGame {
             }
         };
 
-        this.notificationSocket.onclose = () => {
+        this.notificationSocket.onclose = (event) => {
             console.log('Notification WebSocket disconnected');
-            // Reconnect after delay
-            setTimeout(() => this.setupNotificationSocket(), 2000);
+            
+            // Only reconnect if not unloading the page
+            if (!this.isPageUnloading) {
+                console.log('Scheduling notification socket reconnect...');
+                // Store the timeout ID so we can clear it if needed
+                this.notificationReconnectTimeout = setTimeout(() => {
+                    console.log('Attempting notification socket reconnect...');
+                    this.setupNotificationSocket();
+                }, 2000);
+            } else {
+                console.log('Page unloading - skipping notification socket reconnect');
+            }
         };
     }
 
@@ -633,6 +644,12 @@ class PongServerGame {
         // Cancel any pending tasks
         if (this.reconnectTimeout) {
             clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = null;
+        }
+
+        if (this.notificationReconnectTimeout) {
+            clearTimeout(this.notificationReconnectTimeout);
+            this.notificationReconnectTimeout = null;
         }
     
         // Reset game state
