@@ -581,6 +581,12 @@ class PongServerGame {
     }
 
     handleGameState(gameState) {
+        // Don't update or draw if the game is no longer running
+        if (!this.isGameRunning) {
+            console.log("Ignoring game state update - game is no longer running");
+            return;
+        }
+        
         // Update player info if available
         if (gameState.player_info) {
             this.playerInfo = gameState.player_info;
