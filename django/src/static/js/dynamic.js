@@ -228,17 +228,17 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	
 		// 5. Cleanup GameInvitationsManager
-		if (window.gameInvitationsManager) {
-			console.log("[CLEANUP]: Cleaning up GameInvitationsManager...");
-			try {
-				if (typeof window.gameInvitationsManager.cleanup === 'function') {
-					window.gameInvitationsManager.cleanup();
-				}
-				window.gameInvitationsManager = null;
-			} catch (error) {
-				console.error("[CLEANUP]: Error during GameInvitationsManager cleanup:", error);
-			}
-		}
+		// if (window.gameInvitationsManager) {
+		// 	console.log("[CLEANUP]: Cleaning up GameInvitationsManager...");
+		// 	try {
+		// 		if (typeof window.gameInvitationsManager.cleanup === 'function') {
+		// 			window.gameInvitationsManager.cleanup();
+		// 		}
+		// 		window.gameInvitationsManager = null;
+		// 	} catch (error) {
+		// 		console.error("[CLEANUP]: Error during GameInvitationsManager cleanup:", error);
+		// 	}
+		// }
 	
 		// 6. Reset loaded scripts registry
 		console.log("[CLEANUP]: Resetting loaded scripts registry");

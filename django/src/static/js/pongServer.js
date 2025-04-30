@@ -465,10 +465,20 @@ class PongServerGame {
             this.handleGameState(data.game_state);
 
         } else if (data.type === 'player_left') {
-            // Handle player disconnection
-            alert(`${data.player_username} a quitté la partie!`);
+            // Handle player disconnection - treat like a game over since this player wins by forfeit
+            const leftPlayer = data.player_username;
+            const message = `${leftPlayer} a quitté la partie! Vous gagnez par forfait.`;
+            
+            alert(message);
             this.stopGame();
             this.displayWelcomeScreen();
+
+            // Reset invitations same as with game_over
+            setTimeout(() => {
+                if (window.gameInvitationsManager) {
+                    window.gameInvitationsManager.resetInvitations();
+                }
+            }, 1000);
 
         } else if (data.type === 'game_over') {
             // Handle end of game
@@ -482,11 +492,11 @@ class PongServerGame {
             this.stopGame();
             this.displayWelcomeScreen();
 
-			setTimeout(() => {
-				if (window.gameInvitationsManager) {
-					window.gameInvitationsManager.resetInvitations();
-				}
-			}, 1000);
+            setTimeout(() => {
+                if (window.gameInvitationsManager) {
+                    window.gameInvitationsManager.resetInvitations();
+                }
+            }, 1000);
 
         } else if (data.type === 'matchmaking_status' || data.type === 'waiting') {
             // Handle matchmaking status updates
