@@ -139,11 +139,11 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function initBot() {
-		if (window.pongGame) {
-			window.pongGame.stopGame();
-			window.pongGame = new PongBot();
+		if (window.PongBot) {
+			window.PongBot.stopGame();
+			window.PongBot = new PongBot();
 		} else {
-			window.pongGame = new PongBot();
+			window.PongBot = new PongBot();
 		}
 	}
 

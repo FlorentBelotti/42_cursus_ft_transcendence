@@ -298,6 +298,6 @@ class PongBot {
 // Initialiser le jeu Pong
 let PongBot;
 
-// function initPong() {
-//     PongBot = new PongBot();
-// }
+function initPong() {
+    PongBot = new PongBot();
+}
