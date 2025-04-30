@@ -218,6 +218,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (window.friendInviteManager) {
 			console.log("[CLEANUP]: Cleaning up FriendInviteManager...");
 			try {
+				if (typeof window.friendInviteManager.cleanup === 'function') {
+					window.friendInviteManager.cleanup();
+				}
 				window.friendInviteManager = null;
 			} catch (error) {
 				console.error("[CLEANUP]: Error during FriendInviteManager cleanup:", error);
@@ -225,17 +228,23 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	
 		// 5. Cleanup GameInvitationsManager
-		// if (window.gameInvitationsManager) {
-		// 	console.log("[CLEANUP]: Cleaning up GameInvitationsManager...");
-		// 	try {
-		// 		window.gameInvitationsManager.cleanup();
-		// 		window.gameInvitationsManager = null;
-		// 	} catch (error) {
-		// 		console.error("[CLEANUP]: Error during GameInvitationsManager cleanup:", error);
-		// 	}
-		// }
+		if (window.gameInvitationsManager) {
+			console.log("[CLEANUP]: Cleaning up GameInvitationsManager...");
+			try {
+				if (typeof window.gameInvitationsManager.cleanup === 'function') {
+					window.gameInvitationsManager.cleanup();
+				}
+				window.gameInvitationsManager = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during GameInvitationsManager cleanup:", error);
+			}
+		}
 	
-		// 6. Remove Dynamic Scripts
+		// 6. Reset loaded scripts registry
+		console.log("[CLEANUP]: Resetting loaded scripts registry");
+		window.loadedScriptURLs = new Set();
+		
+		// 7. Remove Dynamic Scripts
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic="true"]');
 		console.log(`[CLEANUP]: Removing ${dynamicScripts.length} dynamic scripts...`);
 		dynamicScripts.forEach(script => {
@@ -246,31 +255,36 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function loadScript(url, callback, isModule = false) {
-		// Check if the script is already loaded
-		const existingScript = document.querySelector(`script[data-src="${url}"]`);
-		if (existingScript) {
-			console.log(`Script already loaded: ${url}`);
-			if (callback) callback(); // Call the callback if provided
-			return;
-		}
-	
-		// Create and load the script
-		const script = document.createElement('script');
-		script.setAttribute('data-dynamic', 'true');
-		script.setAttribute('data-src', url); // Add this attribute to track loaded scripts
-	
-		if (isModule) {
-			script.type = 'module';
-		}
-	
-		if (callback) {
-			script.onload = function () {
-				callback();
-			};
-		}
-	
-		script.src = url;
-		document.body.appendChild(script);
+			// Create script registry if it doesn't exist
+			window.loadedScriptURLs = window.loadedScriptURLs || new Set();
+			
+			// Check if the script is already loaded in current page view
+			if (window.loadedScriptURLs.has(url)) {
+				console.log(`Script already loaded in this page view: ${url}`);
+				if (callback) callback(); // Call the callback if provided
+				return;
+			}
+			
+			// Create and load the script
+			const script = document.createElement('script');
+			script.setAttribute('data-dynamic', 'true');
+			script.setAttribute('data-src', url); // Add this attribute to track loaded scripts
+		
+			if (isModule) {
+				script.type = 'module';
+			}
+		
+			if (callback) {
+				script.onload = function () {
+					callback();
+				};
+			}
+		
+			// Add to our registry
+			window.loadedScriptURLs.add(url);
+			
+			script.src = url;
+			document.body.appendChild(script);
 	}
 
 	document.querySelectorAll('.nav-button').forEach(function (button) {
