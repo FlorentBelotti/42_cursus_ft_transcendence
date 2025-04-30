@@ -311,7 +311,7 @@ class PongServerGame {
         this.socket.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                console.log('Received data:', data);
+                // console.log('Received data:', data);
 
                 // Handle invitation accepted notification
                 if (data.type === 'invitation_accepted') {
