@@ -258,13 +258,6 @@ class PongServerGame {
         }
     }
 
-    // getCookie(name) {
-    //     const value = `; ${document.cookie}`;
-    //     const parts = value.split(`; ${name}=`);
-    //     if (parts.length === 2) return parts.pop().split(';').shift();
-    //     return null;
-    // }
-
     connectWebSocket(useForMatchmaking = false) {
     // Store as instance property for access in callbacks
         this.useForMatchmaking = useForMatchmaking;
