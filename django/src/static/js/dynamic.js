@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.declarePongTournamentForfeit();
 		}
 
-		// 5. Cleanup GameInvitationsManager
+		// 6. Cleanup GameInvitationsManager
 		// if (window.gameInvitationsManager) {
 		// 	console.log("[CLEANUP]: Cleaning up GameInvitationsManager...");
 		// 	try {
@@ -274,11 +274,83 @@ document.addEventListener('DOMContentLoaded', function () {
 		// 	}
 		// }
 
-		// 6. Reset loaded scripts registry
+		// 7. Cleanup PongAnimation
+		if (window.PongAnimation) {
+			console.log("[CLEANUP]: Cleaning up PongAnimation...");
+			try {
+				if (typeof window.PongAnimation.stopAnimation === 'function') {
+					window.PongAnimation.stopAnimation();
+				}
+				window.PongAnimation = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during PongAnimation cleanup:", error);
+			}
+		}
+
+		// 8. Cleanup PongGame (local)
+		if (window.pongGame) {
+			console.log("[CLEANUP]: Cleaning up PongGame...");
+			try {
+				if (typeof window.pongGame.stopGame === 'function') {
+					window.pongGame.stopGame();
+				}
+				window.pongGame = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during PongGame cleanup:", error);
+			}
+		}
+
+		// 9. Cleanup Tournament
+		if (window.tournament) {
+			console.log("[CLEANUP]: Cleaning up Tournament...");
+			try {
+				if (typeof window.tournament.stopGame === 'function') {
+					window.tournament.stopGame();
+				}
+				window.tournament = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during Tournament cleanup:", error);
+			}
+		}
+
+		// 10. Cleanup SphereAnimation
+		if (window.sphereAnimation) {
+			console.log("[CLEANUP]: Cleaning up SphereAnimation...");
+			try {
+				if (typeof window.sphereAnimation.cleanup === 'function') {
+					window.sphereAnimation.cleanup();
+				}
+				window.sphereAnimation = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during SphereAnimation cleanup:", error);
+			}
+		}
+
+		// 11. Cleanup CubeAnimation
+		if (window.cubeAnimation) {
+			console.log("[CLEANUP]: Cleaning up CubeAnimation...");
+			try {
+				if (typeof window.cubeAnimation.cleanup === 'function') {
+					window.cubeAnimation.cleanup();
+				}
+				window.cubeAnimation = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during CubeAnimation cleanup:", error);
+			}
+		}
+
+		// 12. Reset loaded scripts registry
 		console.log("[CLEANUP]: Resetting loaded scripts registry");
 		window.loadedScriptURLs = new Set();
 
-		// 7. Remove Dynamic Scripts
+		// 13. Remove event listeners from DOM elements
+		console.log("[CLEANUP]: Removing event listeners from critical elements");
+		const criticalElements = document.querySelectorAll('.pong-button, .nav-button, #amis-button, .invitation-card button');
+		criticalElements.forEach(element => {
+			element.replaceWith(element.cloneNode(true));
+		});
+
+		// 14. Remove Dynamic Scripts
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic="true"]');
 		console.log(`[CLEANUP]: Removing ${dynamicScripts.length} dynamic scripts...`);
 		dynamicScripts.forEach(script => {
@@ -289,36 +361,45 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function loadScript(url, callback, isModule = false) {
-			// Create script registry if it doesn't exist
-			window.loadedScriptURLs = window.loadedScriptURLs || new Set();
+		// Create script registry if it doesn't exist
+		window.loadedScriptURLs = window.loadedScriptURLs || new Set();
 
-			// Check if the script is already loaded in current page view
-			if (window.loadedScriptURLs.has(url)) {
-				console.log(`Script already loaded in this page view: ${url}`);
-				if (callback) callback(); // Call the callback if provided
-				return;
-			}
+		// Check if the script is already loaded in current page view
+		if (window.loadedScriptURLs.has(url)) {
+			console.log(`Script already loaded in this page view: ${url}`);
+			if (callback) callback(); // Call the callback if provided
+			return;
+		}
 
-			// Create and load the script
-			const script = document.createElement('script');
-			script.setAttribute('data-dynamic', 'true');
-			script.setAttribute('data-src', url); // Add this attribute to track loaded scripts
+		// Create and load the script
+		const script = document.createElement('script');
+		script.setAttribute('data-dynamic', 'true');
+		script.setAttribute('data-src', url); // Add this attribute to track loaded scripts
+		script.setAttribute('data-loaded-at', Date.now()); // Add timestamp for debugging
 
-			if (isModule) {
-				script.type = 'module';
-			}
+		if (isModule) {
+			script.type = 'module';
+		}
 
-			if (callback) {
-				script.onload = function () {
-					callback();
-				};
-			}
+		// Add to our registry before actually loading
+		window.loadedScriptURLs.add(url);
 
-			// Add to our registry
-			window.loadedScriptURLs.add(url);
+		// Handle script load and error events
+		script.onload = function() {
+			console.log(`Script loaded successfully: ${url}`);
+			if (callback) callback();
+		};
 
-			script.src = url;
-			document.body.appendChild(script);
+		script.onerror = function() {
+			console.error(`Error loading script: ${url}`);
+			// Remove from registry if failed to load
+			window.loadedScriptURLs.delete(url);
+			if (callback) callback();
+		};
+
+		// Actually set the src and append to document
+		script.src = url;
+		document.body.appendChild(script);
 	}
 
 	document.querySelectorAll('.nav-button').forEach(function (button) {
