@@ -258,12 +258,12 @@ class PongServerGame {
         }
     }
 
-    getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-        return null;
-    }
+    // getCookie(name) {
+    //     const value = `; ${document.cookie}`;
+    //     const parts = value.split(`; ${name}=`);
+    //     if (parts.length === 2) return parts.pop().split(';').shift();
+    //     return null;
+    // }
 
     connectWebSocket(useForMatchmaking = false) {
     // Store as instance property for access in callbacks
@@ -529,7 +529,7 @@ class PongServerGame {
         console.log("Cancelling pending invitations...");
 
         // Get CSRF token for the request
-        const csrfToken = this.getCookie('csrftoken');
+        const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
 
         // Create a synchronous XHR request to ensure it completes before navigation
         const xhr = new XMLHttpRequest();
@@ -537,6 +537,7 @@ class PongServerGame {
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.setRequestHeader('X-CSRFToken', csrfToken);
         xhr.withCredentials = true;
+
 
         // Log request start
         console.log("Sending cancellation request...");
@@ -949,10 +950,7 @@ window.declarePongForfeit = function() {
             xhr.setRequestHeader('Content-Type', 'application/json');
 
             // Get CSRF token from cookie if available
-            const csrfToken = document.cookie
-                .split('; ')
-                .find(cookie => cookie.startsWith('csrftoken='))
-                ?.split('=')[1];
+            const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
 
             if (csrfToken) {
                 xhr.setRequestHeader('X-CSRFToken', csrfToken);

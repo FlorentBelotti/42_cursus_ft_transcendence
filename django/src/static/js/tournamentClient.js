@@ -834,10 +834,7 @@ window.declarePongTournamentForfeit = function() {
             xhr.setRequestHeader('Content-Type', 'application/json');
 
             // Get CSRF token from cookie if available
-            const csrfToken = document.cookie
-                .split('; ')
-                .find(cookie => cookie.startsWith('csrftoken='))
-                ?.split('=')[1];
+            const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
 
             if (csrfToken) {
                 xhr.setRequestHeader('X-CSRFToken', csrfToken);
