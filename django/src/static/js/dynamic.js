@@ -54,9 +54,9 @@ document.addEventListener('DOMContentLoaded', function () {
 							if (scriptUrl.includes('tournamentClient.js')) {
 								initPongTournament();
 							}
-							if (scriptUrl.includes('leaderboard.js')) {
-								loadLeaderboard();
-							}
+							// if (scriptUrl.includes('leaderboard.js')) {
+							// 	loadLeaderboard();
+							// }
 							if (scriptUrl.includes('register.js')) {
 								registerFormEvent();
 							}
@@ -78,9 +78,9 @@ document.addEventListener('DOMContentLoaded', function () {
 							if (scriptUrl.includes('sphere-animation.js')) {
 								initSphereAnimation();
 							}
-							if (scriptUrl.includes('leaderboard.js')) {
-								loadLeaderboardPage();
-							}
+							// if (scriptUrl.includes('leaderboard.js')) {
+							// 	loadLeaderboardPage();
+							// }
 							if (scriptUrl.includes('snake.js')) {
 								initSnake();
 							}
@@ -197,24 +197,40 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.snakeGame.cleanup();
 			window.snakeGame = null;
 		}
-		window.snakeGame = new Snake3D();
+		try {
+			window.snakeGame = new Snake3D();
+			console.log('Snake game initialized successfully.');
+		} catch (error) {
+			console.error('Error initializing snake game:', error);
+		}
 	}
 
 	function cleanupScriptsAndEvents() {
 		console.log("[CLEANUP]: Starting cleanup process...");
-	
+
+		// 0. CLeanup Snake
+		if (window.snakeGame) {
+			console.log("[CLEANUP]: Cleaning up Snake3D...");
+			try {
+				window.snakeGame.cleanup();
+				window.snakeGame = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during Snake3D cleanup:", error);
+			}
+		}
+
 		// 1. Declare Pong Forfeit
 		if (typeof window.declarePongForfeit === 'function') {
 			console.log("[CLEANUP]: Declaring Pong forfeit...");
 			window.declarePongForfeit();
 		}
-	
+
 		// 2. Cancel Pending Invitations
 		if (typeof window.cancelPendingPongInvitations === 'function') {
 			console.log("[CLEANUP]: Cancelling pending invitations...");
 			window.cancelPendingPongInvitations();
 		}
-	
+
 		// 3. Cleanup PongServerGame
 		if (window.pongServerGame) {
 			console.log("[CLEANUP]: Cleaning up PongServerGame...");
@@ -225,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				console.error("[CLEANUP]: Error during PongServerGame cleanup:", error);
 			}
 		}
-	
+
 		// 4. Cleanup FriendInviteManager
 		if (window.friendInviteManager) {
 			console.log("[CLEANUP]: Cleaning up FriendInviteManager...");
@@ -238,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				console.error("[CLEANUP]: Error during FriendInviteManager cleanup:", error);
 			}
 		}
-	
+
 		// 5. Cleanup GameInvitationsManager
 		// if (window.gameInvitationsManager) {
 		// 	console.log("[CLEANUP]: Cleaning up GameInvitationsManager...");
@@ -251,50 +267,50 @@ document.addEventListener('DOMContentLoaded', function () {
 		// 		console.error("[CLEANUP]: Error during GameInvitationsManager cleanup:", error);
 		// 	}
 		// }
-	
+
 		// 6. Reset loaded scripts registry
 		console.log("[CLEANUP]: Resetting loaded scripts registry");
 		window.loadedScriptURLs = new Set();
-		
+
 		// 7. Remove Dynamic Scripts
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic="true"]');
 		console.log(`[CLEANUP]: Removing ${dynamicScripts.length} dynamic scripts...`);
 		dynamicScripts.forEach(script => {
 			script.remove();
 		});
-	
+
 		console.log("[CLEANUP]: Cleanup process completed.");
 	}
 
 	function loadScript(url, callback, isModule = false) {
 			// Create script registry if it doesn't exist
 			window.loadedScriptURLs = window.loadedScriptURLs || new Set();
-			
+
 			// Check if the script is already loaded in current page view
 			if (window.loadedScriptURLs.has(url)) {
 				console.log(`Script already loaded in this page view: ${url}`);
 				if (callback) callback(); // Call the callback if provided
 				return;
 			}
-			
+
 			// Create and load the script
 			const script = document.createElement('script');
 			script.setAttribute('data-dynamic', 'true');
 			script.setAttribute('data-src', url); // Add this attribute to track loaded scripts
-		
+
 			if (isModule) {
 				script.type = 'module';
 			}
-		
+
 			if (callback) {
 				script.onload = function () {
 					callback();
 				};
 			}
-		
+
 			// Add to our registry
 			window.loadedScriptURLs.add(url);
-			
+
 			script.src = url;
 			document.body.appendChild(script);
 	}

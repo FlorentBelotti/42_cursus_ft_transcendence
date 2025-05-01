@@ -3,7 +3,7 @@ from .views import (create_user, list_users, user_detail, update_user, delete_us
                    logout_action, RefreshTokenView, online_friends_view,
                    get_user_invitations, respond_to_invitation, cancel_game_invitation,
                    forfeit_match, forfeit_tournament, friends_view, user_me_detail, friends_view, add_friend_view, user_me_detail,
-                   post_login, remove_friend_view)
+                   post_login, remove_friend_view, get_snake_high_score, update_snake_score)
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -28,6 +28,9 @@ urlpatterns = [
     path('online-friends/', online_friends_view, name='online_friends_api'),
 	path('friends/add/', add_friend_view, name='add_friend'),
     path('friends/remove/', remove_friend_view, name='remove_friend'),
+
+	path('snake/high-score/', get_snake_high_score, name='snake_high_score'),
+    path('snake/update-score/', update_snake_score, name='update_snake_score'),
 
     path('post-login/', post_login, name='post_login'),
 ]

@@ -1053,37 +1053,61 @@ class Snake3D {
 	}
 
 	cleanup() {
+		console.log('[Snake3D]: Starting cleanup...');
+
+		// Arrêter l'animation
 		if (this.animationFrameId) {
 			cancelAnimationFrame(this.animationFrameId);
 			this.animationFrameId = null;
 		}
+
+		// Arrêter la boucle de jeu
 		if (this.gameLoop) {
 			clearInterval(this.gameLoop);
 			this.gameLoop = null;
 		}
+
+		// Supprimer les écouteurs d'événements
 		if (this.keydownHandler) {
 			document.removeEventListener('keydown', this.keydownHandler);
+			this.keydownHandler = null;
 		}
 		if (this.resizeHandler) {
 			window.removeEventListener('resize', this.resizeHandler);
+			this.resizeHandler = null;
 		}
 
+		// Nettoyer la scène Three.js
 		if (this.scene) {
+			// Supprimer tous les enfants de la scène
 			while (this.scene.children.length > 0) {
 				const child = this.scene.children[0];
-				if (child.geometry) child.geometry.dispose();
-				if (child.material) child.material.dispose();
+				this.disposeObject(child);
 				this.scene.remove(child);
 			}
 		}
+
+		// Nettoyer le renderer
 		if (this.renderer) {
+			// Supprimer l'élément canvas du DOM
 			if (this.renderer.domElement && this.renderer.domElement.parentNode) {
 				this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
 			}
+			// Libérer les ressources du renderer
+			this.renderer.forceContextLoss();
 			this.renderer.dispose();
 			this.renderer = null;
 		}
 
+		// Réinitialiser l'état du jeu
+		this.scene = null;
+		this.camera = null;
+		this.snakeGroup = null;
+		this.foodMesh = null;
+		this.obstaclesGroup = null;
+		this.scoreGroup = null;
+		this.leaderboardGroup = null;
+		this.arrowsGroup = null;
 		this.gameStarted = false;
 		this.paused = false;
 		this.gameOver = false;
@@ -1091,6 +1115,31 @@ class Snake3D {
 		this.snake = [];
 		this.food = null;
 		this.obstacles = [];
+
+		// Supprimer la référence globale
+		window.snakeGame = null;
+
+		console.log('[Snake3D]: Cleanup completed.');
+	}
+
+	disposeObject(obj) {
+		if (obj.geometry) {
+			obj.geometry.dispose();
+		}
+		if (obj.material) {
+			if (Array.isArray(obj.material)) {
+				obj.material.forEach(mat => mat.dispose());
+			} else {
+				obj.material.dispose();
+			}
+		}
+		if (obj.texture) {
+			obj.texture.dispose();
+		}
+		// Nettoyer les enfants récursivement
+		if (obj.children) {
+			obj.children.forEach(child => this.disposeObject(child));
+		}
 	}
 
     setupCloseUpView() {
@@ -1401,8 +1450,8 @@ class Snake3D {
 }
 
 // Initialiser le jeu au chargement de la page
-document.addEventListener('DOMContentLoaded', () => {
-    window.snakeGame = new Snake3D();
-});
+// document.addEventListener('DOMContentLoaded', () => {
+//     window.snakeGame = new Snake3D();
+// });
 
 window.Snake3D = Snake3D;
