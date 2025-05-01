@@ -128,7 +128,7 @@ class PongBot {
         this.directionBall.x /= magnitude;
         this.directionBall.y /= magnitude;
 
-        this.ball.ballSpeed = 4 + (this.count * 0.3);
+        this.ball.ballSpeed += 0.5;
         this.ball.x = pad.x + (direction === 1 ? this.padWidth + 1 : -this.ballWidth - 1);
         this.ballTouched = true;
     }
@@ -160,7 +160,6 @@ class PongBot {
         this.directionBall.x = scorer === 'left' ? -1 : 1;
         this.directionBall.y = 0;
         this.ball.ballSpeed = 3;
-        this.count = 0;
         this.ballTouched = false;
     }
 
@@ -279,7 +278,6 @@ class PongBot {
             y: Math.random() < 0.5 ? -1 : 1,
         };
         this.ball.ballSpeed = 3;
-        this.count = 0;
     }
 
     startGameLoop() {
