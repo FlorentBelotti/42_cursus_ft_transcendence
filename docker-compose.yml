@@ -52,8 +52,8 @@ services:
       - ./nginx/init/init.sh:/docker-entrypoint.d/init-nginx.sh:ro
       - static_data:/usr/share/nginx/html/static
       - media_data:/usr/share/nginx/html/media
-      - certbot_conf:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:rw
     depends_on:
       - web
       - pgadmin
@@ -67,8 +67,8 @@ services:
   certbot:
     image: certbot/certbot:latest
     volumes:
-      - certbot_conf:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt:rw
+      - certbot_www:/var/www/certbot:rw
     depends_on:
       - nginx
     command: >
