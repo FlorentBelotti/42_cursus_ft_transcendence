@@ -29,8 +29,6 @@ urlpatterns = [
 	path('friends/add/', add_friend_view, name='add_friend'),
     path('friends/remove/', remove_friend_view, name='remove_friend'),
 
-	path('users/me/', user_me_detail, name='user_me_detail'),
-
     path('post-login/', post_login, name='post_login'),
 ]
 

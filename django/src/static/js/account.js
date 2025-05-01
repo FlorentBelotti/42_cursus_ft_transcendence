@@ -167,7 +167,26 @@ function nicknameFormEvent() {
     });
 }
 
-function initAccountPage() {
+async function initAccountPage() {
+    try {
+        const response = await fetch('/api/users/me/', {
+            method: 'GET',
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            credentials: 'include'
+        });
+
+        const data = await response.json();
+        if (data.status === 'success' && data.user.last_login !== null) {
+            const passwordFormSection = document.getElementById('passwordForm');
+            if (passwordFormSection) {
+                passwordFormSection.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching user info:', error);
+    }
     updateFormEvent();
     passwordFormEvent();
     deleteFormEvent();
