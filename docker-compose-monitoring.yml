@@ -30,8 +30,14 @@ services:
   prometheus:
     image: prom/prometheus:v2.51.0
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_config:/etc/prometheus
+      - ./prometheus/prometheus.yml:/tmp/prometheus.yml:ro
+      - ./prometheus/init/init.sh:/bin/init.sh:ro
       - prometheus_data:/prometheus
+    command: 
+      - "/bin/init.sh"
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
     networks:
       - monitoring_network
 
@@ -39,6 +45,7 @@ volumes:
   pgadmin_data:
   prometheus_data:
   grafana_data:
+  prometheus_config:
 
 networks:
   transcendence_network:
