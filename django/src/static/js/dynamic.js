@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				if (addToHistory) {
 					history.pushState({ url: url }, '', url);
 				}
-			});
+			});	
 	}
 	attachFooterButtonEvents();
 

@@ -85,7 +85,7 @@ async function updateAuthButtons() {
 				updateSlider(this);
 				if (window.location.pathname !== new URL(url, window.location.origin).pathname) {
 					window.loadContent(url);
-					history.pushState({ url: url }, '', url);
+					// history.pushState({ url: url }, '', url);
 				}
 			});
 		});
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			// OPTIONNAL : handle re-click
 			if (url) {
 				window.loadContent(url);
-				history.pushState({ url: url }, '', url);
+				// history.pushState({ url: url }, '', url);
 			}
 		})
 	})
