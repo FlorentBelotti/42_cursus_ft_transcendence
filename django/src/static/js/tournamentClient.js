@@ -23,6 +23,7 @@ class TournamentClient {
         this.finalMatchCompleted = false;
         this.rankingsCheckInterval = null;
         this.rankingsCheckCount = 0;
+        this.isPageUnloading = false; // Nouvelle propriété pour suivre l'état de déchargement de la page
         this.init();
     }
 
@@ -730,6 +731,17 @@ class TournamentClient {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         }
+        
+        // Fermeture propre du WebSocket si nous quittons la page
+        if (this.isPageUnloading && this.socket) {
+            if (this.socket.readyState === WebSocket.OPEN) {
+                // Éviter la reconnexion automatique
+                this.socket.onclose = null;
+                // Fermer la connexion
+                this.socket.close(1000, "Navigation away from page");
+                this.socket = null;
+            }
+        }
     }
 
     addEventListeners() {
@@ -802,25 +814,23 @@ window.declarePongTournamentForfeit = function() {
 
     try {
         // Case 1: Use the existing tournament client if available
-        if (window.tournamentClient && window.tournamentClient.socket) {
+        if (window.tournament && window.tournament.socket) {
             console.log("Found active tournament client, sending forfeit via WebSocket");
 
-            if (window.tournamentClient.socket.readyState === WebSocket.OPEN) {
+            // Marquer que la page est en déchargement pour éviter les reconnexions automatiques
+            window.tournament.isPageUnloading = true;
+
+            if (window.tournament.socket.readyState === WebSocket.OPEN) {
                 // Send forfeit message
-                window.tournamentClient.socket.send(JSON.stringify({
+                window.tournament.socket.send(JSON.stringify({
                     type: 'leave_tournament'
                 }));
 
                 // Force close the socket
-                window.tournamentClient.socket.onclose = null; // Remove reconnect handler
-                window.tournamentClient.socket.close(1000, "User navigated away");
+                window.tournament.socket.onclose = null; // Remove reconnect handler
+                window.tournament.socket.close(1000, "User navigated away");
                 console.log("Socket forcibly closed for tournament forfeit");
-
-                // Set flags to prevent reconnection
-                if (window.tournamentClient) {
-                    window.tournamentClient.isPageUnloading = true;
-                }
-
+                
                 return true;
             }
         }

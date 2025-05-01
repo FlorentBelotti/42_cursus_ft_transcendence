@@ -255,30 +255,39 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		}
 
-		// 5. Declare Forfeit Tournament
+		// 5. Declare Forfeit Tournament - Amélioré!
 		if (typeof window.declarePongTournamentForfeit === 'function') {
-			console.log("TOURNAMENT FORFEIT: Calling global forfeit declaration");
+			console.log("[CLEANUP]: Declaring tournament forfeit...");
 			window.declarePongTournamentForfeit();
+		} else if (window.tournament && window.tournament.socket) {
+			// Fallback direct pour marquer la sortie de page
+			console.log("[CLEANUP]: Setting tournament page unloading flag");
+			window.tournament.isPageUnloading = true;
+			
+			// Fermer proprement la connexion socket
+			if (window.tournament.socket.readyState === WebSocket.OPEN) {
+				console.log("[CLEANUP]: Closing tournament WebSocket connection");
+				window.tournament.socket.onclose = null; // Enlever le gestionnaire de reconnexion
+				window.tournament.socket.close(1000, "Navigation page change");
+			}
 		}
 
-		// 5. Cleanup GameInvitationsManager
-		// if (window.gameInvitationsManager) {
-		// 	console.log("[CLEANUP]: Cleaning up GameInvitationsManager...");
-		// 	try {
-		// 		if (typeof window.gameInvitationsManager.cleanup === 'function') {
-		// 			window.gameInvitationsManager.cleanup();
-		// 		}
-		// 		window.gameInvitationsManager = null;
-		// 	} catch (error) {
-		// 		console.error("[CLEANUP]: Error during GameInvitationsManager cleanup:", error);
-		// 	}
-		// }
+		// 6. Ensure tournament cleanup complete
+		if (window.tournament) {
+			try {
+				console.log("[CLEANUP]: Cleaning up tournament client");
+				window.tournament.stopGame();
+				window.tournament = null;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during tournament cleanup:", error);
+			}
+		}
 
-		// 6. Reset loaded scripts registry
+		// 7. Reset loaded scripts registry
 		console.log("[CLEANUP]: Resetting loaded scripts registry");
 		window.loadedScriptURLs = new Set();
 
-		// 7. Remove Dynamic Scripts
+		// 8. Remove Dynamic Scripts
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic="true"]');
 		console.log(`[CLEANUP]: Removing ${dynamicScripts.length} dynamic scripts...`);
 		dynamicScripts.forEach(script => {
