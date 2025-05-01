@@ -341,7 +341,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 
 			window.loadContent(url);
-			// history.pushState({ url: url }, '', url);
 		});
 	});
 
