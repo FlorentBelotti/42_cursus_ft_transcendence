@@ -57,6 +57,7 @@ class UserUpdateForm(UserChangeForm):
         self.fields['username'].required = False
         self.fields['email'].required = False
         self.fields['profile_picture'].required = False
+
         for field in self.fields:
             self.fields[field].help_text = ''
         for field_name, field in self.fields.items():

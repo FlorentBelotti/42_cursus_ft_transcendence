@@ -142,18 +142,6 @@ body {
     margin-bottom: 20px;
 }
 
-.account-form input[type="checkbox"] {
-    width: auto;
-    margin-right: 10px;
-}
-
-.account-form label[for="id_profile_picture-clear"] {
-    display: inline-block;
-    vertical-align: middle;
-    padding: 0;
-    margin: 0;
-}
-
 .btn {
     padding: 12px 20px;
     background-color: #171717;
@@ -236,4 +224,9 @@ body {
     .button-group {
         flex-direction: column; /* Sur mobile, les boutons s'empilent */
     }
+}
+
+.account-form label[for="profile_picture-clear_id"],
+#profile_picture-clear_id {
+    display: none !important;
 }
