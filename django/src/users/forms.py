@@ -54,16 +54,31 @@ class UserUpdateForm(UserChangeForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['username'].required = False
+        self.fields['email'].required = False
+        self.fields['profile_picture'].required = False
         for field in self.fields:
             self.fields[field].help_text = ''
-
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.TextInput):
                 field.widget.attrs.update({'class': 'form-control'})
-
         self.fields.pop('password', None)
-        self.fields.pop('password1', None)
-        self.fields.pop('password2', None)
+
+    def clean_username(self):
+        username = self.cleaned_data.get("username")
+        if username and username != self.instance.username:
+            if customUser.objects.filter(username=username).exists():
+                raise forms.ValidationError("Username already in use.")
+        if username and not 3 <= len(username) <= 30:
+            raise forms.ValidationError("Username must be between 3 and 30 characters.")
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if email and email != self.instance.email:
+            if customUser.objects.filter(email=email).exists():
+                raise forms.ValidationError("Email already in use.")
+        return email
 
     def clean_profile_picture(self):
         image = self.cleaned_data.get('profile_picture')
@@ -72,18 +87,9 @@ class UserUpdateForm(UserChangeForm):
             valid_extensions = ['.jpg', '.jpeg', '.png']
             if not ext.lower() in valid_extensions:
                 raise ValidationError('Unsupported file extension. Only .jpg and .png are allowed.')
-
             if image.size > 2 * 1024 * 1024:
                 raise ValidationError('Image maximum size is 2MB.')
-
         return image
-    
-    def clean_username(self):
-        username = self.cleaned_data.get("username")
-        if customUser.objects.filter(username=username).exists():
-            raise forms.ValidationError("Username already use.")
-        if not 3 <= len(username) <= 30:
-            raise forms.ValidationError("Username must be between 3 and 30 characters.")
 
 class CustomPasswordChangeForm(PasswordChangeForm):
     class Meta:

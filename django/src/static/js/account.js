@@ -171,7 +171,7 @@ function initAccountPage() {
     updateFormEvent();
     passwordFormEvent();
     deleteFormEvent();
-    logoutFormEvent();
+    // logoutFormEvent();
     nicknameFormEvent();
 
     const buttons = document.querySelectorAll('.sidebar-btn');
