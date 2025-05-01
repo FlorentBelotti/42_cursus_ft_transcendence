@@ -111,6 +111,15 @@ class LobbyManager:
         Add a player to the matchmaking queue.
         """
 
+        # Vérifier si le joueur est déjà dans un match actif
+        if hasattr(player, 'match_id') and player.match_id:
+            print(f"Player {player.user.username} is already in match {player.match_id}, not adding to queue")
+            await player.send(text_data=json.dumps({
+                "type": "error",
+                "message": "Vous êtes déjà dans un match actif. Impossible de rechercher un autre adversaire."
+            }))
+            return
+
         # Check if player is in queue
         for existing_player, _, _ in self.waiting_players:
             if existing_player == player:
@@ -154,6 +163,12 @@ class LobbyManager:
         for i, (waiting_player, timestamp, elo) in enumerate(self.waiting_players):
             if waiting_player == player:
                 continue
+                
+            # DEBUG 1
+            if hasattr(waiting_player, 'match_id') and waiting_player.match_id:
+                print(f"Skipping player {waiting_player.user.username} as they are already in match {waiting_player.match_id}")
+                continue
+                
             elo_diff = abs(my_elo - elo)
             wait_time = asyncio.get_event_loop().time() - timestamp
             adjusted_diff = elo_diff / (1 + 0.1 * wait_time)
@@ -190,6 +205,12 @@ class LobbyManager:
             if i in players_to_remove:
                 continue
                 
+            # DEBUG 1
+            if hasattr(player, 'match_id') and player.match_id:
+                print(f"Skipping player {player.user.username} as they are already in match {player.match_id}")
+                players_to_remove.append(i)
+                continue
+                
             # Find best match
             best_match = None
             min_elo_diff = float('inf')
@@ -197,6 +218,14 @@ class LobbyManager:
             for j, (other_player, other_timestamp, other_elo) in enumerate(self.waiting_players):
                 if i == j or j in players_to_remove:
                     continue
+                    
+                # DEBUG 2 
+                if hasattr(other_player, 'match_id') and other_player.match_id:
+                    print(f"Skipping player {other_player.user.username} as they are already in match {other_player.match_id}")
+                    if j not in players_to_remove:
+                        players_to_remove.append(j)
+                    continue
+                    
                 elo_diff = abs(player.user.elo - other_elo)
                 wait_time = asyncio.get_event_loop().time() - other_timestamp
                 adjusted_diff = elo_diff / (1 + 0.1 * wait_time)
@@ -216,6 +245,7 @@ class LobbyManager:
         for idx in sorted(players_to_remove, reverse=True):
             if idx < len(self.waiting_players):
                 del self.waiting_players[idx]
+                
         return matches_created
     
     async def create_match(self, player1, player2):
