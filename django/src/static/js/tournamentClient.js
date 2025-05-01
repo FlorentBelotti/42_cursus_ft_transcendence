@@ -50,18 +50,18 @@ class TournamentClient {
 
     displayWelcomeScreen() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = '#f0f0f0';
+        this.ctx.fillStyle = '#181818';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        this.ctx.fillStyle = '#333';
-        this.ctx.font = '32px Arial';
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '32px Noto';
         this.ctx.textAlign = 'center';
         this.ctx.fillText('Pong Tournament', this.canvas.width / 2, 150);
 
-        this.ctx.font = '20px Arial';
+        this.ctx.font = '20px Noto';
         this.ctx.fillText('Click "Create Tournament" to begin', this.canvas.width / 2, 220);
 
-        this.ctx.font = '16px Arial';
+        this.ctx.font = '16px Noto';
         this.ctx.fillText('You will be matched with other players', this.canvas.width / 2, 270);
         this.ctx.fillText('for a 4-player tournament', this.canvas.width / 2, 300);
 
@@ -283,13 +283,13 @@ class TournamentClient {
 
             // Draw title
             this.ctx.fillStyle = '#cc0000';
-            this.ctx.font = '32px Arial';
+            this.ctx.font = '32px Noto';
             this.ctx.textAlign = 'center';
             this.ctx.fillText('Tournament Cancelled', this.canvas.width / 2, 150);
 
             // Draw cancellation reason
-            this.ctx.fillStyle = 'black';
-            this.ctx.font = '22px Arial';
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '22px Noto';
 
             // If we have forfeiter info, display it
             const displayName = data.forfeiter_display || data.forfeiter || "A player";
@@ -297,7 +297,7 @@ class TournamentClient {
                              this.canvas.width / 2, 220);
 
             // Draw penalty message
-            this.ctx.font = '18px Arial';
+            this.ctx.font = '18px Noto';
             this.ctx.fillText("The player who left received an ELO penalty (-15)",
                              this.canvas.width / 2, 280);
 
@@ -311,7 +311,7 @@ class TournamentClient {
 
             // Draw try again message
             this.ctx.fillStyle = '#4CAF50';
-            this.ctx.font = '24px Arial';
+            this.ctx.font = '24px Noto';
             // this.ctx.fillText("You can join a new tournament",
             //                  this.canvas.width / 2, 380);
 
@@ -370,13 +370,13 @@ class TournamentClient {
         this.clearCanvas();
 
         // Draw title
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '30px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '30px Noto';
         this.ctx.textAlign = 'center';
         this.ctx.fillText('Tournament Lobby', this.canvas.width / 2, 50);
 
         // Draw "Waiting for players" message
-        this.ctx.font = '24px Arial';
+        this.ctx.font = '24px Noto';
         this.ctx.fillText(data.message, this.canvas.width / 2, 90);
 
         // Draw bracket structure
@@ -400,33 +400,33 @@ class TournamentClient {
 
     drawPlayerCard(player, x, y) {
         // Draw player background
-        this.ctx.fillStyle = '#e0e0e0';
+        this.ctx.fillStyle = '#171717';
         this.ctx.fillRect(x - 75, y - 45, 150, 90);
 
         // Draw player name and ELO
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '18px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '18px Noto';
         this.ctx.textAlign = 'center';
 
         // Use nickname if available, otherwise username
         const displayName = player.nickname || player.username;
         this.ctx.fillText(displayName, x, y - 10);
 
-        this.ctx.font = '16px Arial';
+        this.ctx.font = '16px Noto';
         this.ctx.fillText(`ELO: ${player.elo}`, x, y + 20);
     }
 
     drawEmptySlot(x, y) {
         // Draw empty slot background
-        this.ctx.fillStyle = '#f0f0f0';
-        this.ctx.strokeStyle = '#c0c0c0';
+        this.ctx.fillStyle = '#171717';
+        this.ctx.strokeStyle = '#171717';
         this.ctx.lineWidth = 1;
         this.ctx.fillRect(x - 75, y - 45, 150, 90);
         this.ctx.strokeRect(x - 75, y - 45, 150, 90);
 
         // Draw waiting text
         this.ctx.fillStyle = '#808080';
-        this.ctx.font = '18px Arial';
+        this.ctx.font = '18px Noto';
         this.ctx.textAlign = 'center';
         this.ctx.fillText('Waiting...', x, y);
     }
@@ -435,17 +435,17 @@ class TournamentClient {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Draw finals announcement
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '30px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '30px Noto';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2 - 50);
 
         // Draw VS text
-        this.ctx.font = '40px Arial';
+        this.ctx.font = '40px Noto';
         this.ctx.fillText('VS', this.canvas.width / 2, this.canvas.height / 2);
 
         // Draw player 1 info (left) - Use display name if available
-        this.ctx.font = '24px Arial';
+        this.ctx.font = '24px Noto';
         this.ctx.textAlign = 'right';
         this.ctx.fillText(data.finalists.player1_display || data.finalists.player1, this.canvas.width / 2 - 30, this.canvas.height / 2);
 
@@ -455,7 +455,7 @@ class TournamentClient {
 
         // Draw preparing message
         this.ctx.textAlign = 'center';
-        this.ctx.font = '20px Arial';
+        this.ctx.font = '20px Noto';
         this.ctx.fillText("Préparation de la finale...",
                     this.canvas.width / 2, this.canvas.height / 2 + 50);
     }
@@ -464,17 +464,17 @@ class TournamentClient {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Draw third-place announcement
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '30px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '30px Noto';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2 - 50);
 
         // Draw VS text
-        this.ctx.font = '40px Arial';
+        this.ctx.font = '40px Noto';
         this.ctx.fillText('VS', this.canvas.width / 2, this.canvas.height / 2);
 
         // Draw player 1 info (left)
-        this.ctx.font = '24px Arial';
+        this.ctx.font = '24px Noto';
         this.ctx.textAlign = 'right';
         this.ctx.fillText(data.contestants.player1_display || data.contestants.player1, this.canvas.width / 2 - 30, this.canvas.height / 2);
 
@@ -484,7 +484,7 @@ class TournamentClient {
 
         // Draw preparing message
         this.ctx.textAlign = 'center';
-        this.ctx.font = '20px Arial';
+        this.ctx.font = '20px Noto';
         this.ctx.fillText("Préparation du match pour la 3ème place...",
                     this.canvas.width / 2, this.canvas.height / 2 + 50);
     }
@@ -499,8 +499,8 @@ class TournamentClient {
         this.gameState = null;
 
         // Draw result message
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '30px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '30px Noto';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(data.message, this.canvas.width / 2, this.canvas.height / 2);
 
@@ -508,7 +508,7 @@ class TournamentClient {
         const isFinalMatch = data.match_id === 'final' || data.match_id === 'third_place';
 
         // Draw different text based on match type
-        this.ctx.font = '20px Arial';
+        this.ctx.font = '20px Noto';
         if (isFinalMatch) {
             this.ctx.fillText("Le classement final sera bientôt affiché...",
                         this.canvas.width / 2, this.canvas.height / 2 + 50);
@@ -540,8 +540,8 @@ class TournamentClient {
     displayMessage(message) {
         this.clearCanvas();
 
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '24px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '24px Noto';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(message, this.canvas.width / 2, this.canvas.height / 2);
     }
@@ -552,7 +552,7 @@ class TournamentClient {
         this.clearCanvas();
 
         // Draw pads
-        this.ctx.fillStyle = 'black';
+        this.ctx.fillStyle = '#333333';
         this.ctx.fillRect(
             gameState.pads.player1.x,
             gameState.pads.player1.y,
@@ -565,6 +565,7 @@ class TournamentClient {
         );
 
         // Draw ball
+        this.ctx.fillStyle = 'white';
         this.ctx.beginPath();
         this.ctx.fillRect(
             gameState.ball.x,
@@ -574,11 +575,12 @@ class TournamentClient {
         this.ctx.fill();
 
         // Draw scores
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '30px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '30px Noto';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(gameState.score.player1, this.canvas.width / 4, 50);
-        this.ctx.fillText(gameState.score.player2, 3 * this.canvas.width / 4, 50);
+        this.ctx.fillText(gameState.score.player1, this.canvas.width / 2 - 30, 30);
+        this.ctx.fillText(":", this.canvas.width / 2, 30);
+        this.ctx.fillText(gameState.score.player2, this.canvas.width / 2 + 30, 30);
 
         // Draw player info with nickname support
         const player1 = gameState.player_info?.player1 || {};
@@ -587,18 +589,19 @@ class TournamentClient {
         const player1Display = player1.nickname || player1.username;
         const player2Display = player2.nickname || player2.username;
 
+        this.ctx.font = '20px Noto';
         this.ctx.textAlign = 'left';
         this.ctx.fillText(
             `${player1Display} (${player1.elo})`,
-            10,
-            25
+            20,
+            20
         );
 
         this.ctx.textAlign = 'right';
         this.ctx.fillText(
             `${player2Display} (${player2.elo})`,
-            this.canvas.width - 10,
-            25
+            this.canvas.width - 20,
+            20
         );
     }
 
@@ -606,12 +609,12 @@ class TournamentClient {
         this.clearCanvas();
 
         // Draw podium background
-        this.ctx.fillStyle = '#f5f5f5';
+        this.ctx.fillStyle = '#181818';
         this.ctx.fillRect(100, 200, 600, 250);
 
         // Draw title
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '36px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '36px Noto';
         this.ctx.textAlign = 'center';
         this.ctx.fillText('Classement du Tournoi', this.canvas.width / 2, 100);
 
@@ -654,7 +657,7 @@ class TournamentClient {
 
             // Draw position number
             this.ctx.fillStyle = 'black';
-            this.ctx.font = '40px Arial';
+            this.ctx.font = '40px Noto';
             this.ctx.textAlign = 'center';
             this.ctx.fillText(i, pos.x, pos.y - height + 40);
         }
@@ -665,7 +668,7 @@ class TournamentClient {
             const height = podiumHeights[rank.position];
 
             this.ctx.fillStyle = 'black';
-            this.ctx.font = '20px Arial';
+            this.ctx.font = '20px Noto';
             this.ctx.textAlign = 'center';
 
             // Use nickname if available
@@ -690,8 +693,8 @@ class TournamentClient {
 
         // Draw message for incomplete tournaments
         if (!data.complete) {
-            this.ctx.fillStyle = 'black';
-            this.ctx.font = '20px Arial';
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '20px Noto';
             this.ctx.textAlign = 'center';
             this.ctx.fillText(
                 "Matches en cours... Classement partiel",
@@ -699,8 +702,8 @@ class TournamentClient {
                 500
             );
         } else {
-            this.ctx.fillStyle = 'black';
-            this.ctx.font = '20px Arial';
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '20px Noto';
             this.ctx.textAlign = 'center';
             this.ctx.fillText(
                 "Tournoi terminé! Les ELO ont été mis à jour.",

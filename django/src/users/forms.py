@@ -8,6 +8,7 @@ from .models import customUser
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 import os
+from django.forms.widgets import FileInput
 
 User = get_user_model()
 
@@ -57,6 +58,8 @@ class UserUpdateForm(UserChangeForm):
         self.fields['username'].required = False
         self.fields['email'].required = False
         self.fields['profile_picture'].required = False
+
+        self.fields['profile_picture'].widget = FileInput()
 
         for field in self.fields:
             self.fields[field].help_text = ''

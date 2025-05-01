@@ -174,14 +174,14 @@ class PongBot {
     }
 
     manageScore() {
-        if (this.score.score1 === 10) return 'left';
-        if (this.score.score2 === 10) return 'right';
+        if (this.score.score1 === 3) return 'left';
+        if (this.score.score2 === 3) return 'right';
         return null;
     }
 
     displayWinner(winner) {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.font = '50px Arial';
+        this.ctx.font = '50px Noto';
         this.ctx.fillText(`Player ${winner === 'left' ? 1 : 2} wins!`, this.canvas.width / 2, 50);
         this.stopGame();
     }

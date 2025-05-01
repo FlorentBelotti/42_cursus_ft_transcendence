@@ -255,6 +255,12 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		}
 
+		// 5. Declare Forfeit Tournament
+		if (typeof window.declarePongTournamentForfeit === 'function') {
+			console.log("TOURNAMENT FORFEIT: Calling global forfeit declaration");
+			window.declarePongTournamentForfeit();
+		}
+
 		// 5. Cleanup GameInvitationsManager
 		// if (window.gameInvitationsManager) {
 		// 	console.log("[CLEANUP]: Cleaning up GameInvitationsManager...");
