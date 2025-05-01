@@ -111,9 +111,8 @@ class LobbyManager:
         Add a player to the matchmaking queue.
         """
 
-        # Vérifier si le joueur est déjà dans un match actif
+        # DEBUG QUEUE
         if hasattr(player, 'match_id') and player.match_id:
-            print(f"Player {player.user.username} is already in match {player.match_id}, not adding to queue")
             await player.send(text_data=json.dumps({
                 "type": "error",
                 "message": "Vous êtes déjà dans un match actif. Impossible de rechercher un autre adversaire."
@@ -164,9 +163,8 @@ class LobbyManager:
             if waiting_player == player:
                 continue
                 
-            # DEBUG 1
+            # DEBUG QUEUE
             if hasattr(waiting_player, 'match_id') and waiting_player.match_id:
-                print(f"Skipping player {waiting_player.user.username} as they are already in match {waiting_player.match_id}")
                 continue
                 
             elo_diff = abs(my_elo - elo)
@@ -205,9 +203,8 @@ class LobbyManager:
             if i in players_to_remove:
                 continue
                 
-            # DEBUG 1
+            # DEBUG QUEUE
             if hasattr(player, 'match_id') and player.match_id:
-                print(f"Skipping player {player.user.username} as they are already in match {player.match_id}")
                 players_to_remove.append(i)
                 continue
                 
@@ -219,9 +216,8 @@ class LobbyManager:
                 if i == j or j in players_to_remove:
                     continue
                     
-                # DEBUG 2 
+                # DEBUG QUEUE
                 if hasattr(other_player, 'match_id') and other_player.match_id:
-                    print(f"Skipping player {other_player.user.username} as they are already in match {other_player.match_id}")
                     if j not in players_to_remove:
                         players_to_remove.append(j)
                     continue
