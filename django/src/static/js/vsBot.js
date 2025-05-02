@@ -5,6 +5,8 @@ class PongBot {
         this.isGameRunning = false;
         this.requestID = null;
         this.ballTouched = false;
+        this.botRunning = false;
+        this.botRequestID = null;
 
         // PAD PARAMS
         this.padWidth = 20;
@@ -25,62 +27,56 @@ class PongBot {
         };
         this.directionBall = {
             x: Math.random() < 0.5 ? -1 : 1,
-            y: 0,
+            y: Math.random() < 0.5 ? -1 : 1,
         };
 
         // SCORE
         this.score = { score1: 0, score2: 0 };
-
-        // BOT
-        this.targetY = 0;
-        this.botRunning = false;
+        
+        // Compteur pour ajuster la vitesse de la balle
+        this.count = 0;
 
         this.init();
     }
 
     init() {
-		this.gameMode = 'ia';
-		this.startGameLoop();
-
-        document.addEventListener('keydown', (event) => this.handleKeyDown(event));
-        document.addEventListener('keyup', (event) => this.handleKeyUp(event));
+        this.startGameLoop();
+        
+        // Lier les méthodes aux événements pour pouvoir les supprimer plus tard
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        this.handleKeyUp = this.handleKeyUp.bind(this);
+        
+        document.addEventListener('keydown', this.handleKeyDown);
+        document.addEventListener('keyup', this.handleKeyUp);
     }
 
     handleKeyDown(event) {
-		switch (event.key) {
-			case 'ArrowUp':
-				this.direction2 = -1;
-				break;
-			case 'ArrowDown':
-				this.direction2 = 1;
-				break;
-			case 'z':
-				this.direction1 = -1;
-				break;
-			case 's':
-				this.direction1 = 1;
-		}
+        switch (event.key) {
+            case 'ArrowUp':
+            case 'z':
+                this.direction1 = -1;
+                break;
+            case 'ArrowDown':
+            case 's':
+                this.direction1 = 1;
+                break;
+        }
     }
 
     handleKeyUp(event) {
-		switch (event.key) {
-			case 'ArrowUp':
-			case 'ArrowDown':
-				this.direction2 = 0;
-				break;
-			case 'z':
-			case 's':
-				this.direction1 = 0;
-				break;
-		}
+        switch (event.key) {
+            case 'ArrowUp':
+            case 'ArrowDown':
+            case 'z':
+            case 's':
+                this.direction1 = 0;
+                break;
+        }
     }
 
-    updatePad() {
+    updatePad1() {
         this.pad1.y += this.direction1 * this.padSpeed;
-        this.pad2.y += this.direction2 * this.padSpeed;
-
         this.pad1.y = Math.max(0, Math.min(this.pad1.y, this.canvas.height - this.padHeight));
-        this.pad2.y = Math.max(0, Math.min(this.pad2.y, this.canvas.height - this.padHeight));
     }
 
     draw() {
@@ -128,6 +124,7 @@ class PongBot {
         this.directionBall.x /= magnitude;
         this.directionBall.y /= magnitude;
 
+        this.count++;
         this.ball.ballSpeed = 4 + (this.count * 0.3);
         this.ball.x = pad.x + (direction === 1 ? this.padWidth + 1 : -this.ballWidth - 1);
         this.ballTouched = true;
@@ -186,85 +183,123 @@ class PongBot {
         this.stopGame();
     }
 
-    updatePad1() {
-        this.pad1.y += this.direction1 * this.padSpeed;
-        this.pad1.y = Math.max(0, Math.min(this.pad1.y, this.canvas.height - this.padHeight));
-    }
-
     predictBallImpact() {
-        if (this.directionBall.x === 0) return this.pad2.y;
+        if (this.directionBall.x < 0) {
+            return this.pad2.y; // Ne rien faire si la balle va vers le joueur
+        }
 
-        const distanceToPad2 = this.pad2.x - this.ball.x;
-        const timeToReachPad2 = distanceToPad2 / (this.directionBall.x * this.ball.ballSpeed);
-
-        let predictedY = this.ball.y + this.directionBall.y * this.ball.ballSpeed * timeToReachPad2;
-        let predictedDirectionY = this.directionBall.y;
-        let remainingTime = timeToReachPad2;
-        let currentY = this.ball.y;
-
-        while (remainingTime > 0) {
-            const timeToNextWall = predictedDirectionY > 0 ?
-                (this.canvas.height - this.ballHeight - currentY) / (predictedDirectionY * this.ball.ballSpeed) :
-                (currentY) / (-predictedDirectionY * this.ball.ballSpeed);
-
-            if (timeToNextWall >= remainingTime) {
-                currentY += predictedDirectionY * this.ball.ballSpeed * remainingTime;
-                break;
-            } else {
-                currentY += predictedDirectionY * this.ball.ballSpeed * timeToNextWall;
-                predictedDirectionY *= -1;
-                remainingTime -= timeToNextWall;
+        // Calculer où la balle va toucher le côté droit
+        let ballX = this.ball.x;
+        let ballY = this.ball.y;
+        let dirX = this.directionBall.x;
+        let dirY = this.directionBall.y;
+        let speed = this.ball.ballSpeed;
+        
+        // Simuler le mouvement de la balle jusqu'à ce qu'elle atteigne le côté droit
+        while (ballX < this.pad2.x) {
+            ballX += dirX * speed;
+            ballY += dirY * speed;
+            
+            // Vérifier les collisions avec les murs du haut et du bas
+            if (ballY <= 0 || ballY >= this.canvas.height - this.ballHeight) {
+                dirY *= -1;
             }
         }
-
-        return currentY - this.padHeight / 2;
+        
+        // Ajouter un peu d'imperfection pour rendre le bot plus humain
+        const errorFactor = Math.random() * 60 - 30; // Erreur de ±30 pixels
+        return ballY - (this.padHeight / 2) + errorFactor;
     }
-
-    async botLoop() {
-        this.botRunning = true;
-        while (this.isGameRunning) {
-            this.targetY = this.predictBallImpact();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-        this.botRunning = false;
-    }
-
+    
     moveBot() {
-        const step = this.padSpeed;
-
-        if (Math.abs(this.pad2.y - this.targetY) < step) {
-            this.pad2.y = this.targetY;
-        } else if (this.pad2.y < this.targetY) {
-            this.pad2.y += step;
-        } else if (this.pad2.y > this.targetY) {
-            this.pad2.y -= step;
+        const targetY = this.predictBallImpact();
+        const diffY = targetY - this.pad2.y;
+        
+        // Vitesse adaptative en fonction de la difficulté
+        const botSpeed = this.padSpeed * 0.8;
+        
+        // Mouvement progressif vers la cible
+        if (diffY > botSpeed) {
+            this.pad2.y += botSpeed;
+        } else if (diffY < -botSpeed) {
+            this.pad2.y -= botSpeed;
+        } else {
+            this.pad2.y = targetY;
         }
-
+        
+        // S'assurer que le bot ne dépasse pas les limites
         this.pad2.y = Math.max(0, Math.min(this.pad2.y, this.canvas.height - this.padHeight));
     }
 
-    stopGame() {
-        if (this.requestID) {
-            cancelAnimationFrame(this.requestID);
+    botLoop() {
+        if (!this.isGameRunning) {
+            this.botRunning = false;
+            return;
         }
-        this.isGameRunning = false;
-        this.requestID = null;
+        
+        this.botRunning = true;
+        this.moveBot();
+        this.botRequestID = setTimeout(() => {
+            requestAnimationFrame(() => this.botLoop());
+        }, 1000 / 30); // Actualiser l'IA 30 fois par seconde (suffisant pour le bot)
     }
 
     gameLoop() {
-		if (!this.isGameRunning) return;
+        if (!this.isGameRunning) return;
 
-		this.updatePad1();
-		this.moveBot();
-		this.updateBall();
-		this.draw();
-		this.displayScore();
-		const winner = this.manageScore();
-		if (winner) {
-			this.displayWinner(winner);
-			return;
-		}
-        this.requestID = requestAnimationFrame(() => this.gameLoop());
+        this.updatePad1();
+        this.moveBot();
+        this.updateBall();
+        this.draw();
+        this.displayScore();
+        const winner = this.manageScore();
+        if (winner) {
+            this.displayWinner(winner);
+            return;
+        }
+        
+        // Optimisation pour limiter le taux de rafraîchissement
+        this.requestID = setTimeout(() => {
+            requestAnimationFrame(() => this.gameLoop());
+        }, 1000 / 60); // Limiter à 60 FPS
+    }
+
+    stopGame() {
+        console.log('[PongBot]: Stopping game');
+        
+        this.isGameRunning = false;
+        this.botRunning = false;
+        
+        if (this.requestID) {
+            clearTimeout(this.requestID);
+            cancelAnimationFrame(this.requestID);
+            this.requestID = null;
+        }
+        
+        if (this.botRequestID) {
+            clearTimeout(this.botRequestID);
+            cancelAnimationFrame(this.botRequestID);
+            this.botRequestID = null;
+        }
+        
+        this.cleanup();
+    }
+    
+    cleanup() {
+        console.log('[PongBot]: Cleaning up resources');
+        
+        // Supprimer les écouteurs d'événements
+        document.removeEventListener('keydown', this.handleKeyDown);
+        document.removeEventListener('keyup', this.handleKeyUp);
+        
+        // Nettoyer le canvas
+        if (this.ctx && this.canvas) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        
+        // Réinitialiser les flags
+        this.isGameRunning = false;
+        this.botRunning = false;
     }
 
     resetGame() {
@@ -295,7 +330,11 @@ class PongBot {
     }
 }
 
-// Initialiser le jeu Pong
-function initPong() {
-	window.PongBot = new PongBot();
+function initBot() {
+    // Si une instance existe déjà, la nettoyer avant d'en créer une nouvelle
+    if (window.PongBot) {
+        window.PongBot.stopGame();
+        window.PongBot = null;
+    }
+    window.PongBot = new PongBot();
 }

@@ -25,7 +25,8 @@ class PongAnimation {
 				speedX: 0,
 				speedY: 0
 			},
-			lastTime: performance.now()
+			lastTime: performance.now(),
+			noiseUpdateCounter: 0 // Compteur pour limiter la fréquence des mises à jour du bruit
 		};
 
 		this.config = {
@@ -42,13 +43,20 @@ class PongAnimation {
 				reactionTime: 0.05,
 				maxOffset: 40,
 				targetUpdateInterval: 500
+			},
+			noise: {
+				updateFrequency: 5 // Ne mettre à jour le bruit que tous les X frames
 			}
 		};
+		
 		this.titleElement = document.querySelector('.main-title');
+		
+		// Lier la méthode resizeCanvas à l'objet pour pouvoir l'utiliser comme callback
+		this.resizeHandler = this.resizeCanvas.bind(this);
+		window.addEventListener('resize', this.resizeHandler);
 
 		this.resizeCanvas();
 		this.resetGame();
-		window.addEventListener('resize', () => this.resizeCanvas());
 		this.animate();
 	}
 
@@ -137,6 +145,7 @@ class PongAnimation {
 			const ballRight = ball.x + ballConfig.radius;
 			const ballTop = ball.y - ballConfig.radius;
 			const ballBottom = ball.y + ballConfig.radius;
+
 			const paddleTop = paddle.y;
 			const paddleBottom = paddle.y + paddles.height;
 
@@ -153,7 +162,6 @@ class PongAnimation {
 					const speed = ballConfig.baseSpeed + Math.abs(ball.speedX) * 0.1;
 					ball.speedX = direction * Math.cos(bounceAngle) * speed;
 					ball.speedY = Math.sin(bounceAngle) * speed;
-
 					ball.x = isLeft ? paddleRight + ballConfig.radius : paddleX - ballConfig.radius;
 					return true;
 				}
@@ -169,19 +177,40 @@ class PongAnimation {
 	}
 
 	generateNoise() {
+        // Optimisation: ne mettre à jour le bruit que périodiquement
+        this.state.noiseUpdateCounter++;
+        if (this.state.noiseUpdateCounter % this.config.noise.updateFrequency !== 0) {
+            return; // Sauter cette frame
+        }
+        
         const width = this.noiseCanvas.width;
         const height = this.noiseCanvas.height;
         const imageData = this.noiseCtx.createImageData(width, height);
         const data = imageData.data;
-
-        for (let i = 0; i < data.length; i += 4) {
-            const value = Math.random() * 255; // Valeur aléatoire entre 0 et 255
-            data[i] = value;     // Rouge
-            data[i + 1] = value; // Vert
-            data[i + 2] = value; // Bleu
-            data[i + 3] = 255;   // Alpha (opacité complète, contrôlée par CSS)
+        
+        // Réduire la résolution du bruit pour améliorer les performances
+        const pixelSkip = 2; // Traiter un pixel sur deux
+        
+        for (let y = 0; y < height; y += pixelSkip) {
+            for (let x = 0; x < width; x += pixelSkip) {
+                const value = Math.random() * 255;
+                const index = (y * width + x) * 4;
+                
+                // Remplir un bloc de pixelSkip x pixelSkip avec la même valeur
+                for (let dy = 0; dy < pixelSkip && y + dy < height; dy++) {
+                    for (let dx = 0; dx < pixelSkip && x + dx < width; dx++) {
+                        const i = ((y + dy) * width + (x + dx)) * 4;
+                        if (i < data.length - 3) {
+                            data[i] = value;     // Rouge
+                            data[i + 1] = value; // Vert
+                            data[i + 2] = value; // Bleu
+                            data[i + 3] = 255;   // Alpha
+                        }
+                    }
+                }
+            }
         }
-
+        
         this.noiseCtx.putImageData(imageData, 0, 0);
     }
 
@@ -205,11 +234,27 @@ class PongAnimation {
 	stopAnimation() {
 		if (this.animationFrameId) {
 			cancelAnimationFrame(this.animationFrameId);
+			this.animationFrameId = null;
 		}
-		if (this.canvas) {
-			this.canvas.remove();
+	}
+	
+	cleanup() {
+		console.log('[PongAnimation]: Cleaning up resources');
+		this.stopAnimation();
+		
+		// Retirer les écouteurs d'événements pour éviter les fuites mémoire
+		window.removeEventListener('resize', this.resizeHandler);
+		
+		// Supprimer les éléments du DOM
+		if (this.canvas && this.canvas.parentNode) {
+			this.canvas.parentNode.removeChild(this.canvas);
 		}
-		window.removeEventListener('resize', this.resizeCanvas);
+		
+		// Effacer les références
+		this.ctx = null;
+		this.noiseCtx = null;
+		this.canvas = null;
+		this.state = null;
 	}
 
 	animate(currentTime = 0) {
@@ -226,7 +271,7 @@ class PongAnimation {
 
 document.addEventListener('DOMContentLoaded', () => {
 	if (document.querySelector('.pong-container')) {
-		new PongAnimation();
+		window.PongAnimation = new PongAnimation();
 	} else {
 		console.error('Le conteneur .pong-container est introuvable');
 	}

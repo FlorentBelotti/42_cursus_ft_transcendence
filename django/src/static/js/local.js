@@ -30,6 +30,10 @@ class PongGame {
 
 		// SCORE
 		this.score = { score1: 0, score2: 0 };
+		
+		// Lier les méthodes aux événements pour pouvoir les supprimer plus tard
+		this.handleKeyDown = this.handleKeyDown.bind(this);
+		this.handleKeyUp = this.handleKeyUp.bind(this);
 
 		this.init();
 	}
@@ -37,37 +41,37 @@ class PongGame {
 	init() {
 		this.startGameLoop();
 
-		document.addEventListener('keydown', (event) => this.handleKeyDown(event));
-		document.addEventListener('keyup', (event) => this.handleKeyUp(event));
+		document.addEventListener('keydown', this.handleKeyDown);
+		document.addEventListener('keyup', this.handleKeyUp);
 	}
 
 	handleKeyDown(event) {
-			switch (event.key) {
-				case 'ArrowUp':
-					this.direction2 = -1;
-					break;
-				case 'ArrowDown':
-					this.direction2 = 1;
-					break;
-				case 'z':
-					this.direction1 = -1;
-					break;
-				case 's':
-					this.direction1 = 1;
-			}
+		switch (event.key) {
+			case 'ArrowUp':
+				this.direction2 = -1;
+				break;
+			case 'ArrowDown':
+				this.direction2 = 1;
+				break;
+			case 'z':
+				this.direction1 = -1;
+				break;
+			case 's':
+				this.direction1 = 1;
+		}
 	}
 
 	handleKeyUp(event) {
-			switch (event.key) {
-				case 'ArrowUp':
-				case 'ArrowDown':
-					this.direction2 = 0;
-					break;
-				case 'z':
-				case 's':
-					this.direction1 = 0;
-					break;
-			}
+		switch (event.key) {
+			case 'ArrowUp':
+			case 'ArrowDown':
+				this.direction2 = 0;
+				break;
+			case 'z':
+			case 's':
+				this.direction1 = 0;
+				break;
+		}
 	}
 
 	updatePad() {
@@ -218,24 +222,50 @@ class PongGame {
 	stopGame() {
 		if (this.requestID) {
 			cancelAnimationFrame(this.requestID);
+			this.requestID = null;
 		}
 		this.isGameRunning = false;
-		this.requestID = null;
+		this.cleanup();
+	}
+	
+	cleanup() {
+		console.log('[PongGame]: Cleaning up resources');
+		
+		// Annuler l'animation en cours
+		if (this.requestID) {
+			cancelAnimationFrame(this.requestID);
+			this.requestID = null;
+		}
+		
+		// Supprimer les écouteurs d'événements pour éviter les fuites mémoire
+		document.removeEventListener('keydown', this.handleKeyDown);
+		document.removeEventListener('keyup', this.handleKeyUp);
+		
+		// Effacer le canvas
+		if (this.ctx && this.canvas) {
+			this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		}
+		
+		this.isGameRunning = false;
 	}
 
 	gameLoop() {
 		if (!this.isGameRunning) return;
 
-			this.updatePad();
-			this.updateBall();
-			this.draw();
-			this.displayScore();
-			const winner = this.manageScore();
-			if (winner) {
-				this.displayWinner(winner);
-				return;
-			}
-		this.requestID = requestAnimationFrame(() => this.gameLoop());
+		this.updatePad();
+		this.updateBall();
+		this.draw();
+		this.displayScore();
+		const winner = this.manageScore();
+		if (winner) {
+			this.displayWinner(winner);
+			return;
+		}
+		
+		// Optimisation pour limiter le taux de rafraîchissement
+		this.requestID = setTimeout(() => {
+			this.requestID = requestAnimationFrame(() => this.gameLoop());
+		}, 1000 / 60); // Limiter à 60 FPS
 	}
 
 	resetGame() {
@@ -264,8 +294,11 @@ class PongGame {
 }
 
 // Initialiser le jeu Pong
-// let pongGame;
-
 function initPong() {
-	pongGame = new PongGame();
+	// Si une instance existe déjà, la nettoyer avant d'en créer une nouvelle
+	if (window.pongGame) {
+		window.pongGame.stopGame();
+		window.pongGame = null;
+	}
+	window.pongGame = new PongGame();
 }

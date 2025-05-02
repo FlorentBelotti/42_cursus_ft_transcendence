@@ -131,20 +131,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	function initPong() {
 		if (window.pongGame) {
+			console.log('[DYNAMIC]: Cleaning up existing Pong game instance.');
 			window.pongGame.stopGame();
-			window.pongGame = new PongGame();
-		} else {
-			window.pongGame = new PongGame();
+			// Supprimer les écouteurs d'événements pour éviter les fuites mémoire
+			document.removeEventListener('keydown', window.pongGame.handleKeyDown);
+			document.removeEventListener('keyup', window.pongGame.handleKeyUp);
+			window.pongGame = null;
 		}
+		console.log('[DYNAMIC]: Creating new Pong game instance.');
+		window.pongGame = new PongGame();
 	}
 
 	function initBot() {
 		if (window.PongBot) {
+			console.log('[DYNAMIC]: Cleaning up existing PongBot instance.');
 			window.PongBot.stopGame();
-			window.PongBot = new PongBot();
-		} else {
-			window.PongBot = new PongBot();
+			// Annuler toutes les animations en cours
+			if (window.PongBot.requestID) {
+				cancelAnimationFrame(window.PongBot.requestID);
+			}
+			window.PongBot = null;
 		}
+		console.log('[DYNAMIC]: Creating new PongBot instance.');
+		window.PongBot = new PongBot();
 	}
 
 	function initPongServer() {

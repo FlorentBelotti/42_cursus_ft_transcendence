@@ -643,11 +643,19 @@ class PongServerGame {
         // Close WebSocket connections
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             console.log("[PongServerGame CLEANUP]: Closing game WebSocket...");
+            // Désactiver les gestionnaires d'événements avant de fermer
+            this.socket.onclose = null;
+            this.socket.onerror = null;
+            this.socket.onmessage = null;
             this.socket.close(1000, "Cleaning up before navigation");
         }
     
         if (this.notificationSocket && this.notificationSocket.readyState === WebSocket.OPEN) {
             console.log("[PongServerGame CLEANUP]: Closing notification WebSocket...");
+            // Désactiver les gestionnaires d'événements avant de fermer
+            this.notificationSocket.onclose = null;
+            this.notificationSocket.onerror = null;
+            this.notificationSocket.onmessage = null;
             this.notificationSocket.close(1000, "Cleaning up notifications");
         }
     
@@ -667,6 +675,23 @@ class PongServerGame {
         this.playerNumber = null;
         this.match_id = null;
         this.pendingInvitedGame = null;
+        
+        // Supprimer les références aux éléments DOM
+        this.canvas = null;
+        this.ctx = null;
+        this.matchmakingButton = null;
+        this.inviteFriendsBtn = null;
+        
+        // Effacer les timeouts et intervalles potentiels
+        if (this.matchmakingStatusInterval) {
+            clearInterval(this.matchmakingStatusInterval);
+            this.matchmakingStatusInterval = null;
+        }
+        
+        // Effacer toutes les références cycliques
+        this.socket = null;
+        this.notificationSocket = null;
+        this.friendInviteManager = null;
     
         console.log("[PongServerGame CLEANUP]: Cleanup completed.");
     }
