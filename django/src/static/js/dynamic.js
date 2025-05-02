@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	let snakeGame = null;
 	updateAuthButtons();
 
+	// Flag to track if pong animation has been initialized in current view
+	window.pongAnimationInitialized = false;
+
 	function attachFooterButtonEvents() {
 		document.querySelectorAll('.footer-button').forEach(function (button) {
 			// Supprimer les anciens gestionnaires pour éviter les doublons
@@ -24,6 +27,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	window.loadContent = function(url, addToHistory = true) {
 
 		window.isDynamicLoading = true;
+
+		// Reset the pong animation initialization flag when changing pages
+		window.pongAnimationInitialized = false;
 
 		console.log(`Navigation initiated to ${url}`);
 		console.log("Starting cleanup before navigation");
@@ -167,21 +173,36 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 
-	function  initPongAnimation(){
-		console.log('Initializing pong animation...');
-		// Nettoyage de l'ancienne instance d'animation si elle existe
-		if (window.pongAnimation) {
-			console.log('Cleaning up old pong animation...');
-			window.pongAnimation.stopAnimation();
-			window.pongAnimation = null;
+	function initPongAnimation() {
+		console.log('Dynamic.js: initPongAnimation called');
+		
+		// Skip if already initialized in this view
+		if (window.pongAnimationInitialized) {
+			console.log('Animation already initialized in this view, skipping');
+			return;
 		}
 		
-		// Vérifier que le conteneur existe avant de créer une nouvelle instance
-		if (document.querySelector('.pong-container')) {
-			console.log('Creating new pong animation instance...');
-			window.pongAnimation = new window.PongAnimation();
+		// Use the global initialization function if available
+		if (typeof window.initPongAnimation === 'function') {
+			const result = window.initPongAnimation();
+			if (result) {
+				window.pongAnimationInitialized = true;
+			}
 		} else {
-			console.error('Pong container not found!');
+			// Fallback if the function isn't available for some reason
+			if (window.pongAnimation) {
+				console.log('Cleaning up old pong animation...');
+				window.pongAnimation.stopAnimation();
+				window.pongAnimation = null;
+			}
+			
+			if (document.querySelector('.pong-container')) {
+				console.log('Creating new pong animation instance...');
+				window.pongAnimation = new window.PongAnimation();
+				window.pongAnimationInitialized = true;
+			} else {
+				console.error('Pong container not found!');
+			}
 		}
 	}
 
@@ -216,6 +237,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	function cleanupScriptsAndEvents() {
 		console.log("[CLEANUP]: Starting cleanup process...");
+
+		 // Clean up pong animation
+		if (window.pongAnimation) {
+			console.log("[CLEANUP]: Cleaning up pong animation...");
+			try {
+				window.pongAnimation.stopAnimation();
+				window.pongAnimation = null;
+				window.pongAnimationInitialized = false;
+			} catch (error) {
+				console.error("[CLEANUP]: Error during pong animation cleanup:", error);
+			}
+		}
 
 		// 0. CLeanup Snake
 		if (window.snakeGame) {

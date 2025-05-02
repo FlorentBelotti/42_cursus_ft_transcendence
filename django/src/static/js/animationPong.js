@@ -232,14 +232,33 @@ if (typeof window.PongAnimation === 'undefined') {
     };
 }
 
-// Suppression de l'initialisation automatique qui créait une instance à chaque chargement
-// et modification de l'initialisation pour utiliser le système de SPA
-// document.addEventListener('DOMContentLoaded', () => {
-//     if (document.querySelector('.pong-container')) {
-//         new PongAnimation();
-//     } else {
-//         console.error('Le conteneur .pong-container est introuvable');
-//     }
-// });
+// Fonction d'initialisation à appeler à la fois en SPA et au chargement initial
+if (typeof window.initPongAnimation !== 'function') {
+    window.initPongAnimation = function() {
+        console.log('initPongAnimation called');
+        // Nettoyage de l'instance existante si elle existe
+        if (window.pongAnimation) {
+            console.log('Cleaning up existing pong animation');
+            window.pongAnimation.stopAnimation();
+            window.pongAnimation = null;
+        }
+        
+        // Vérifier que le conteneur existe avant de créer une nouvelle instance
+        if (document.querySelector('.pong-container')) {
+            console.log('Creating new pong animation instance');
+            window.pongAnimation = new window.PongAnimation();
+            return true;
+        } else {
+            console.error('Pong container not found!');
+            return false;
+        }
+    };
+}
 
-// Les instances seront créées par la fonction initPongAnimation dans dynamic.js
+// Initialisation automatique lors du chargement initial de la page
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.querySelector('.pong-container') && !window.isDynamicLoading) {
+        console.log('Initial page load detected with pong container, initializing animation');
+        window.initPongAnimation();
+    }
+});
