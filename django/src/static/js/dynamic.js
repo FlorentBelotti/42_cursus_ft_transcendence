@@ -168,11 +168,20 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function  initPongAnimation(){
-		if (window.PongAnimation){
-			window.PongAnimation.stopAnimation();
-			window.PongAnimation = new PongAnimation();
-		}else{
-			window.PongAnimation = new PongAnimation();
+		console.log('Initializing pong animation...');
+		// Nettoyage de l'ancienne instance d'animation si elle existe
+		if (window.pongAnimation) {
+			console.log('Cleaning up old pong animation...');
+			window.pongAnimation.stopAnimation();
+			window.pongAnimation = null;
+		}
+		
+		// Vérifier que le conteneur existe avant de créer une nouvelle instance
+		if (document.querySelector('.pong-container')) {
+			console.log('Creating new pong animation instance...');
+			window.pongAnimation = new window.PongAnimation();
+		} else {
+			console.error('Pong container not found!');
 		}
 	}
 
