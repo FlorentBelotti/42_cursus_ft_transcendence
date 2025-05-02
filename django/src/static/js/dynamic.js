@@ -331,22 +331,30 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	document.querySelectorAll('.nav-button').forEach(function (button) {
-		button.addEventListener('click', function (event) {
-			event.preventDefault();
-
-			const url = button.getAttribute('data-url');
-
-			if (window.location.pathname === new URL(url, window.location.origin).pathname) {
-				return;
-			}
-
-			window.loadContent(url);
-		});
+		// Remove existing event listeners to prevent duplication
+		button.removeEventListener('click', handleNavButtonClick);
+		button.addEventListener('click', handleNavButtonClick);
 	});
 
-	window.addEventListener('popstate', function (event) {
-		if (event.state && event.state.url) {
-			window.loadContent(event.state.url, false);
+	function handleNavButtonClick(event) {
+		event.preventDefault();
+
+		const url = event.currentTarget.getAttribute('data-url');
+
+		if (window.location.pathname === new URL(url, window.location.origin).pathname) {
+			return;
 		}
-	});
+
+		window.loadContent(url);
+	}
+
+	// Ensure popstate listener is added only once
+	if (!window.hasPopstateListener) {
+		window.addEventListener('popstate', function (event) {
+			if (event.state && event.state.url) {
+				window.loadContent(event.state.url, false);
+			}
+		});
+		window.hasPopstateListener = true;
+	}
 });
