@@ -22,12 +22,13 @@ function verifyCodeFormEvent() {
         let data = await response.json();
         if ('success' in data) {
             console.log('Success:', "Redirecting to home page");
-            modal.style.display = 'none'; 
+            modal.style.display = 'none';
             await updateAuthButtons();
             window.location.href = data.redirect_url;
         } else {
             console.log('Error:', "Wrong code");
             const errorDiv = document.getElementById("verifyErrorMessage");
+			errorDiv.style.color = "white";
             errorDiv.textContent = data.error;
             errorDiv.style.display = "block";
             setTimeout(() => {
