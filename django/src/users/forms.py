@@ -47,8 +47,15 @@ class RegisterForm(UserCreationForm):
 
 	def clean_email(self):
 		email = self.cleaned_data.get("email")
+		
+		if re.search(r"@42[a-z]*\.fr$", email, re.IGNORECASE):
+			raise forms.ValidationError(
+				"You cannot create an account with a 42 email. Please login with your 42 account on the login page."
+			)
+		
 		if customUser.objects.filter(email=email).exists():
 			raise forms.ValidationError("Email already use.")
+		
 		return email
 
 class UserUpdateForm(UserChangeForm):
