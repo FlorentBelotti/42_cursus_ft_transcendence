@@ -704,6 +704,16 @@ class PongServerGame {
 			this.inviteFriendsBtn.disabled = true;
 		}
 
+		const urlParams = new URLSearchParams(window.location.search);
+		if (urlParams.has('game') || urlParams.has('opponent')) {
+			console.log('[PONGSERVER]: Clearing invitation parameters from URL');
+			const newUrl = window.location.pathname;
+			history.replaceState(null, '', newUrl);
+		}
+
+		// S'assurer que pendingInvitedGame est null pour ne pas rejoindre une partie d'invitation
+		this.pendingInvitedGame = null;
+
 		// GET SOCKET
 		if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
 			console.log('[PONGSERVER]:Connecting to WebSocket for matchmaking...');
