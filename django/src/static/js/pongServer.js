@@ -21,6 +21,7 @@ class PongServerGame {
 		};
 		this.keysPressed = {};
 		this.friendInviteManager = null;
+		this.authenticated = true;
 
 
 		// SETUP INVITE
@@ -408,7 +409,7 @@ class PongServerGame {
 
 		// IN CASE OF MATCH
 		if (data.type === 'match_created') {
-			console.log('[PONGSERVER]:Match created!', data);e
+			console.log('[PONGSERVER]:Match created!', data);
 			this.playerNumber = data.player_number;
 			this.isGameRunning = true;
 			this.match_id = data.match_id;
@@ -429,7 +430,7 @@ class PongServerGame {
 		// DURING MATCH
 		} else if (data.type === 'game_state') {
 			this.handleGameState(data.game_state);
-
+			
 		// IF FORFEIT IS DECLARED
 		} else if (data.type === 'player_left') {
 			const leftPlayer = data.player_username;
