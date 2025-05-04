@@ -7,30 +7,30 @@ import logging
 import json
 import traceback
 
-from game.serializers import GameStateSerializer, PaddleInputSerializer, MatchmakingSerializer
-from game.pongLobby import LobbyManager
+from .serializers import GameStateSerializer, PaddleInputSerializer, MatchmakingSerializer
+from .pongLobby import LobbyManager
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.shortcuts import get_object_or_404
 from users.models import customUser
 from .api_consumer import APIMatchConsumer
 
-# Logger configuration
+# Configuration du logger
 logger = logging.getLogger('pong.api')
 
-# Singleton for the lobby manager
+# Singleton pour le lobby manager
 lobby_manager = LobbyManager()
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def game_status(request):
     """
-    Gets the game status for the connected user
+    Récupère le statut du jeu pour l'utilisateur connecté
     """
     user = request.user
-    logger.info(f"Status request for user {user.username}")
+    logger.info(f"Requête status pour l'utilisateur {user.username}")
     
-    # Check if the user is in an active game
+    # Vérifier si l'utilisateur est dans une partie active
     match_data = None
     player_number = None
     match_id = None
@@ -41,19 +41,19 @@ def game_status(request):
                 match_data = match
                 player_number = i + 1
                 match_id = mid
-                logger.info(f"User {user.username} found in match {mid} as player {player_number}")
+                logger.info(f"Utilisateur {user.username} trouvé dans la partie {mid} en tant que joueur {player_number}")
                 break
         if match_data:
             break
     
     if not match_data:
-        logger.info(f"User {user.username} is not in an active game")
+        logger.info(f"Utilisateur {user.username} n'est pas dans une partie active")
         return Response({
             'in_game': False,
-            'message': "The user is not in an active game"
+            'message': "L'utilisateur n'est pas dans une partie active"
         })
     
-    # Serialize the game state
+    # Sérialiser l'état du jeu
     serializer = GameStateSerializer(match_data['game_state'])
     
     return Response({
@@ -67,12 +67,12 @@ def game_status(request):
 @permission_classes([IsAuthenticated])
 def game_score(request):
     """
-    Gets the score of the active game for the connected user
+    Récupère le score de la partie active pour l'utilisateur connecté
     """
     user = request.user
-    logger.info(f"Score request for user {user.username}")
+    logger.info(f"Requête score pour l'utilisateur {user.username}")
     
-    # Check if the user is in an active game
+    # Vérifier si l'utilisateur est dans une partie active
     match_data = None
     match_id = None
     
@@ -86,12 +86,12 @@ def game_score(request):
             break
     
     if not match_data:
-        logger.info(f"User {user.username} is not in an active game to view the score")
+        logger.info(f"Utilisateur {user.username} n'est pas dans une partie active pour voir le score")
         return Response({
-            'error': "The user is not in an active game"
+            'error': "L'utilisateur n'est pas dans une partie active"
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # Retrieve only the scores
+    # Récupérer uniquement les scores
     player1_username = match_data['game_state']['player_info']['player1']['username']
     player2_username = match_data['game_state']['player_info']['player2']['username']
     
@@ -111,22 +111,22 @@ def game_score(request):
 @permission_classes([IsAuthenticated])
 def start_matchmaking(request):
     """
-    Starts matchmaking for the user
+    Démarre la recherche d'un match pour l'utilisateur
     """
     user = request.user
-    logger.info(f"Starting matchmaking for user {user.username}")
+    logger.info(f"Démarrage du matchmaking pour l'utilisateur {user.username}")
     
-    # Check if already in a match
+    # Vérifier si déjà dans un match
     for match_id, match in lobby_manager.active_matches.items():
         for player in match['players']:
             if hasattr(player, 'user') and player.user.id == user.id:
-                logger.warning(f"User {user.username} already in an active game {match_id}")
+                logger.warning(f"Utilisateur {user.username} déjà dans une partie active {match_id}")
                 return Response({
-                    'error': "The user is already in an active game",
+                    'error': "L'utilisateur est déjà dans une partie active",
                     'match_id': match_id
                 }, status=status.HTTP_400_BAD_REQUEST)
     
-    # Check if already in the queue
+    # Vérifier si déjà en file d'attente
     for player, _, _ in lobby_manager.waiting_players:
         if hasattr(player, 'user') and player.user.id == user.id:
             queue_position = 0
@@ -135,25 +135,25 @@ def start_matchmaking(request):
                     queue_position = i + 1
                     break
                     
-            logger.info(f"User {user.username} already in the queue (position: {queue_position})")
+            logger.info(f"Utilisateur {user.username} déjà en file d'attente (position: {queue_position})")
             return Response({
                 'status': 'in_queue',
-                'message': "The user is already in the queue",
+                'message': "L'utilisateur est déjà en file d'attente",
                 'queue_position': queue_position
             })
     
-    # Create a simulation of a consumer for the API
+    # Créer une simulation d'un consumer pour l'API
     api_consumer = APIMatchConsumer(user)
-    logger.info(f"Creating an APIMatchConsumer for user {user.username}")
+    logger.info(f"Création d'un APIMatchConsumer pour l'utilisateur {user.username}")
     
     try:
-        # Add the player to the queue
+        # Ajouter le joueur à la file d'attente
         async_to_sync(lobby_manager.add_player_to_queue)(api_consumer)
         
-        # Try to find a match immediately
+        # Tenter de trouver un match immédiatement
         match_found = async_to_sync(lobby_manager.find_match_for_player)(api_consumer)
         
-        # Find the position in the queue
+        # Trouver la position dans la file d'attente
         queue_position = 0
         for i, (p, _, _) in enumerate(lobby_manager.waiting_players):
             if hasattr(p, 'user') and p.user.id == user.id:
@@ -161,78 +161,78 @@ def start_matchmaking(request):
                 break
         
         if match_found:
-            # Get information about the match
+            # Récupérer les informations sur le match
             last_message = api_consumer.get_last_message()
             match_id = api_consumer.match_id or (last_message.get('match_id') if last_message else None)
-            opponent = last_message.get('opponent') if last_message else "opponent"
+            opponent = last_message.get('opponent') if last_message else "adversaire"
             
-            logger.info(f"Match found for {user.username}: match_id={match_id}, opponent={opponent}")
+            logger.info(f"Match trouvé pour {user.username}: match_id={match_id}, adversaire={opponent}")
             
             return Response({
                 'status': 'match_found',
-                'message': 'An opponent has been found!',
+                'message': 'Un adversaire a été trouvé!',
                 'match_id': match_id,
                 'player_number': api_consumer.player_number,
                 'opponent': opponent
             })
         else:
-            logger.info(f"No immediate match found for {user.username}, position in queue: {queue_position}")
+            logger.info(f"Aucun match immédiat trouvé pour {user.username}, position dans la file: {queue_position}")
             
-            # Start a background task to continue the search
+            # Lancer une tâche en arrière-plan pour continuer la recherche
             try:
                 import threading
                 def background_matchmaking():
                     try:
-                        logger.info(f"Starting background search for {user.username}")
-                        # Try to find a match for up to 30 seconds
-                        for _ in range(15):  # 15 attempts at 2-second intervals = 30 seconds
-                            logger.debug(f"Matchmaking attempt for {user.username}")
+                        logger.info(f"Démarrage de la recherche en arrière-plan pour {user.username}")
+                        # Essayer de trouver un match pendant 30 secondes maximum
+                        for _ in range(15):  # 15 tentatives à 2 secondes d'intervalle = 30 secondes
+                            logger.debug(f"Tentative de matchmaking pour {user.username}")
                             try:
                                 if async_to_sync(lobby_manager.find_matches_for_all)() > 0:
-                                    logger.info(f"Match found in background for {user.username}")
+                                    logger.info(f"Match trouvé en arrière-plan pour {user.username}")
                                     break
                             except Exception as e:
-                                logger.error(f"Error during background search: {e}")
+                                logger.error(f"Erreur lors de la recherche en arrière-plan: {e}")
                             import time
                             time.sleep(2)
                     except Exception as e:
-                        logger.error(f"Error in matchmaking thread: {e}")
+                        logger.error(f"Erreur dans le thread de matchmaking: {e}")
                         traceback.print_exc()
                 
-                # Start background search
+                # Démarrer la recherche en arrière-plan
                 t = threading.Thread(target=background_matchmaking)
                 t.daemon = True
                 t.start()
                 
-                logger.info(f"Search thread started for {user.username}")
+                logger.info(f"Thread de recherche démarré pour {user.username}")
             except Exception as e:
-                logger.error(f"Error starting search thread: {e}")
+                logger.error(f"Erreur lors du démarrage du thread de recherche: {e}")
             
             return Response({
                 'status': 'in_queue',
-                'message': 'Waiting for an opponent...',
+                'message': 'En attente d\'un adversaire...',
                 'queue_position': queue_position
             })
     except Exception as e:
-        logger.error(f"Error during matchmaking for {user.username}: {str(e)}")
+        logger.error(f"Erreur lors du matchmaking pour {user.username}: {str(e)}")
         traceback.print_exc()
         return Response({
-            'error': f"An error occurred during matchmaking: {str(e)}"
+            'error': f"Une erreur s'est produite lors du matchmaking: {str(e)}"
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def move_paddle(request):
     """
-    Moves the paddle of the active player
+    Déplace la raquette du joueur actif
     """
     user = request.user
-    logger.debug(f"Paddle movement request for {user.username}")
+    logger.debug(f"Requête de mouvement de raquette pour {user.username}")
     
     serializer = PaddleInputSerializer(data=request.data)
     
     if not serializer.is_valid():
-        logger.warning(f"Invalid data for paddle movement: {request.data}")
+        logger.warning(f"Données invalides pour le mouvement de raquette: {request.data}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     input_value = serializer.validated_data['input']
@@ -240,7 +240,7 @@ def move_paddle(request):
     player_number = None
     match_id = None
     
-    # Find the active game for the user
+    # Trouver la partie active de l'utilisateur
     for mid, match in lobby_manager.active_matches.items():
         for i, player in enumerate(match['players']):
             if hasattr(player, 'user') and player.user.id == user.id:
@@ -252,15 +252,15 @@ def move_paddle(request):
             break
     
     if not match_data:
-        logger.warning(f"User {user.username} is not in an active game to move their paddle")
+        logger.warning(f"Utilisateur {user.username} n'est pas dans une partie active pour bouger sa raquette")
         return Response({
-            'error': "The user is not in an active game"
+            'error': "L'utilisateur n'est pas dans une partie active"
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # Update the game state with the input
+    # Mettre à jour l'état du jeu avec l'entrée
     player_key = f"player{player_number}"
     match_data["game_state"]["inputs"][player_key] = input_value
-    logger.debug(f"Movement {input_value} applied for {user.username} (player {player_number}) in match {match_id}")
+    logger.debug(f"Mouvement {input_value} appliqué pour {user.username} (joueur {player_number}) dans le match {match_id}")
     
     return Response({
         'status': 'success',

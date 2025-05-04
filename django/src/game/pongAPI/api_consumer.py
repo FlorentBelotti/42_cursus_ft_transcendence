@@ -2,12 +2,12 @@
 ╔═══════════════════════════════════════════════════╗
 ║                 APIConsumer                       ║
 ╠═══════════════════════════════════════════════════╣
-║ Adapter to interface REST API calls               ║
-║ with the existing WebSocket system                ║
+║ Adaptateur pour interfacer les appels API REST    ║
+║ avec le système WebSocket existant                ║
 ║                                                   ║
-║ • Simulates WebSocket consumer methods            ║
-║ • Allows using existing infrastructure            ║
-║ • Handles API requests as WS clients              ║
+║ • Simule les méthodes d'un WebSocket consumer     ║
+║ • Permet d'utiliser l'infrastructure existante    ║
+║ • Gère les requêtes API comme des clients WS      ║
 ╚═══════════════════════════════════════════════════╝
 """
 
@@ -23,8 +23,8 @@ logger = logging.getLogger('pong.api')
 
 class APIConsumer:
     """
-    Class simulating a WebSocket consumer for REST API calls
-    Allows reusing existing WebSocket infrastructure
+    Classe simulant un consumer WebSocket pour les appels API REST
+    Permet de réutiliser l'infrastructure WebSocket existante
     """
     
     def __init__(self, user=None):
@@ -34,14 +34,14 @@ class APIConsumer:
         self.scope = {"user": user} if user else {}
         self.messages = []
         self.is_connected = True
-        self._is_api = True  # Marker to identify as API client
+        self._is_api = True  # Marqueur pour identifier comme client API
         self.channel_name = f"api_consumer_{user.username}_{datetime.now().timestamp()}" if user else "api_consumer_unknown"
-        logger.info(f"APIConsumer created for {user.username if user else 'unknown user'}")
+        logger.info(f"APIConsumer créé pour {user.username if user else 'utilisateur inconnu'}")
     
     async def send(self, text_data):
         """
-        Simulates WebSocket message sending
-        Stores messages for later retrieval by the API
+        Simule l'envoi de messages WebSocket
+        Stocke les messages pour récupération ultérieure par l'API
         """
         try:
             if isinstance(text_data, str):
@@ -50,20 +50,20 @@ class APIConsumer:
                 data = text_data
             
             self.messages.append(data)
-            logger.debug(f"Message stored for {self.user.username if self.user else 'unknown'}: {data.get('type', 'unknown')}")
+            logger.debug(f"Message stocké pour {self.user.username if self.user else 'inconnu'}: {data.get('type', 'unknown')}")
             
-            # Special handling for matchmaking and match creation
+            # Traitement spécial pour le matchmaking et la création de partie
             if data.get('type') == 'match_created':
                 self.match_id = data.get('match_id')
                 self.player_number = data.get('player_number')
-                logger.info(f"Match created for API user {self.user.username}: match_id={self.match_id}, player_number={self.player_number}")
+                logger.info(f"Match créé pour API user {self.user.username}: match_id={self.match_id}, player_number={self.player_number}")
         except Exception as e:
-            logger.error(f"Error in APIConsumer.send: {str(e)}")
+            logger.error(f"Erreur dans APIConsumer.send: {str(e)}")
             traceback.print_exc()
     
     def get_last_message(self):
         """
-        Gets the last sent message
+        Récupère le dernier message envoyé
         """
         if self.messages:
             return self.messages[-1]
@@ -71,28 +71,28 @@ class APIConsumer:
     
     def get_messages(self):
         """
-        Gets all sent messages
+        Récupère tous les messages envoyés
         """
         return self.messages
     
     def clear_messages(self):
         """
-        Clears the message history
+        Efface l'historique des messages
         """
         self.messages = []
     
     async def close(self):
         """
-        Simulates closing a WebSocket connection
+        Simule la fermeture d'une connexion WebSocket
         """
         self.is_connected = False
-        logger.info(f"APIConsumer closed for {self.user.username if self.user else 'unknown'}")
+        logger.info(f"APIConsumer fermé pour {self.user.username if self.user else 'inconnu'}")
     
-    # Additional methods to better simulate a WebSocket consumer
+    # Méthodes supplémentaires pour mieux simuler un consumer WebSocket
     
     def __eq__(self, other):
         """
-        Two APIConsumers are equal if they represent the same user
+        Deux APIConsumer sont égaux s'ils représentent le même utilisateur
         """
         if not hasattr(other, 'user') or not self.user or not other.user:
             return False
@@ -100,56 +100,56 @@ class APIConsumer:
 
     def __hash__(self):
         """
-        Hash based on user ID for use in collections
+        Hash basé sur l'ID utilisateur pour pouvoir utiliser dans des collections
         """
         return hash(f"api_{self.user.id}" if self.user else id(self))
 
 class APIMatchConsumer(APIConsumer):
     """
-    Specific version of APIConsumer for Pong matches
+    Version spécifique de l'APIConsumer pour les matchs de Pong
     """
     
     def __init__(self, user=None):
         super().__init__(user)
-        logger.info(f"APIMatchConsumer created for {user.username if user else 'unknown'}")
+        logger.info(f"APIMatchConsumer créé pour {user.username if user else 'inconnu'}")
         self.match_task = None
         
-    # Methods necessary for integration with existing MatchConsumer
+    # Méthodes nécessaires à l'intégration avec le MatchConsumer existant
     async def authenticate(self, token):
         """
-        Simplified authentication method for the API
-        Authentication is already handled by the REST API
+        Méthode d'authentification simplifiée pour l'API
+        L'authentification est déjà gérée par l'API REST
         """
         pass
         
     async def run_game_loop(self, match_id):
         """
-        Simplified game loop version for the API
-        Implements enough for the LobbyManager to use it
+        Version simplifiée du game loop pour l'API
+        Implémente suffisamment pour que le LobbyManager puisse l'utiliser
         """
-        logger.info(f"run_game_loop called for match_id={match_id} by APIMatchConsumer for {self.user.username}")
-        # Get the LobbyManager
+        logger.info(f"run_game_loop appelé pour match_id={match_id} par APIMatchConsumer pour {self.user.username}")
+        # Récupérer le LobbyManager
         from .pongLobby import LobbyManager
         lobby_manager = LobbyManager()
         
         try:
-            # Check if match exists
+            # On vérifie si le match existe
             match_data = lobby_manager.active_matches.get(match_id)
             if not match_data:
-                logger.error(f"APIConsumer.run_game_loop: match {match_id} not found")
+                logger.error(f"APIConsumer.run_game_loop: match {match_id} introuvable")
                 return
                 
-            # Get the game engine
+            # On récupère le game engine
             from .pongEngine import GameEngine
             game_engine = GameEngine()
             
-            # Get the players
+            # On récupère les joueurs
             players = match_data["players"]
             game_state = match_data["game_state"]
             
-            logger.info(f"APIMatchConsumer: starting game loop for match {match_id} with players: {[p.user.username for p in players if hasattr(p, 'user')]}")
+            logger.info(f"APIMatchConsumer: démarrage game loop pour match {match_id} avec joueurs: {[p.user.username for p in players if hasattr(p, 'user')]}")
             
-            # Logic similar to MatchConsumer
+            # Logique similaire à celle du MatchConsumer
             while True:
                 # Game speed control
                 await asyncio.sleep(0.02)  # 50 FPS
@@ -157,7 +157,7 @@ class APIMatchConsumer(APIConsumer):
                 # Check players connection status
                 all_connected = all(hasattr(player, 'is_connected') and player.is_connected for player in players)
                 if not all_connected:
-                    logger.info(f"Match {match_id} ended: a player disconnected")
+                    logger.info(f"Match {match_id} terminé: un joueur s'est déconnecté")
                     break
                 
                 # Update game state
@@ -167,11 +167,11 @@ class APIMatchConsumer(APIConsumer):
                 game_over, winner_username = await game_engine.check_goals(game_state)
                 
                 if game_over:
-                    logger.info(f"Match {match_id} ended: {winner_username} won")
+                    logger.info(f"Match {match_id} terminé: {winner_username} a gagné")
                     await self.handle_match_result(lobby_manager, match_id, winner_username)
                     break
                 
-                # Send game state to players
+                # Envoyer l'état du jeu aux joueurs
                 for player in players:
                     if hasattr(player, 'send'):
                         await player.send(json.dumps({
@@ -180,14 +180,14 @@ class APIMatchConsumer(APIConsumer):
                         }))
         
         except asyncio.CancelledError:
-            logger.info(f"Game loop cancelled for match {match_id}")
+            logger.info(f"Game loop annulée pour match {match_id}")
         except Exception as e:
-            logger.error(f"Error in game loop for match {match_id}: {e}")
+            logger.error(f"Erreur dans game loop pour match {match_id}: {e}")
             traceback.print_exc()
     
     async def handle_match_result(self, lobby_manager, match_id, winner_username):
         """
-        Handles the end of a match
+        Gère la fin d'un match
         """
         match_data = lobby_manager.active_matches.get(match_id)
         if not match_data:
@@ -195,28 +195,28 @@ class APIMatchConsumer(APIConsumer):
             
         players = match_data["players"]
         
-        # Find the winner and loser
+        # Trouver le gagnant et le perdant
         winner = next((player for player in players if hasattr(player, 'user') and player.user.username == winner_username), None)
         if not winner:
             return
             
         loser = next((player for player in players if player != winner), None)
         
-        # Update ELO
+        # Mise à jour ELO
         if winner and loser and hasattr(winner, 'user') and hasattr(loser, 'user'):
             await lobby_manager.update_elo_ratings(winner.user, loser.user)
         
-        # Show result
+        # Afficher le résultat
         for player in players:
             try:
                 await player.send(json.dumps({
                     "type": "game_over",
                     "winner": winner_username,
-                    "message": f"{winner_username} won the game!"
+                    "message": f"{winner_username} a gagné la partie!"
                 }))
             except Exception as e:
-                logger.error(f"Error while sending result to {player.user.username if hasattr(player, 'user') else 'unknown'}: {e}")
+                logger.error(f"Erreur lors de l'envoi du résultat à {player.user.username if hasattr(player, 'user') else 'inconnu'}: {e}")
         
-        # Cleanup
+        # Nettoyage
         if match_id in lobby_manager.active_matches:
             del lobby_manager.active_matches[match_id]
