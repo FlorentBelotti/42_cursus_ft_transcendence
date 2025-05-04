@@ -43,24 +43,30 @@
                 <form id="updateForm" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <h3 class="form-title">Update Account</h3>
-            
+
+
                     <p>
                         <label for="id_username">Username</label><br>
                         {{ user_form.username }}
+						<div id="errorUsername"></div>
                     </p>
                     <p>
                         <label for="id_email">Email</label><br>
                         {{ user_form.email }}
+						<div id="errorEmail"></div>
                     </p>
                     <p>
                         <label for="id_profile_picture">Profile Picture</label><br>
                         {{ user_form.profile_picture }}
+						<div id="errorPicture"></div>
                     </p>
-            
+
+
                     <button type="submit" name="update_info" class="btn update-btn">Update account</button>
                 </form>
             </div>
-            
+
+
 
             <!-- Section Pseudo -->
             <div id="nickname-section" class="account-section account-form nickname-form">

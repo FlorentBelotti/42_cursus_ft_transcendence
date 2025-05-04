@@ -230,3 +230,8 @@ body {
 #profile_picture-clear_id {
     display: none !important;
 }
+
+.error-message {
+    color: rgb(234, 46, 46);
+    font-size: 0.9em;
+}

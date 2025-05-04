@@ -24,7 +24,19 @@ function updateFormEvent() {
                 console.log('Error:', data.error);
                 if (data.errors) {
                     console.log('Validation errors:', data.errors);
+                    if (data.errors.username) {
+                        document.getElementById("errorUsername").innerHTML = `<span class="error-message">${data.errors.username.join(', ')}</span>`;
+                    }
+                    if (data.errors.email) {
+                        document.getElementById("errorEmail").innerHTML = `<span class="error-message">${data.errors.email.join(', ')}</span>`;
+                    }
+                    if (data.errors.profile_picture) {
+                        document.getElementById("errorPicture").innerHTML = `<span class="error-message">${data.errors.profile_picture.join(', ')}</span>`;
+                    }
+                } else {
+                    alert('Erreur lors de la mise à jour du compte : ' + data.error);
                 }
+                console.log('Validation errors:', data.errors);
             }
         } catch (error) {
             console.error('Fetch error:', error);
