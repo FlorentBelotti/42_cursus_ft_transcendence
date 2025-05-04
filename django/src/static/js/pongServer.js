@@ -437,7 +437,7 @@ class PongServerGame {
 			const message = `${leftPlayer} left the game! You win.`;
 			alert(message);
 			this.stopGame();
-			this.displayWelcomeScreen();
+			// this.displayWelcomeScreen();
 			setTimeout(() => {
 				if (window.gameInvitationsManager) {
 					window.gameInvitationsManager.resetInvitations();
