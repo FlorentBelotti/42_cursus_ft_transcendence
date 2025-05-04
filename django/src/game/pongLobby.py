@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from .pongHelper import calculate_elo_change, now_str, create_initial_game_state
+from game.pongHelper import calculate_elo_change, now_str, create_initial_game_state
 from random import random
 from channels.db import database_sync_to_async
 
