@@ -579,6 +579,12 @@ class PongServerGame {
 	}
 
 	displayMatchmakingStatus(data) {
+		// Ne pas afficher l'écran de matchmaking si une partie est déjà en cours
+		if (this.isGameRunning) {
+			console.log("[PONGSERVER]: Ignoring matchmaking status update - game is running");
+			return;
+		}
+
 		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
 		this.ctx.fillStyle = 'white';
@@ -606,8 +612,21 @@ class PongServerGame {
 		const dotCount = Math.floor((now % 3000) / 1000) + 1;
 		const dots = '.'.repeat(dotCount);
 		this.ctx.fillText(`Searching${dots}`, this.canvas.width / 2, this.canvas.height / 2 + 120);
+
+		// Stocker l'ID du timer pour pouvoir l'annuler si nécessaire
+		if (this.matchmakingAnimationTimer) {
+			clearTimeout(this.matchmakingAnimationTimer);
+			this.matchmakingAnimationTimer = null;
+		}
+
+		// Ne programmer la prochaine animation que si nous ne sommes pas encore en jeu
 		if (!this.isGameRunning && this.authenticated) {
-			setTimeout(() => this.displayMatchmakingStatus(data), 500);
+			this.matchmakingAnimationTimer = setTimeout(() => {
+				// Vérifier à nouveau que le jeu n'a pas démarré avant de continuer l'animation
+				if (!this.isGameRunning) {
+					this.displayMatchmakingStatus(data);
+				}
+			}, 500);
 		}
 	}
 
