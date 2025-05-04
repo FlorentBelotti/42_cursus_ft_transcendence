@@ -693,24 +693,20 @@ class PongServerGame {
 	startMatchmaking() {
 		console.log('[PONGSERVER]:Matchmaking started...');
 		
-		// NETTOYAGE COMPLET DE TOUS LES ÉTATS D'INVITATION PRÉCÉDENTS
-		// 1. Nettoyer les paramètres URL
+		// CLEAN ALL STATE
 		const urlParams = new URLSearchParams(window.location.search);
 		if (urlParams.has('game') || urlParams.has('opponent')) {
 			console.log('[PONGSERVER]: Clearing invitation parameters from URL');
 			history.replaceState(null, '', window.location.pathname);
 		}
 		
-		// 2. Nettoyer les données de session
 		if (sessionStorage.getItem('pendingGame')) {
 			console.log('[PONGSERVER]: Removing pending game data from sessionStorage');
 			sessionStorage.removeItem('pendingGame');
 		}
 		
-		// 3. Réinitialiser complètement les propriétés d'invitation
 		this.pendingInvitedGame = null;
 		
-		// 4. Fermer la connexion WebSocket existante si elle existe
 		if (this.socket && this.socket.readyState === WebSocket.OPEN) {
 			console.log('[PONGSERVER]: Closing existing WebSocket before starting matchmaking');
 			this.socket.onclose = null; // Désactiver le gestionnaire de reconnexion
@@ -718,7 +714,6 @@ class PongServerGame {
 			this.socket = null;
 		}
 		
-		// 5. Annuler tout timeout de reconnexion
 		if (this.reconnectTimeout) {
 			clearTimeout(this.reconnectTimeout);
 			this.reconnectTimeout = null;
@@ -735,7 +730,7 @@ class PongServerGame {
 			this.inviteFriendsBtn.disabled = true;
 		}
 
-		// Établir une nouvelle connexion WebSocket spécifiquement pour le matchmaking
+		// NEW CONNECTION
 		console.log('[PONGSERVER]: Creating new WebSocket connection specifically for matchmaking');
 		this.connectWebSocket(true);
 	}
