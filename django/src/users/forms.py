@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserChangeForm, PasswordChangeForm
 from .models import customUser
+import re
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 import os
@@ -38,6 +39,8 @@ class RegisterForm(UserCreationForm):
             raise forms.ValidationError("Username already use.")
         if not 3 <= len(username) <= 30:
             raise forms.ValidationError("Username must be between 3 and 30 characters.")
+        if not re.match("^[a-zA-Z0-9]+$", username):
+            raise forms.ValidationError("Username can only contain letters and numbers.")
     
         return username
 
@@ -75,6 +78,8 @@ class UserUpdateForm(UserChangeForm):
                 raise forms.ValidationError("Username already in use.")
         if username and not 3 <= len(username) <= 30:
             raise forms.ValidationError("Username must be between 3 and 30 characters.")
+        if not re.match("^[a-zA-Z0-9]+$", username):
+            raise forms.ValidationError("Username can only contain letters and numbers.")
         return username
 
     def clean_email(self):
