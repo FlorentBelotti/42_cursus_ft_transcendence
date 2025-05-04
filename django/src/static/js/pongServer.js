@@ -692,6 +692,37 @@ class PongServerGame {
 
 	startMatchmaking() {
 		console.log('[PONGSERVER]:Matchmaking started...');
+		
+		// NETTOYAGE COMPLET DE TOUS LES ÉTATS D'INVITATION PRÉCÉDENTS
+		// 1. Nettoyer les paramètres URL
+		const urlParams = new URLSearchParams(window.location.search);
+		if (urlParams.has('game') || urlParams.has('opponent')) {
+			console.log('[PONGSERVER]: Clearing invitation parameters from URL');
+			history.replaceState(null, '', window.location.pathname);
+		}
+		
+		// 2. Nettoyer les données de session
+		if (sessionStorage.getItem('pendingGame')) {
+			console.log('[PONGSERVER]: Removing pending game data from sessionStorage');
+			sessionStorage.removeItem('pendingGame');
+		}
+		
+		// 3. Réinitialiser complètement les propriétés d'invitation
+		this.pendingInvitedGame = null;
+		
+		// 4. Fermer la connexion WebSocket existante si elle existe
+		if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+			console.log('[PONGSERVER]: Closing existing WebSocket before starting matchmaking');
+			this.socket.onclose = null; // Désactiver le gestionnaire de reconnexion
+			this.socket.close(1000, "Restarting for matchmaking");
+			this.socket = null;
+		}
+		
+		// 5. Annuler tout timeout de reconnexion
+		if (this.reconnectTimeout) {
+			clearTimeout(this.reconnectTimeout);
+			this.reconnectTimeout = null;
+		}
 
 		// COVER BUTTON DURING MATCH
 		if (this.matchmakingButton) {
@@ -704,26 +735,9 @@ class PongServerGame {
 			this.inviteFriendsBtn.disabled = true;
 		}
 
-		const urlParams = new URLSearchParams(window.location.search);
-		if (urlParams.has('game') || urlParams.has('opponent')) {
-			console.log('[PONGSERVER]: Clearing invitation parameters from URL');
-			const newUrl = window.location.pathname;
-			history.replaceState(null, '', newUrl);
-		}
-
-		// S'assurer que pendingInvitedGame est null pour ne pas rejoindre une partie d'invitation
-		this.pendingInvitedGame = null;
-
-		// GET SOCKET
-		if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-			console.log('[PONGSERVER]:Connecting to WebSocket for matchmaking...');
-			this.connectWebSocket(true);
-		} else {
-			console.log('[PONGSERVER]:WebSocket already connected, sending matchmaking request directly');
-			this.socket.send(JSON.stringify({
-				type: 'find_match'
-			}));
-		}
+		// Établir une nouvelle connexion WebSocket spécifiquement pour le matchmaking
+		console.log('[PONGSERVER]: Creating new WebSocket connection specifically for matchmaking');
+		this.connectWebSocket(true);
 	}
 
 	//==========================================================//
