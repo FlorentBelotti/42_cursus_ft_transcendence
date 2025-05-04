@@ -1,3 +1,19 @@
+/**
+ * ╔══════════════════════════════════════════════════════════╗
+ * ║                   Friend Modal Manager                   ║
+ * ╠══════════════════════════════════════════════════════════╣
+ * ║ Client-side friend management system                     ║
+ * ║                                                          ║
+ * ║ • Fetches and displays friends list                      ║
+ * ║ • Handles adding new friends                             ║
+ * ║ • Manages friend status UI updates                       ║
+ * ║ • Provides error handling and feedback messages          ║
+ * ╚══════════════════════════════════════════════════════════╝
+ */
+
+//==========================================================//
+//                   FRIEND LIST FETCHING                   //
+//==========================================================//
 
 function fetchFriends() {
 	fetch('/api/friends/', {
@@ -38,11 +54,15 @@ function fetchFriends() {
 		}
 	})
 	.catch(error => {
-		console.error('Erreur:', error);
+		console.error('[FRIEND-MODAL]:Erreur:', error);
 		const friendsList = document.getElementById('friends-list');
 		friendsList.innerHTML = `<p>Erreur: ${error.message}</p>`;
 	});
 }
+
+//==========================================================//
+//                   FRIEND ADDING                         //
+//==========================================================//
 
 function addFriend(username) {
 	const addFriendMessage = document.getElementById('add-friend-message');
@@ -71,7 +91,7 @@ function addFriend(username) {
 		return response.json();
 	})
 	.then(data => {
-		console.log('Ami ajouté avec succès:', data);
+		console.log('[FRIEND-MODAL]:Ami ajouté avec succès:', data);
 		addFriendMessage.innerHTML = '<span style="color: green;">Ami ajouté avec succès !</span>';
 		setTimeout(() => {
 			addFriendMessage.classList.add('fade-out');
@@ -83,7 +103,7 @@ function addFriend(username) {
 		}, 2000);
 	})
 	.catch(error => {
-		console.error('Erreur:', error);
+		console.error('[FRIEND-MODAL]:Erreur:', error);
 		addFriendMessage.innerHTML = `<span style="color: red;">${error.message}</span>`;
 		setTimeout(() => {
 			addFriendMessage.classList.add('fade-out');
@@ -96,6 +116,9 @@ function addFriend(username) {
 	});
 }
 
+//==========================================================//
+//                   EVENT HANDLING                         //
+//==========================================================//
 
 const addFriendButton = document.getElementById('add-friend-button');
 const friendUsernameInput = document.getElementById('friend-username');
@@ -109,4 +132,3 @@ if (addFriendButton && friendUsernameInput) {
 		}
 	});
 }
-

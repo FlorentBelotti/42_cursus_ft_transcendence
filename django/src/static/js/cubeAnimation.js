@@ -1,4 +1,22 @@
+/**
+ * ╔══════════════════════════════════════════════════════════╗
+ * ║                   Cube Animation                         ║
+ * ╠══════════════════════════════════════════════════════════╣
+ * ║ Client-side 3D cube animation system                     ║
+ * ║                                                          ║
+ * ║ • Initializes a rotating 3D cube using Three.js          ║
+ * ║ • Manages WebGL rendering and scene setup                ║
+ * ║ • Handles responsive resizing of the canvas              ║
+ * ║ • Provides cleanup for resource management               ║
+ * ║ • Integrates with DOM for dynamic container rendering    ║
+ * ╚══════════════════════════════════════════════════════════╝
+ */
+
 import * as THREE from 'three'
+
+//==========================================================//
+//                   CUBE INITIALIZATION                    //
+//==========================================================//
 
 export class CubeAnimation {
 	constructor(container) {
@@ -15,7 +33,6 @@ export class CubeAnimation {
 		this.renderer.setClearColor(0x000000, 0);
 		this.container.appendChild(this.renderer.domElement);
 
-		// Stockez une référence au canvas
 		this.canvas = this.renderer.domElement;
 
 		const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
@@ -33,7 +50,6 @@ export class CubeAnimation {
 
 		this.animate();
 
-		// Gestion du redimensionnement
 		this.resizeHandler = () => {
 			const width = this.container.clientWidth;
 			const height = this.container.clientHeight;
@@ -46,6 +62,10 @@ export class CubeAnimation {
 		window.addEventListener('resize', this.resizeHandler);
 	}
 
+	//==========================================================//
+	//                   ANIMATION MANAGEMENT                   //
+	//==========================================================//
+
 	animate() {
 		if (!this.cube) return;
 
@@ -55,25 +75,25 @@ export class CubeAnimation {
 		this.renderer.render(this.scene, this.camera);
 	}
 
+	//==========================================================//
+	//                   CLASS DESTRUCTION                     //
+	//==========================================================//
+
 	cleanup() {
-		// Arrêter l'animation
 		if (this.animationId) {
 			cancelAnimationFrame(this.animationId);
 			this.animationId = null;
 		}
 
-		// Supprimer le gestionnaire de redimensionnement
 		if (this.resizeHandler) {
 			window.removeEventListener('resize', this.resizeHandler);
 			this.resizeHandler = null;
 		}
 
-		// Nettoyer le canvas si possible
 		if (this.canvas && this.canvas.parentNode) {
 			this.canvas.parentNode.removeChild(this.canvas);
 		}
 
-		// Nettoyer les ressources Three.js
 		if (this.renderer) {
 			this.renderer.dispose();
 			this.renderer = null;
@@ -94,11 +114,13 @@ export class CubeAnimation {
 	}
 }
 
-// Initialisation au chargement de la page
+//==========================================================//
+//                   INITIALIZATION                         //
+//==========================================================//
+
 document.addEventListener('DOMContentLoaded', function() {
 	const container = document.getElementById('cube-container');
 	window.cubeAnimation = new CubeAnimation(container);
 });
 
-// Export pour utilisation externe
 window.CubeAnimation = CubeAnimation;

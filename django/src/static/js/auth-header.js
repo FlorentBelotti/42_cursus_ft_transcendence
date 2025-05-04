@@ -1,4 +1,22 @@
+/**
+ * ╔══════════════════════════════════════════════════════════╗
+ * ║                   Authentication Header                  ║
+ * ╠══════════════════════════════════════════════════════════╣
+ * ║ Client-side authentication header management system      ║
+ * ║                                                          ║
+ * ║ • Dynamically updates navigation buttons based on auth   ║
+ * ║ • Manages modal interactions for games and friends       ║
+ * ║ • Handles navigation slider for active button states     ║
+ * ║ • Supports responsive design and hover effects           ║
+ * ║ • Facilitates page navigation via SPA content loading    ║
+ * ╚══════════════════════════════════════════════════════════╝
+ */
+
 let previousActiveButton = null;
+
+//==========================================================//
+//                   AUTH BUTTON MANAGEMENT                 //
+//==========================================================//
 
 async function updateAuthButtons() {
 	try {
@@ -27,7 +45,6 @@ async function updateAuthButtons() {
 				if (pongGameButton) {
 					pongGameButton.addEventListener('click', function(event) {
 						event.preventDefault();
-						// Sauvegarder le bouton actif actuel comme précédent
 						previousActiveButton = document.querySelector('.nav-button.active, .pong-button.active, #amis-button.active');
 						document.querySelectorAll('.nav-button.active, .pong-button.active, #amis-button.active').forEach(btn => {
 							btn.classList.remove('active');
@@ -53,7 +70,6 @@ async function updateAuthButtons() {
 			const amisButton = document.getElementById('amis-button');
 			if (amisButton) {
 				amisButton.addEventListener('click', function () {
-					// Sauvegarder le bouton actif actuel comme précédent
 					previousActiveButton = document.querySelector('.nav-button.active, .pong-button.active, #amis-button.active');
 					document.querySelectorAll('.nav-button.active, .pong-button.active, #amis-button.active').forEach(btn => {
 						btn.classList.remove('active');
@@ -85,16 +101,19 @@ async function updateAuthButtons() {
 				updateSlider(this);
 				if (window.location.pathname !== new URL(url, window.location.origin).pathname) {
 					window.loadContent(url);
-					// history.pushState({ url: url }, '', url);
 				}
 			});
 		});
 
 		initHeaderSlider();
 	} catch (error) {
-		console.error('Error updating auth buttons:', error);
+		console.error('[AUTH-HEADER]:Error updating auth buttons:', error);
 	}
 }
+
+//==========================================================//
+//                   SLIDER MANAGEMENT                      //
+//==========================================================//
 
 function updateSlider(activeButton) {
 	const slider = document.querySelector('.menu-item-slider');
@@ -114,7 +133,7 @@ function initHeaderSlider() {
 	const slider = document.querySelector('.menu-item-slider');
 
 	if (!navButtons.length || !slider) {
-		console.warn('Aucun bouton ou slider trouvé pour initialisation');
+		console.warn('[AUTH-HEADER]:Aucun bouton ou slider trouvé pour initialisation');
 		return;
 	}
 
@@ -170,8 +189,11 @@ function initHeaderSlider() {
 	});
 }
 
+//==========================================================//
+//                   INITIALIZATION                         //
+//==========================================================//
+
 document.addEventListener('DOMContentLoaded', function () {
-	
 	updateAuthButtons();
 
 	const pongModal = document.getElementById('pong-modal');
@@ -181,20 +203,14 @@ document.addEventListener('DOMContentLoaded', function () {
 	const friendsModal = document.getElementById('friends-modal');
 	const closeFriendsModal = friendsModal.querySelector('.close-friends-modal');
 
-	// LISTEN TO CLICK EVENT ON PONG MODAL
-
 	pongModalButtons.forEach(button => {
 		button.addEventListener('click', function() {
 			const url = button.getAttribute('data-url');
-			// OPTIONNAL : handle re-click
 			if (url) {
 				window.loadContent(url);
-				// history.pushState({ url: url }, '', url);
 			}
-		})
-	})
-
-	// CLOSE
+		});
+	});
 
 	closePongModal.addEventListener('click', function () {
 		pongModal.style.display = 'none';
@@ -218,4 +234,3 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 });
-

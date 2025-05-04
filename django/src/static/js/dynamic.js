@@ -1,18 +1,34 @@
+/**
+ * ╔══════════════════════════════════════════════════════════╗
+ * ║                   Dynamic Content Loader                 ║
+ * ╠══════════════════════════════════════════════════════════╣
+ * ║ Client-side dynamic content management system            ║
+ * ║                                                          ║
+ * ║ • Handles SPA navigation and content loading             ║
+ * ║ • Manages script loading and initialization              ║
+ * ║ • Cleans up resources before navigation                  ║
+ * ║ • Supports footer and navigation button interactions     ║
+ * ║ • Integrates with browser history for navigation         ║
+ * ╚══════════════════════════════════════════════════════════╝
+ */
+
 document.addEventListener('DOMContentLoaded', function () {
 	let pongGame = null;
 	let pongServerGame = null;
 	let snakeGame = null;
 	updateAuthButtons();
 
+	//==========================================================//
+	//                   EVENT HANDLING                        //
+	//==========================================================//
+
 	function attachFooterButtonEvents() {
 		document.querySelectorAll('.footer-button').forEach(function (button) {
-			// Supprimer les anciens gestionnaires pour éviter les doublons
 			button.removeEventListener('click', handleFooterButtonClick);
 			button.addEventListener('click', handleFooterButtonClick);
 		});
 	}
 
-	// Gestionnaire d'événements pour les clics sur les boutons du footer
 	function handleFooterButtonClick(event) {
 		event.preventDefault();
 		const url = event.currentTarget.getAttribute('data-url');
@@ -21,12 +37,15 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 
-	window.loadContent = function(url, addToHistory = true) {
+	//==========================================================//
+	//                   CONTENT LOADING                       //
+	//==========================================================//
 
+	window.loadContent = function(url, addToHistory = true) {
 		window.isDynamicLoading = true;
 
-		console.log(`Navigation initiated to ${url}`);
-		console.log("Starting cleanup before navigation");
+		console.log(`[DYNAMIC]:Navigation initiated to ${url}`);
+		console.log("[DYNAMIC]:Starting cleanup before navigation");
 		cleanupScriptsAndEvents();
 
 		fetch(url, {
@@ -54,9 +73,6 @@ document.addEventListener('DOMContentLoaded', function () {
 							if (scriptUrl.includes('tournamentClient.js')) {
 								initPongTournament();
 							}
-							// if (scriptUrl.includes('leaderboard.js')) {
-							// 	loadLeaderboard();
-							// }
 							if (scriptUrl.includes('register.js')) {
 								registerFormEvent();
 							}
@@ -78,9 +94,6 @@ document.addEventListener('DOMContentLoaded', function () {
 							if (scriptUrl.includes('sphere-animation.js')) {
 								initSphereAnimation();
 							}
-							// if (scriptUrl.includes('leaderboard.js')) {
-							// 	loadLeaderboardPage();
-							// }
 							if (scriptUrl.includes('snake.js')) {
 								initSnake();
 							}
@@ -99,31 +112,34 @@ document.addEventListener('DOMContentLoaded', function () {
 				if (addToHistory) {
 					history.pushState({ url: url }, '', url);
 				}
-			});	
+			});
 	}
 	attachFooterButtonEvents();
 
+	//==========================================================//
+	//                   GAME INITIALIZATION                   //
+	//==========================================================//
+
 	function initCubeAnimation() {
-		console.log('Initializing cube animation...');
+		console.log('[DYNAMIC]:Initializing cube animation...');
 		if (window.cubeAnimation) {
-			console.log('Cleaning up old cube animation...');
+			console.log('[DYNAMIC]:Cleaning up old cube animation...');
 			window.cubeAnimation.cleanup();
 		}
 		const container = document.getElementById('cube-container');
 		if (!container) {
-			console.error('Cube container not found!');
+			console.error('[DYNAMIC]:Cube container not found!');
 			return;
 		}
 		window.cubeAnimation = new CubeAnimation(container);
 	}
 
 	function initGameInvitations() {
-		console.log('Initializing game invitations...');
+		console.log('[DYNAMIC]:Initializing game invitations...');
 		if (window.gameInvitationsManager) {
 			window.gameInvitationsManager.init();
 		} else {
-			console.error('Game invitations manager not found');
-			// If for some reason it's not available, let's create it
+			console.error('[DYNAMIC]:Game invitations manager not found');
 			window.gameInvitationsManager = new GameInvitationsManager();
 			window.gameInvitationsManager.init();
 		}
@@ -149,12 +165,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	function initPongServer() {
 		if (window.pongServerGame) {
-			console.log('[DYNAMIC]: Cleaning up existing game instance.');
+			console.log('[DYNAMIC]:Cleaning up existing game instance.');
 			window.pongServerGame.stopGame();
 			window.pongServerGame.cleanup();
 			window.pongServerGame = null;
 		}
-		console.log('[DYNAMIC]: Creating new game instance.');
+		console.log('[DYNAMIC]:Creating new game instance.');
 		window.pongServerGame = new PongServerGame();
 	}
 
@@ -167,168 +183,165 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 
-	function  initPongAnimation(){
+	function initPongAnimation(){
 		if (window.PongAnimation){
 			window.PongAnimation.stopAnimation();
 			window.PongAnimation = new PongAnimation();
-		}else{
+		} else {
 			window.PongAnimation = new PongAnimation();
 		}
 	}
 
 	function initSphereAnimation() {
-		console.log('Initializing sphere animation...');
+		console.log('[DYNAMIC]:Initializing sphere animation...');
 		if (window.sphereAnimation) {
-			console.log('Cleaning up old animation...');
+			console.log('[DYNAMIC]:Cleaning up old animation...');
 			window.sphereAnimation.cleanup();
 		}
 		const container = document.getElementById('sphere-container');
 		if (!container) {
-			console.error('Sphere container not found!');
+			console.error('[DYNAMIC]:Sphere container not found!');
 			return;
 		}
 		window.sphereAnimation = new SphereAnimation(container);
 	}
 
 	function initSnake() {
-		console.log('Initializing snake game...');
+		console.log('[DYNAMIC]:Initializing snake game...');
 		if (window.snakeGame) {
-			console.log('Cleaning up old snake game...');
+			console.log('[DYNAMIC]:Cleaning up old snake game...');
 			window.snakeGame.cleanup();
 			window.snakeGame = null;
 		}
 		try {
 			window.snakeGame = new Snake3D();
-			console.log('Snake game initialized successfully.');
+			console.log('[DYNAMIC]:Snake game initialized successfully.');
 		} catch (error) {
-			console.error('Error initializing snake game:', error);
+			console.error('[DYNAMIC]:Error initializing snake game:', error);
 		}
 	}
 
-	function cleanupScriptsAndEvents() {
-		console.log("[CLEANUP]: Starting cleanup process...");
+	//==========================================================//
+	//                   CLEANUP MANAGEMENT                    //
+	//==========================================================//
 
-		// 0. CLeanup Snake
+	function cleanupScriptsAndEvents() {
+		console.log("[DYNAMIC]:Starting cleanup process...");
+
 		if (window.snakeGame) {
-			console.log("[CLEANUP]: Cleaning up Snake3D...");
+			console.log("[DYNAMIC]:Cleaning up Snake3D...");
 			try {
 				window.snakeGame.cleanup();
 				window.snakeGame = null;
 			} catch (error) {
-				console.error("[CLEANUP]: Error during Snake3D cleanup:", error);
+				console.error("[DYNAMIC]:Error during Snake3D cleanup:", error);
 			}
 		}
 
-		// 1. Declare Pong Forfeit
 		if (typeof window.declarePongForfeit === 'function') {
-			console.log("[CLEANUP]: Declaring Pong forfeit...");
+			console.log("[DYNAMIC]:Declaring Pong forfeit...");
 			window.declarePongForfeit();
 		}
 
-		// 2. Cancel Pending Invitations
 		if (typeof window.cancelPendingPongInvitations === 'function') {
-			console.log("[CLEANUP]: Cancelling pending invitations...");
+			console.log("[DYNAMIC]:Cancelling pending invitations...");
 			window.cancelPendingPongInvitations();
 		}
 
-		// 3. Cleanup PongServerGame
 		if (window.pongServerGame) {
-			console.log("[CLEANUP]: Cleaning up PongServerGame...");
+			console.log("[DYNAMIC]:Cleaning up PongServerGame...");
 			try {
 				window.pongServerGame.cleanup();
 				window.pongServerGame = null;
 			} catch (error) {
-				console.error("[CLEANUP]: Error during PongServerGame cleanup:", error);
+				console.error("[DYNAMIC]:Error during PongServerGame cleanup:", error);
 			}
 		}
 
-		// 4. Cleanup FriendInviteManager
 		if (window.friendInviteManager) {
-			console.log("[CLEANUP]: Cleaning up FriendInviteManager...");
+			console.log("[DYNAMIC]:Cleaning up FriendInviteManager...");
 			try {
 				if (typeof window.friendInviteManager.cleanup === 'function') {
 					window.friendInviteManager.cleanup();
 				}
 				window.friendInviteManager = null;
 			} catch (error) {
-				console.error("[CLEANUP]: Error during FriendInviteManager cleanup:", error);
+				console.error("[DYNAMIC]:Error during FriendInviteManager cleanup:", error);
 			}
 		}
 
-		// 5. Declare Forfeit Tournament - Amélioré!
 		if (typeof window.declarePongTournamentForfeit === 'function') {
-			console.log("[CLEANUP]: Declaring tournament forfeit...");
+			console.log("[DYNAMIC]:Declaring tournament forfeit...");
 			window.declarePongTournamentForfeit();
 		} else if (window.tournament && window.tournament.socket) {
-			// Fallback direct pour marquer la sortie de page
-			console.log("[CLEANUP]: Setting tournament page unloading flag");
+			console.log("[DYNAMIC]:Setting tournament page unloading flag");
 			window.tournament.isPageUnloading = true;
-			
-			// Fermer proprement la connexion socket
+
 			if (window.tournament.socket.readyState === WebSocket.OPEN) {
-				console.log("[CLEANUP]: Closing tournament WebSocket connection");
-				window.tournament.socket.onclose = null; // Enlever le gestionnaire de reconnexion
+				console.log("[DYNAMIC]:Closing tournament WebSocket connection");
+				window.tournament.socket.onclose = null;
 				window.tournament.socket.close(1000, "Navigation page change");
 			}
 		}
 
-		// 6. Ensure tournament cleanup complete
 		if (window.tournament) {
 			try {
-				console.log("[CLEANUP]: Cleaning up tournament client");
+				console.log("[DYNAMIC]:Cleaning up tournament client");
 				window.tournament.stopGame();
 				window.tournament = null;
 			} catch (error) {
-				console.error("[CLEANUP]: Error during tournament cleanup:", error);
+				console.error("[DYNAMIC]:Error during tournament cleanup:", error);
 			}
 		}
 
-		// 7. Reset loaded scripts registry
-		console.log("[CLEANUP]: Resetting loaded scripts registry");
+		console.log("[DYNAMIC]:Resetting loaded scripts registry");
 		window.loadedScriptURLs = new Set();
 
-		// 8. Remove Dynamic Scripts
 		const dynamicScripts = document.querySelectorAll('script[data-dynamic="true"]');
-		console.log(`[CLEANUP]: Removing ${dynamicScripts.length} dynamic scripts...`);
+		console.log(`[DYNAMIC]:Removing ${dynamicScripts.length} dynamic scripts...`);
 		dynamicScripts.forEach(script => {
 			script.remove();
 		});
 
-		console.log("[CLEANUP]: Cleanup process completed.");
+		console.log("[DYNAMIC]:Cleanup process completed.");
 	}
+
+	//==========================================================//
+	//                   SCRIPT LOADING                        //
+	//==========================================================//
 
 	function loadScript(url, callback, isModule = false) {
-			// Create script registry if it doesn't exist
-			window.loadedScriptURLs = window.loadedScriptURLs || new Set();
+		window.loadedScriptURLs = window.loadedScriptURLs || new Set();
 
-			// Check if the script is already loaded in current page view
-			if (window.loadedScriptURLs.has(url)) {
-				console.log(`Script already loaded in this page view: ${url}`);
-				if (callback) callback(); // Call the callback if provided
-				return;
-			}
+		if (window.loadedScriptURLs.has(url)) {
+			console.log(`[DYNAMIC]:Script already loaded in this page view: ${url}`);
+			if (callback) callback();
+			return;
+		}
 
-			// Create and load the script
-			const script = document.createElement('script');
-			script.setAttribute('data-dynamic', 'true');
-			script.setAttribute('data-src', url); // Add this attribute to track loaded scripts
+		const script = document.createElement('script');
+		script.setAttribute('data-dynamic', 'true');
+		script.setAttribute('data-src', url);
 
-			if (isModule) {
-				script.type = 'module';
-			}
+		if (isModule) {
+			script.type = 'module';
+		}
 
-			if (callback) {
-				script.onload = function () {
-					callback();
-				};
-			}
+		if (callback) {
+			script.onload = function () {
+				callback();
+			};
+		}
 
-			// Add to our registry
-			window.loadedScriptURLs.add(url);
+		window.loadedScriptURLs.add(url);
 
-			script.src = url;
-			document.body.appendChild(script);
+		script.src = url;
+		document.body.appendChild(script);
 	}
+
+	//==========================================================//
+	//                   NAVIGATION HANDLING                    //
+	//==========================================================//
 
 	document.querySelectorAll('.nav-button').forEach(function (button) {
 		button.addEventListener('click', function (event) {
