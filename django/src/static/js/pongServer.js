@@ -761,9 +761,14 @@ class PongServerGame {
 			try {
 				this.socket.send(JSON.stringify({
 					type: 'cancel_matchmaking'
-				}));
+					}));
+				
+				console.log("[PONGSERVER]: Closing WebSocket connection after game end");
+				this.socket.onclose = null;
+				this.socket.close(1000, "Game ended normally");
+				this.socket = null;
 			} catch (e) {
-				console.error("Error sending cancel matchmaking:", e);
+				console.error("[PONGSERVER]: Error closing game socket:", e);
 			}
 		}
 
@@ -771,7 +776,7 @@ class PongServerGame {
 		try {
 			this.cancelPendingInvitations();
 		} catch (e) {
-			console.error("Error cancelling invitations:", e);
+			console.error("[PONGSERVER]: Error cancelling invitations:", e);
 		}
 
 		// ACTIVATE BUTTON
@@ -790,7 +795,10 @@ class PongServerGame {
 		// CANCEL INVITE
 		if (this.friendInviteManager) {
 			this.friendInviteManager.hasInvitedSomeone = false;
-		}
+			}
+
+		// Afficher l'écran d'accueil après la fin du jeu
+		this.displayWelcomeScreen();
 	}
 
 	//==========================================================//
