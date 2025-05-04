@@ -24,6 +24,7 @@ urlpatterns = [
 
 	path('leaderboard/', views.leaderboard, name='leaderboard'),
 	path('api/', include('users.urls')),
+	path('', include('game.urls')),  # Ajout des URLs de l'API Pong
 	path('auth/', include('social_django.urls', namespace='social')),
 	path('snake/', views.define_render, name='snake'),
 	path('local/', views.define_render, name='local'),
