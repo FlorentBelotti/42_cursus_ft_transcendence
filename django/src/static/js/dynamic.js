@@ -42,7 +42,21 @@ document.addEventListener('DOMContentLoaded', function () {
 	//==========================================================//
 
 	window.loadContent = function(url, addToHistory = true) {
+		// Éviter les appels multiples à loadContent pour la même URL
+		// Utiliser une variable statique pour suivre l'URL en cours de chargement
+		if (window.currentlyLoadingUrl === url) {
+			console.log(`[DYNAMIC]:Already loading ${url}, ignoring duplicate request`);
+			return;
+		}
+
+		// Si une autre navigation est en cours, attendez qu'elle se termine
+		if (window.isDynamicLoading) {
+			console.log(`[DYNAMIC]:Navigation already in progress, ignoring request to ${url}`);
+			return;
+		}
+
 		window.isDynamicLoading = true;
+		window.currentlyLoadingUrl = url;
 
 		console.log(`[DYNAMIC]:Navigation initiated to ${url}`);
 		console.log("[DYNAMIC]:Starting cleanup before navigation");
@@ -112,6 +126,16 @@ document.addEventListener('DOMContentLoaded', function () {
 				if (addToHistory) {
 					history.pushState({ url: url }, '', url);
 				}
+
+				// Réinitialiser les drapeaux une fois le chargement terminé
+				window.isDynamicLoading = false;
+				window.currentlyLoadingUrl = null;
+			})
+			.catch(error => {
+				console.error(`[DYNAMIC]:Error loading content from ${url}:`, error);
+				// Réinitialiser les drapeaux même en cas d'erreur
+				window.isDynamicLoading = false;
+				window.currentlyLoadingUrl = null;
 			});
 	}
 	attachFooterButtonEvents();
