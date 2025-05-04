@@ -14,12 +14,12 @@ from game.routing import websocket_urlpatterns
 from game.gameMiddleware import JWTAuthMiddleware
 
 application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": JWTAuthMiddleware(
-        AuthMiddlewareStack(
-            SessionMiddlewareStack(
-                URLRouter(websocket_urlpatterns)
-            )
-        )
-    ),
+	"http": get_asgi_application(),
+	"websocket": JWTAuthMiddleware(
+		AuthMiddlewareStack(
+			SessionMiddlewareStack(
+				URLRouter(websocket_urlpatterns)
+			)
+		)
+	),
 })
