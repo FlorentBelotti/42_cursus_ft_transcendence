@@ -894,10 +894,11 @@ window.declarePongForfeit = function() {
 	console.log("[PONGSERVER]:Global forfeit declaration triggered");
 
 	try {
+		console.log("[PONGSERVER]:PongServerGame exists:", !!window.pongServerGame);
 
 		// DELETE EXISTING GAME INSTANCE
 		if (window.pongServerGame && window.pongServerGame.socket) {
-			console.log("Found active pongServerGame, sending forfeit via WebSocket");
+			console.log("[PONGSERVER]:Found active pongServerGame, sending forfeit via WebSocket");
 
 			if (window.pongServerGame.socket.readyState === WebSocket.OPEN) {
 				window.pongServerGame.socket.send(JSON.stringify({
@@ -906,7 +907,7 @@ window.declarePongForfeit = function() {
 				}));
 				window.pongServerGame.socket.onclose = null; // Remove reconnect handler
 				window.pongServerGame.socket.close(1000, "User navigated away");
-				console.log("Socket forcibly closed for forfeit");
+				console.log("[PONGSERVER]:Socket forcibly closed for forfeit");
 				window.pongServerGame.isPageUnloading = true;
 				window.pongServerGame.isGameRunning = false;
 				return true;
@@ -915,7 +916,7 @@ window.declarePongForfeit = function() {
 
 		// API FALLBACK
 		else {
-			console.log("No active pongServerGame, using API fallback");
+			console.log("[PONGSERVER]:No active pongServerGame, using API fallback");
 			const xhr = new XMLHttpRequest();
 			xhr.open('POST', '/api/match/forfeit/', false); // false = synchronous
 			xhr.setRequestHeader('Content-Type', 'application/json');
@@ -925,16 +926,16 @@ window.declarePongForfeit = function() {
 			}
 			try {
 				xhr.send();
-				console.log("Forfeit API response:", xhr.status);
+				console.log("[PONGSERVER]:Forfeit API response:", xhr.status);
 				return true;
 			} catch (e) {
-				console.error("Forfeit API call failed:", e);
+				console.error("[PONGSERVER]:Forfeit API call failed:", e);
 			}
 		}
 
 		return false;
 	} catch (error) {
-		console.error("Error in global forfeit declaration:", error);
+		console.error("[PONGSERVER]:Error in global forfeit declaration:", error);
 		return false;
 	}
 };
