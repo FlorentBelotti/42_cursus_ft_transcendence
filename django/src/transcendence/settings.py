@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from .logging_config import configure_logging
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -8,6 +9,9 @@ SECRET_KEY = 'your-secret-key'
 DEBUG = False
 
 ALLOWED_HOSTS = ['*']
+
+# Configuration du logging
+LOGGING = configure_logging(BASE_DIR)
 
 INSTALLED_APPS = [
 	'django_prometheus',
