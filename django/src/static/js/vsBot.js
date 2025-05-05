@@ -278,6 +278,7 @@ class PongBot {
             y: Math.random() < 0.5 ? -1 : 1,
         };
         this.ball.ballSpeed = 3;
+		this.pad2.y = this.canvas.height / 2 - this.padHeight / 2;
     }
 
     startGameLoop() {
