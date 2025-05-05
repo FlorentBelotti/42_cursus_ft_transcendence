@@ -22,7 +22,7 @@ class PongGame {
 
 		this.padWidth = 20;
 		this.padHeight = 90;
-		this.padSpeed = 7;
+		this.padSpeed = 5;
 		this.pad1 = { x: 10, y: 255 };
 		this.pad2 = { x: 770, y: 255 };
 		this.direction1 = 0;
@@ -33,7 +33,7 @@ class PongGame {
 		this.ball = {
 			x: this.canvas.width / 2 - this.ballWidth / 2,
 			y: this.canvas.height / 2 - this.ballHeight / 2,
-			ballSpeed: 3
+			ballSpeed: 2
 		};
 		this.directionBall = {
 			x: Math.random() < 0.5 ? -1 : 1,
