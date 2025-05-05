@@ -161,6 +161,9 @@ function nicknameFormEvent() {
 				console.log('[ACCOUNT]:Error:', data.error);
 				if (data.errors) {
 					console.log('[ACCOUNT]:Validation errors:', data.errors);
+					if (data.errors.nickname) {
+						document.getElementById("errorNickname").innerHTML = `<span class="error-message">${data.errors.nickname.join(', ')}</span>`;
+					}
 				}
 			}
 		} catch (error) {
@@ -168,6 +171,7 @@ function nicknameFormEvent() {
 		}
 	});
 }
+
 
 //==========================================================//
 //                   INITIALIZATION                         //

@@ -131,4 +131,10 @@ class NicknameUpdateForm(forms.ModelForm):
 		widgets = {
 			'nickname': forms.TextInput(attrs={'class': 'form-control'}),
 		}
-		
+
+	def clean_nickname(self):
+		nickname = self.cleaned_data.get('nickname')
+		if nickname:
+			if not 3 <= len(nickname) <= 30:
+				raise forms.ValidationError("Nickname must be between 3 and 30 characters.")
+		return nickname
