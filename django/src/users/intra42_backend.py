@@ -1,5 +1,6 @@
 from social_core.backends.oauth import BaseOAuth2
 from base64 import b64encode
+from social_core.exceptions import AuthFailed
 
 class Intra42OAuth2(BaseOAuth2):
 	name = 'intra42'
@@ -30,6 +31,24 @@ class Intra42OAuth2(BaseOAuth2):
 		}
 
 	def user_data(self, access_token, *args, **kwargs):
-		return self.get_json('https://api.intra.42.fr/v2/me', headers={
-			'Authorization': f'Bearer {access_token}'
-		})
+		try:
+			return self.get_json('https://api.intra.42.fr/v2/me', headers={
+				'Authorization': f'Bearer {access_token}'
+			})
+		except Exception as e:
+			raise AuthFailed(self, f"Erreur lors de la récupération des données utilisateur: {str(e)}")
+	
+	def auth_complete(self, *args, **kwargs):
+		"""Complète le processus d'authentification et gère les erreurs"""
+		try:
+			# Tentative d'authentification standard
+			return super().auth_complete(*args, **kwargs)
+		except AuthFailed as e:
+			# Authentification échouée (refus utilisateur ou problème API)
+			if 'error' in self.data:
+				error = self.data.get('error')
+				if error == 'access_denied':
+					# L'utilisateur a refusé l'autorisation
+					raise AuthFailed(self, "L'utilisateur a refusé l'autorisation")
+			# Autres erreurs d'authentification
+			raise

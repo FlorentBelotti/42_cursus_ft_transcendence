@@ -3,7 +3,7 @@ from django.views.generic import RedirectView
 from views import views
 from django.conf import settings
 from django.conf.urls.static import static
-from users.views import password_reset_confirm, password_reset_request
+from users.views import password_reset_confirm, password_reset_request, auth_error
 from django_prometheus import exports
 
 urlpatterns = [
@@ -39,6 +39,9 @@ urlpatterns = [
 
 	path('', include('django_prometheus.urls')),
 	path('metrics/', exports.ExportToDjangoView, name='prometheus-metrics'),
+
+	# URL pour gérer les erreurs d'authentification OAuth
+	path('auth/error/', auth_error, name='social_auth_error'),
 ]
 
 if settings.DEBUG:

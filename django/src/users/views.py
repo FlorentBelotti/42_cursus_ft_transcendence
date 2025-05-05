@@ -135,7 +135,6 @@ def logout_action(request):
 		return response
 	return redirect('home')
 
-
 class RefreshTokenView(APIView):
 	def post(self, request):
 		refresh_token = request.COOKIES.get('refresh_token') or request.data.get('refresh_token')
@@ -321,7 +320,6 @@ def post_login(request):
 ########################################################################################################################################
 ########################################################################################################################################
 ########################################################################################################################################
-
 
 @login_required
 def get_user_invitations(request):
@@ -777,3 +775,21 @@ def update_snake_score(request):
 	except Exception as e:
 		print("Erreur lors de la mise à jour du score:", str(e))
 		return JsonResponse({'error': str(e)}, status=500)
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.urls import reverse
+from social_django.utils import load_strategy, load_backend
+from social_core.exceptions import AuthFailed, SocialAuthBaseException
+
+def auth_error(request):
+    """Vue pour gérer les erreurs d'authentification OAuth"""
+    error_message = "Une erreur s'est produite lors de l'authentification."
+    
+    # Récupérer les détails de l'erreur depuis la session si disponibles
+    if 'social_auth_error' in request.session:
+        error_message = request.session.get('social_auth_error')
+        del request.session['social_auth_error']
+    
+    messages.error(request, error_message)
+    return redirect('login')
