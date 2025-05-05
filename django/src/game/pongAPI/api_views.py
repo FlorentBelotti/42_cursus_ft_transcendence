@@ -15,22 +15,19 @@ from django.shortcuts import get_object_or_404
 from users.models import customUser
 from .api_consumer import APIMatchConsumer
 
-# Configuration du logger
+# DEBUG
 logger = logging.getLogger('pong.api')
 
-# Singleton pour le lobby manager
+# CREATE LOBBY INSTANCE (ONLY INITIALIZE)
 lobby_manager = LobbyManager()
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def game_status(request):
-    """
-    Récupère le statut du jeu pour l'utilisateur connecté
-    """
     user = request.user
     logger.info(f"Requête status pour l'utilisateur {user.username}")
     
-    # Vérifier si l'utilisateur est dans une partie active
+    # CHECK FOR ACTIVE GAME
     match_data = None
     player_number = None
     match_id = None
@@ -53,7 +50,7 @@ def game_status(request):
             'message': "L'utilisateur n'est pas dans une partie active"
         })
     
-    # Sérialiser l'état du jeu
+    # SERIALIZE GAME STATE
     serializer = GameStateSerializer(match_data['game_state'])
     
     return Response({
@@ -66,13 +63,10 @@ def game_status(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def game_score(request):
-    """
-    Récupère le score de la partie active pour l'utilisateur connecté
-    """
     user = request.user
     logger.info(f"Requête score pour l'utilisateur {user.username}")
-    
-    # Vérifier si l'utilisateur est dans une partie active
+
+    # CHECK GAME STATE
     match_data = None
     match_id = None
     
@@ -91,7 +85,7 @@ def game_score(request):
             'error': "L'utilisateur n'est pas dans une partie active"
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # Récupérer uniquement les scores
+    # GET SCORE
     player1_username = match_data['game_state']['player_info']['player1']['username']
     player2_username = match_data['game_state']['player_info']['player2']['username']
     
@@ -110,13 +104,10 @@ def game_score(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def start_matchmaking(request):
-    """
-    Démarre la recherche d'un match pour l'utilisateur
-    """
     user = request.user
     logger.info(f"Démarrage du matchmaking pour l'utilisateur {user.username}")
     
-    # Vérifier si déjà dans un match
+    # CHECK GAME STATE
     for match_id, match in lobby_manager.active_matches.items():
         for player in match['players']:
             if hasattr(player, 'user') and player.user.id == user.id:
@@ -126,7 +117,7 @@ def start_matchmaking(request):
                     'match_id': match_id
                 }, status=status.HTTP_400_BAD_REQUEST)
     
-    # Vérifier si déjà en file d'attente
+    # CHECK QUEUE
     for player, _, _ in lobby_manager.waiting_players:
         if hasattr(player, 'user') and player.user.id == user.id:
             queue_position = 0
@@ -142,18 +133,18 @@ def start_matchmaking(request):
                 'queue_position': queue_position
             })
     
-    # Créer une simulation d'un consumer pour l'API
+    # API CONSUMMER CLASS
     api_consumer = APIMatchConsumer(user)
     logger.info(f"Création d'un APIMatchConsumer pour l'utilisateur {user.username}")
     
     try:
-        # Ajouter le joueur à la file d'attente
+        # ADD TO QUEUE
         async_to_sync(lobby_manager.add_player_to_queue)(api_consumer)
         
-        # Tenter de trouver un match immédiatement
+        # FIND MATCH DIRECTLY
         match_found = async_to_sync(lobby_manager.find_match_for_player)(api_consumer)
         
-        # Trouver la position dans la file d'attente
+        # QUEUE POSITION
         queue_position = 0
         for i, (p, _, _) in enumerate(lobby_manager.waiting_players):
             if hasattr(p, 'user') and p.user.id == user.id:
@@ -161,7 +152,6 @@ def start_matchmaking(request):
                 break
         
         if match_found:
-            # Récupérer les informations sur le match
             last_message = api_consumer.get_last_message()
             match_id = api_consumer.match_id or (last_message.get('match_id') if last_message else None)
             opponent = last_message.get('opponent') if last_message else "adversaire"
@@ -178,14 +168,13 @@ def start_matchmaking(request):
         else:
             logger.info(f"Aucun match immédiat trouvé pour {user.username}, position dans la file: {queue_position}")
             
-            # Lancer une tâche en arrière-plan pour continuer la recherche
+            # KEEP SEARCHING
             try:
                 import threading
                 def background_matchmaking():
                     try:
                         logger.info(f"Démarrage de la recherche en arrière-plan pour {user.username}")
-                        # Essayer de trouver un match pendant 30 secondes maximum
-                        for _ in range(15):  # 15 tentatives à 2 secondes d'intervalle = 30 secondes
+                        for _ in range(15):
                             logger.debug(f"Tentative de matchmaking pour {user.username}")
                             try:
                                 if async_to_sync(lobby_manager.find_matches_for_all)() > 0:
@@ -199,7 +188,7 @@ def start_matchmaking(request):
                         logger.error(f"Erreur dans le thread de matchmaking: {e}")
                         traceback.print_exc()
                 
-                # Démarrer la recherche en arrière-plan
+                # START BACKGROUND SEARCH
                 t = threading.Thread(target=background_matchmaking)
                 t.daemon = True
                 t.start()
@@ -223,9 +212,6 @@ def start_matchmaking(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def move_paddle(request):
-    """
-    Déplace la raquette du joueur actif
-    """
     user = request.user
     logger.debug(f"Requête de mouvement de raquette pour {user.username}")
     
@@ -240,7 +226,6 @@ def move_paddle(request):
     player_number = None
     match_id = None
     
-    # Trouver la partie active de l'utilisateur
     for mid, match in lobby_manager.active_matches.items():
         for i, player in enumerate(match['players']):
             if hasattr(player, 'user') and player.user.id == user.id:
@@ -257,7 +242,6 @@ def move_paddle(request):
             'error': "L'utilisateur n'est pas dans une partie active"
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # Mettre à jour l'état du jeu avec l'entrée
     player_key = f"player{player_number}"
     match_data["game_state"]["inputs"][player_key] = input_value
     logger.debug(f"Mouvement {input_value} appliqué pour {user.username} (joueur {player_number}) dans le match {match_id}")

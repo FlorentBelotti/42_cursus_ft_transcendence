@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 class GameStateSerializer(serializers.Serializer):
     """
-    Serializer pour l'état du jeu Pong
+    Game state
     """
     match_id = serializers.CharField(required=False)
     player1_username = serializers.CharField(source='player_info.player1.username')
@@ -16,12 +16,12 @@ class GameStateSerializer(serializers.Serializer):
 
 class PaddleInputSerializer(serializers.Serializer):
     """
-    Serializer pour les entrées de mouvement de la raquette
+    Pad state
     """
     input = serializers.IntegerField(min_value=-1, max_value=1)
 
 class MatchmakingSerializer(serializers.Serializer):
     """
-    Serializer pour démarrer le matchmaking
+    Matchmaking state
     """
     start = serializers.BooleanField(default=True)
