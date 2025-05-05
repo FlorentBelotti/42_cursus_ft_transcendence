@@ -786,10 +786,16 @@ def auth_error(request):
     """Vue pour gérer les erreurs d'authentification OAuth"""
     error_message = "Une erreur s'est produite lors de l'authentification."
     
-    # Récupérer les détails de l'erreur depuis la session si disponibles
-    if 'social_auth_error' in request.session:
-        error_message = request.session.get('social_auth_error')
-        del request.session['social_auth_error']
+    # Récupération des paramètres d'erreur depuis l'URL
+    error = request.GET.get('error', '')
     
+    if error == 'access_denied':
+        error_message = "Vous avez refusé l'autorisation à l'API 42."
+    elif error:
+        error_message = f"Erreur d'authentification: {error}"
+    
+    # Afficher le message d'erreur
     messages.error(request, error_message)
-    return redirect('login')
+    
+    # Redirection vers la page de connexion avec le message d'erreur dans l'URL
+    return redirect(f"{reverse('login')}?error={error_message}")
