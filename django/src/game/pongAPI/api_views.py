@@ -8,7 +8,7 @@ import json
 import traceback
 
 from .serializers import GameStateSerializer, PaddleInputSerializer, MatchmakingSerializer
-from .pongLobby import LobbyManager
+from ..pongLobby import LobbyManager
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.shortcuts import get_object_or_404

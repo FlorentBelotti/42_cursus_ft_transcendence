@@ -2,12 +2,12 @@
 ╔═══════════════════════════════════════════════════╗
 ║                 APIConsumer                       ║
 ╠═══════════════════════════════════════════════════╣
-║ Adaptateur pour interfacer les appels API REST    ║
-║ avec le système WebSocket existant                ║
+║ Adapter to interface REST API calls               ║
+║ with the existing WebSocket system                ║
 ║                                                   ║
-║ • Simule les méthodes d'un WebSocket consumer     ║
-║ • Permet d'utiliser l'infrastructure existante    ║
-║ • Gère les requêtes API comme des clients WS      ║
+║ • Simulates WebSocket consumer methods            ║
+║ • Allows using existing infrastructure            ║
+║ • Handles API requests as WS clients              ║
 ╚═══════════════════════════════════════════════════╝
 """
 
@@ -129,7 +129,7 @@ class APIMatchConsumer(APIConsumer):
         """
         logger.info(f"run_game_loop appelé pour match_id={match_id} par APIMatchConsumer pour {self.user.username}")
         # Récupérer le LobbyManager
-        from .pongLobby import LobbyManager
+        from ..pongLobby import LobbyManager
         lobby_manager = LobbyManager()
         
         try:
@@ -140,7 +140,7 @@ class APIMatchConsumer(APIConsumer):
                 return
                 
             # On récupère le game engine
-            from .pongEngine import GameEngine
+            from ..pongEngine import GameEngine
             game_engine = GameEngine()
             
             # On récupère les joueurs
