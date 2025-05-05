@@ -57,8 +57,7 @@ services:
 
   nginx-exporter:
     image: nginx/nginx-prometheus-exporter:latest
-    environment:
-      - NGINX_STATUS_URL=http://nginx:80/stub_status
+    command: --nginx.scrape-uri=http://nginx:80/stub_status
     networks:
       - transcendence_network
       - monitoring_network
