@@ -99,6 +99,10 @@ class UserUpdateForm(UserChangeForm):
 		if email and email != self.instance.email:
 			if customUser.objects.filter(email=email).exists():
 				raise forms.ValidationError("Email already in use.")
+		if re.search(r"@(?:.*\.)?42[a-z]*\.fr$", email, re.IGNORECASE):
+			raise forms.ValidationError(
+				"You cannot connect with a 42 email. Please clic on the 42 button."
+			)
 		return email
 
 	def clean_profile_picture(self):
