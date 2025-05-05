@@ -35,6 +35,46 @@ services:
     networks:
       - monitoring_network
 
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
+    networks:
+      - transcendence_network
+      - monitoring_network
+    depends_on:
+      - db
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    environment:
+      - REDIS_ADDR=redis:6379
+    networks:
+      - transcendence_network
+      - monitoring_network
+    depends_on:
+      - redis
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    environment:
+      - NGINX_STATUS_URL=http://nginx:80/stub_status
+    networks:
+      - transcendence_network
+      - monitoring_network
+    depends_on:
+      - nginx
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - monitoring_network
+
 volumes:
   pgadmin_data:
   prometheus_data:
