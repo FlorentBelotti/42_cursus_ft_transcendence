@@ -26,17 +26,13 @@ class Intra42OAuth2(BaseOAuth2):
 		}
 		
 	def auth_complete(self, *args, **kwargs):
-		"""Handle the auth response and raise an exception if access was denied."""
-		# Si l'utilisateur a refusé l'autorisation, l'API 42 envoie généralement un paramètre d'erreur
 		if 'error' in self.data or 'denied' in self.data:
-			# Récupérer l'URL de login à partir des settings ou utiliser une URL par défaut
 			login_url = getattr(settings, 'LOGIN_URL', '/')
 			return redirect(login_url)
 		
 		try:
 			return super().auth_complete(*args, **kwargs)
 		except AuthCanceled:
-			# En cas d'annulation d'authentification, rediriger vers la page de login
 			login_url = getattr(settings, 'LOGIN_URL', '/')
 			return redirect(login_url)
 
